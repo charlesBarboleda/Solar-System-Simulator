@@ -5,8 +5,7 @@ public static class SpacePhysics3D
 {
     /// <summary>
     /// Custom physics functions and calculations for space simulation in 3D. 
-    /// 1 Unity world unit ≈ 5,000,000 KM ≈ 5,000,000,000 M
-    /// Gravitational constant adapted to Unity units (see PhysicsConstants.cs)
+    /// Gravitational constants adapted to Unity units (see PhysicsConstants.cs)
     /// Use double precision for all calculations to maintain accuracy over large distances
     /// Use double3 from Unity.Mathematics for 3D vector math operations
     /// </summary>
@@ -33,8 +32,8 @@ public static class SpacePhysics3D
             return 0.0;
         }
 
-        if (dist < PhysicsConstants.MIN_DISTANCE)
-            dist = PhysicsConstants.MIN_DISTANCE;
+        if (dist < PhysicsConstants.MIN_DISTANCE_SIM)
+            dist = PhysicsConstants.MIN_DISTANCE_SIM;
 
         double massSelf = self.TotalMassKg;
         double massOther = neighbour.TotalMassKg;
@@ -42,7 +41,7 @@ public static class SpacePhysics3D
         double invDist = 1.0 / dist;
         double invDist2 = invDist * invDist;
 
-        double force = PhysicsConstants.GRAVITY * SimulationSettings.Instance.GravityScale * massSelf * massOther * invDist2;
+        double force = PhysicsConstants.G_SIM * SimulationSettings.Instance.GravityScale * massSelf * massOther * invDist2;
         direction = displacement * invDist; // normalized
         return force;
     }

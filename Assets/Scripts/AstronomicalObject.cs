@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
-using TMPro;
 
 public class AstronomicalObject : MonoBehaviour
 {
