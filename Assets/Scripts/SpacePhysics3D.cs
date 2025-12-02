@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
 public static class SpacePhysics3D
 {
@@ -35,8 +36,8 @@ public static class SpacePhysics3D
         if (dist < PhysicsConstants.MIN_DISTANCE_SIM)
             dist = PhysicsConstants.MIN_DISTANCE_SIM;
 
-        double massSelf = self.TotalMassKg;
-        double massOther = neighbour.TotalMassKg;
+        double massSelf = self.MassKg;
+        double massOther = neighbour.MassKg;
 
         double invDist = 1.0 / dist;
         double invDist2 = invDist * invDist;
@@ -49,14 +50,14 @@ public static class SpacePhysics3D
     // Returns an acceleration vector (UnityUnits / s^2) on 'self' due to 'neighbour' (2-body only)
     public static double3 TwoBodyAcceleration(AstronomicalObject self, AstronomicalObject neighbour)
     {
-        if (self == null || self.TotalMassKg <= 0.0)
+        if (self == null || self.MassKg <= 0.0)
             return double3.zero;
 
         double force = TwoBodyGForce(self, neighbour, out double3 dir);
         if (force == 0.0)
             return double3.zero;
 
-        double accelMag = force / self.TotalMassKg; // a = F / m_self
+        double accelMag = force / self.MassKg; // a = F / m_self
         return dir * accelMag;                      // UnityUnits / s^2
     }
 
@@ -67,6 +68,37 @@ public static class SpacePhysics3D
 
         // Keep it all in double, do NOT cast to float here.
         return dir * forceMagnitude;
+    }
+
+    // Returns the barycentric position between two or more astronomical objects based on their masses and positions
+    // The Barycentric Position is the center of mass in an n-body star system
+    public static double3 GetBarycentricPosition(List<AstronomicalObject> bodies)
+    {
+        double3 barycenterPos = double3.zero;
+        double MassKg = 0.0;
+
+        // 1) Calculate total mass and weighted position sum by mass
+        foreach (AstronomicalObject body in bodies)
+        {
+            if (body == null || body.MassKg <= 0.0) continue;
+
+            barycenterPos += body.Position * body.MassKg; // weighted position sum by mass
+            MassKg += body.MassKg; // total mass of the astronomical bodies
+        }
+
+        // 2) Divide weighted position sum by total mass to get barycenter position
+        if (MassKg > 0.0) barycenterPos /= MassKg;
+        return barycenterPos;
+    }
+
+    // Returns the distance between two astronomical objects in simulation units
+    public static double DistanceBetween(AstronomicalObject obj1, AstronomicalObject obj2)
+    {
+        if (obj1 == null || obj2 == null)
+            return double.PositiveInfinity;
+
+        double3 displacement = obj2.Position - obj1.Position;
+        return math.length(displacement);
     }
 
 }

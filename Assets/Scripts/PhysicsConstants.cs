@@ -5,6 +5,7 @@ public static class PhysicsConstants
     public const double METERS_PER_AU = 1.495978707e11;
     public const double KG_PER_SOLAR_MASS = 1.98847e30;     // kg
     public const double SECONDS_PER_YEAR = 365.25 * 86400.0;
+    public const double SPEED_OF_LIGHT_M_PER_S = 299792458.0;
 
     // --- Real-world measurements ---
     // Sun constants
