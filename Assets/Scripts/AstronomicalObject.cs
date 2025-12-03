@@ -23,10 +23,10 @@ public class AstronomicalObject : MonoBehaviour
     [Tooltip("The barycentric acceleration is the acceleration relative to the system's center of mass.")]
     [SerializeField] double3 _barycentricAcceleration;
 
-    [SerializeField] double _acceleration;
+    [SerializeField] double3 _acceleration;
 
     [Tooltip("Neighbors for N-body gravitational calculations. Neighbors are added automatically via trigger colliders.")]
-    [SerializeField] List<AstronomicalObject> _astronomicalNeighbors = new();
+    [SerializeField] List<AstronomicalObject> AstronomicalNeighbors = new();
 
 
     void Awake()
@@ -37,16 +37,7 @@ public class AstronomicalObject : MonoBehaviour
 
     void FixedUpdate()
     {
-        double deltaTime = Time.fixedDeltaTime * (SimulationSettings.Instance != null ? SimulationSettings.Instance.TimeScale : 1.0);
 
-        if (_astronomicalNeighbors.Count == 0) return;
-
-        var neighbour = _astronomicalNeighbors[0];
-
-        double3 acceleration = SpacePhysics3D.TwoBodyAcceleration(this, neighbour);
-        Velocity += acceleration * deltaTime;
-        Position += Velocity * deltaTime;
-        SyncPosition();
     }
 
     void SyncPosition()
@@ -64,9 +55,9 @@ public class AstronomicalObject : MonoBehaviour
     {
         if (other.CompareTag(tag))
         {
-            if (other.TryGetComponent(out AstronomicalObject otherAstronomicalObject) && !_astronomicalNeighbors.Contains(otherAstronomicalObject))
+            if (other.TryGetComponent(out AstronomicalObject otherAstronomicalObject) && !AstronomicalNeighbors.Contains(otherAstronomicalObject))
             {
-                _astronomicalNeighbors.Add(otherAstronomicalObject);
+                AstronomicalNeighbors.Add(otherAstronomicalObject);
             }
         }
     }
