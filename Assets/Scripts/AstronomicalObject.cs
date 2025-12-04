@@ -33,6 +33,7 @@ public class AstronomicalObject : MonoBehaviour
     {
         Position = (double3)(float3)transform.position; // initial sync from scene
         Velocity = double3.zero;
+
     }
 
     void FixedUpdate()

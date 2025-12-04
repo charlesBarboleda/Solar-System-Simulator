@@ -1,8 +1,7 @@
 using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
-
-// 
+using UnityEditor;
 
 public static class SpacePhysics3D
 {
@@ -13,97 +12,9 @@ public static class SpacePhysics3D
     /// Use double3 from Unity.Mathematics for 3D vector math operations
     /// </summary>
 
-    // Returns the gravitational acceleration vector on 'a' due to 'b' (2-body only) using Newton's law of universal gravitation
-    public static double3 TwoBodyAccelVector(AstronomicalObject a, AstronomicalObject b)
-    {
-        if (a == null || b == null)
-        {
-            Debug.LogError("TwoBodyAcceleration requires valid AstronomicalObject references.");
-            return double3.zero;
-        }
-
-        if (a.MassKg <= 0.0 || b.MassKg <= 0.0)
-        {
-            Debug.LogError("TwoBodyAcceleration requires AstronomicalObjects to have a valid mass greater than zero.");
-            return double3.zero;
-        }
-        // Numerator: (GConst * GScale) * MassB * Unit Direction Vector from B to A
-        double3 numerator = (PhysicsConstants.G_SIM * SimulationSettings.Instance.GravityScale) * b.MassKg * UnitVectorDirectionFrom(a, b);
-        // Denominator: Distance^2 between A and B
-        double denominator = DistanceBetween(a, b) * DistanceBetween(a, b);
-
-        return numerator / denominator;
-    }
-
-    // Returns the barycentric position between two or more astronomical objects based on their mass and position
-    // The Barycentric Position is the center of mass in an n-body star system
-    public static double3 GetBarycentricPosition(List<AstronomicalObject> bodies)
-    {
-        double3 barycenterPos = double3.zero;
-        double MassKg = 0.0;
-
-        // 1) Calculate total mass and weighted position sum by mass
-        foreach (AstronomicalObject body in bodies)
-        {
-            if (body == null || body.MassKg <= 0.0) continue;
-
-            barycenterPos += body.Position * body.MassKg; // weighted position sum by mass
-            MassKg += body.MassKg; // total mass of the astronomical bodies
-        }
-
-        // 2) Divide weighted position sum by total mass to get barycenter position
-        if (MassKg > 0.0) barycenterPos /= MassKg;
-        return barycenterPos;
-    }
-
-    // Returns the barycentric acceleration vector of body A using the Einstein-Infeld-Hoffmann equations for n-body systems
-    public static double3 BarycentricAcceleration(AstronomicalObject mainBody, IReadOnlyList<AstronomicalObject> neighborBodies)
-    {
-        // if (mainBody == null || neighborBodies == null || neighborBodies.Count == 0)
-        // {
-        //     Debug.LogError("BarycentricAcceleration requires valid AstronomicalObject references and a non-empty neighbor list.");
-        //     return double3.zero;
-        // }
-
-        // if (mainBody.MassKg <= 0.0)
-        // {
-        //     Debug.LogError("BarycentricAcceleration requires mainBody to have a valid mass greater than zero.");
-        //     return double3.zero;
-        // }
-
-        // if (TotalSumMassKg(neighborBodies) <= 0.0)
-        // {
-        //     Debug.LogError("BarycentricAcceleration requires neighborBodies to have a total mass greater than zero.");
-        //     return double3.zero;
-        // }
-
-        // // Calculate barycentric acceleration using EIH equations
-        // // 1) Initialize variables needed for the calculation
-        // int neighborsCount = neighborBodies.Count;
-        // double neighborsMassKg = TotalSumMassKg(neighborBodies, mainBody); // exclude main body mass
-        // double vASquared = math.lengthsq(mainBody.Velocity); // squared velocity of main body
-
-        // double3 baryAccelVector = double3.zero;
-        // double3 equation1 = ((neighborsMassKg) * ((PhysicsConstants.G_SIM*)/ ()));
-        // baryAcceleration =
-        // ((TotalSumMassKg(astroObjects) - mainBody.MassKg) * ((PhysicsConstants.G_SIM*)/ ()))
 
 
-        return double3.zero;
-
-    }
-
-    // Returns the separation vector between two astronomical objects in Unity units
-    public static double3 SeparationVectorFrom(AstronomicalObject a, AstronomicalObject b)
-    {
-        if (a == null || b == null)
-        {
-            Debug.LogError("SeparationVectorFrom requires valid AstronomicalObject references.");
-            return double3.zero;
-        }
-
-        return b.Position - a.Position;
-    }
+    // ******GENERAL HELPER METHODS****** // 
 
     // Returns the unit vector pointing from object B to object A (direction only, magnitude = 1)
     public static double3 UnitVectorDirectionFrom(AstronomicalObject a, AstronomicalObject b)
@@ -116,7 +27,7 @@ public static class SpacePhysics3D
 
         double3 direction = b.Position - a.Position;
         double lenSq = math.lengthsq(direction);
-        const double epsilon = 1e-24; // tweak for your position scale
+        const double epsilon = 1e-24; // tweak to accomodate for position scaling
 
         if (lenSq < epsilon)
         {
@@ -125,6 +36,18 @@ public static class SpacePhysics3D
         }
 
         return math.normalize(direction);
+    }
+
+    // Returns the separation vector between two astronomical objects in Unity units
+    public static double3 SeparationVectorFrom(AstronomicalObject a, AstronomicalObject b)
+    {
+        if (a == null || b == null)
+        {
+            Debug.LogError("SeparationVectorFrom requires valid AstronomicalObject references.");
+            return double3.zero;
+        }
+
+        return b.Position - a.Position;
     }
 
     // Returns the distance between two astronomical objects in Unity units
@@ -169,6 +92,33 @@ public static class SpacePhysics3D
         return totalMass;
     }
 
+
+    // ******EINSTEIN-INFELD-HOFFMANN EQUATION METHODS****** //
+
+
+    // These methods solve the first term of the EIH equations 
+    // Returns the gravitational acceleration vector on 'a' due to 'b' (2-body only) using Newton's law of universal gravitation
+    public static double3 TwoBodyAccelVector(AstronomicalObject a, AstronomicalObject b)
+    {
+        if (a == null || b == null)
+        {
+            Debug.LogError("TwoBodyAcceleration requires valid AstronomicalObject references.");
+            return double3.zero;
+        }
+
+        if (a.MassKg <= 0.0 || b.MassKg <= 0.0)
+        {
+            Debug.LogError("TwoBodyAcceleration requires AstronomicalObjects to have a valid mass greater than zero.");
+            return double3.zero;
+        }
+        // Numerator: (GConst * GScale) * MassB * Unit Direction Vector from B to A
+        double3 numerator = (PhysicsConstants.G_SIM * SimulationSettings.Instance.GravityScale) * b.MassKg * UnitVectorDirectionFrom(a, b);
+        // Denominator: Distance^2 between A and B
+        double denominator = DistanceBetween(a, b) * DistanceBetween(a, b);
+
+        return numerator / denominator;
+    }
+
     // Returns the Newtonian gravitational acceleration of an object with respect to its neighbors
     // This method calculates the first term of the Einstein-Infeld-Hoffmann equations for n-body systems
     public static double3 NBodyAccelVector(AstronomicalObject self, IReadOnlyList<AstronomicalObject> neighborBodies)
@@ -186,7 +136,83 @@ public static class SpacePhysics3D
         return accumulatedAccelVector;
     }
 
-    // Returns the barycentric acceleration vector of object a in an n-body system using Einstein-Infeld-Hoffmann equations
+    // These methods solve the second term of the EIH equations
+    // PLACEHOLDER METHOD
+    public static double3 SecondTerm(AstronomicalObject self, IReadOnlyList<AstronomicalObject> neighborBodies)
+    {
+        double3 secondTerm = double3.zero;
+
+        double3 inverseSqLaw = 1 / (PhysicsConstants.SPEED_OF_LIGHT_M_PER_S * PhysicsConstants.SPEED_OF_LIGHT_M_PER_S);
+        double3 accelVectorAB = NBodyAccelVector(self, neighborBodies);
+        double3 bracket = double3.zero;
+
+        // Variables needed to solve the second term of the EIH equation
+
+        double3 v_A = self.Velocity; // Velocity of self or object "A"
+        double speed_A = math.length(v_A); // Speed of self from velocity
+        double3 v2_A = math.square(speed_A); // Speed of "A" squared
+
+        double3 v_B = double3.zero; // Velocity of neighbor object "B"
+        double speed_B = math.length(v_B); // Speed magnitude of neighbor object "B" from velocity
+        double3 v2_B = math.square(speed_B); // Speed of neighbor object "B" squared
+
+        double3 nUnitVect_AB = double3.zero; // Vector direction from B to A
+        double3 nUnitVect_BC = double3.zero; // Vector direction from C to B
+
+
+
+        foreach (AstronomicalObject B in neighborBodies)
+        {
+            if (B == self) continue;
+
+            v_B = B.Velocity;
+            nUnitVect_AB = UnitVectorDirectionFrom(self, B);
+
+            // bracket += (v2_A + (2 * v2_B)
+            //             - (4 * (v_A * v_B))
+            //             - ((3 / 2) * (nUnitVect_AB * v_B))
+            //             - (4 * ( / rAC))
+            //         );
+        }
+
+        return secondTerm = inverseSqLaw
+                            * accelVectorAB
+                            * bracket;
+    }
+
+    // ******BARYCENTER METHODS****** //
+
+    // Returns the barycentric position between two or more astronomical objects based on their mass and position
+    // The Barycentric Position is the center of mass in an n-body star system
+    public static double3 GetBarycentricPosition(List<AstronomicalObject> bodies)
+    {
+        if (bodies == null)
+        {
+            Debug.LogError("Invalid or Null AstronomicalObject references");
+        }
+
+        if (bodies.Count <= 0)
+        {
+            Debug.LogError("Must have minimum 1 AstronomicalObject body in bodies");
+        }
+
+        double3 barycenterPos = double3.zero;
+        double MassKg = 0.0;
+
+        // 1) Calculate total mass and weighted position sum by mass
+        foreach (AstronomicalObject body in bodies)
+        {
+            if (body == null || body.MassKg <= 0.0) continue;
+
+            barycenterPos += body.Position * body.MassKg; // weighted position sum by mass
+            MassKg += body.MassKg; // total mass of the astronomical bodies
+        }
+
+        // 2) Divide weighted position sum by total mass to get barycenter position
+        if (MassKg > 0.0) barycenterPos /= MassKg;
+        return barycenterPos;
+    }
+    // Returns the barycentric acceleration vector of object a in an n-body system using the full-form Einstein-Infeld-Hoffmann equations
     // Incomplete - placeholder for future implementation
     public static double3 NBodyBaryAccelVector(AstronomicalObject a, IReadOnlyList<AstronomicalObject> neighborBodies)
     {
