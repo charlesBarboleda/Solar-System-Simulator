@@ -181,37 +181,83 @@ public static class SpacePhysics3D
     }
 
     // ******BARYCENTER METHODS****** //
+    // BARYCENTER: The center of mass given an n-body system
 
-    // Returns the barycentric position between two or more astronomical objects based on their mass and position
-    // The Barycentric Position is the center of mass in an n-body star system
-    public static double3 GetBarycentricPosition(List<AstronomicalObject> bodies)
+    // Outputs the barycenter vectors (position & velocity) between two or more astronomical objects based on their masses, positions, and velocities
+    public static void GetBarycenterVectorsOf(List<AstronomicalObject> bodies, out double3 barycenterPosition, out double3 barycenterVelocity)
     {
         if (bodies == null)
         {
-            Debug.LogError("Invalid or Null AstronomicalObject references");
+            Debug.LogError("[SpacePhysics3D] GetBarycenter: Invalid or Null AstronomicalObject references");
+            barycenterPosition = double3.zero;
+            barycenterVelocity = double3.zero;
+            return;
         }
 
         if (bodies.Count <= 0)
         {
-            Debug.LogError("Must have minimum 1 AstronomicalObject body in bodies");
+            Debug.LogError("[SpacePhysics3D] GetBarycenter: Must have a minimum of 1 AstronomicalObject body in bodies");
+            barycenterPosition = double3.zero;
+            barycenterVelocity = double3.zero;
+            return;
         }
 
-        double3 barycenterPos = double3.zero;
-        double MassKg = 0.0;
+        double3 weightedVelocities = double3.zero;
+        double3 weightedPositions = double3.zero;
+        double totalMassKg = 0.0;
 
-        // 1) Calculate total mass and weighted position sum by mass
+        // 1) Calculate total mass and weighted sum by mass of the position/velocity of each object
         foreach (AstronomicalObject body in bodies)
         {
             if (body == null || body.MassKg <= 0.0) continue;
 
-            barycenterPos += body.Position * body.MassKg; // weighted position sum by mass
-            MassKg += body.MassKg; // total mass of the astronomical bodies
+            weightedVelocities += body.Velocity * body.MassKg; // velocity of object weighted/multiplied/scaled by the object's mass
+            weightedPositions += body.Position * body.MassKg; // same calculations as velocity but with the position value instead
+            totalMassKg += body.MassKg; // total mass of the astronomical bodies
         }
 
-        // 2) Divide weighted position sum by total mass to get barycenter position
-        if (MassKg > 0.0) barycenterPos /= MassKg;
-        return barycenterPos;
+
+        if (totalMassKg <= 0.0)
+        {
+            Debug.LogError("[SpacePhysics3D] GetBarycenter: Cannot calculate with a totalMassKg of 0 or less");
+            barycenterPosition = double3.zero;
+            barycenterVelocity = double3.zero;
+            return;
+        }
+
+        // 2) Divide weighted sum of position/velocity by total mass to get barycenter vectors
+        barycenterPosition = weightedPositions / totalMassKg;
+        barycenterVelocity = weightedVelocities / totalMassKg;
+        return;
+
     }
+
+    // Returns the position of "body" expressed in barycentric coordinates (relative to the given barycenterPosition)
+    public static double3 GetBarycentricPositionOf(AstronomicalObject body, double3 barycenterPosition)
+    {
+        if (body == null)
+        {
+            Debug.LogError("Invalid or null reference of an astronomical object.");
+            return double3.zero;
+        }
+
+        double3 barycentricPosition = body.Position - barycenterPosition;
+        return barycentricPosition;
+    }
+
+    // Returns the velocity of "body" relative to the given barycenterVelocity
+    public static double3 GetBarycentricVelocityOf(AstronomicalObject body, double3 barycenterVelocity)
+    {
+        if (body == null)
+        {
+            Debug.LogError("Invalid or Null AstronomicalObject reference.");
+            return double3.zero;
+        }
+
+        double3 barycentricVelocity = body.Velocity - barycenterVelocity;
+        return barycentricVelocity;
+    }
+
     // Returns the barycentric acceleration vector of object a in an n-body system using the full-form Einstein-Infeld-Hoffmann equations
     // Incomplete - placeholder for future implementation
     public static double3 NBodyBaryAccelVector(AstronomicalObject a, IReadOnlyList<AstronomicalObject> neighborBodies)
