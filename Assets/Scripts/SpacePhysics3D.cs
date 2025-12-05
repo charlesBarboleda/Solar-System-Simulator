@@ -212,7 +212,7 @@ public static class SpacePhysics3D
             if (body == null || body.MassKg <= 0.0) continue;
 
             weightedVelocities += body.Velocity * body.MassKg; // velocity of object weighted/multiplied/scaled by the object's mass
-            weightedPositions += body.Position * body.MassKg; // same calculations as velocity but with the position value instead
+            weightedPositions += body.Position * body.MassKg; // same calculations as velocity but with the position vector instead
             totalMassKg += body.MassKg; // total mass of the astronomical bodies
         }
 
