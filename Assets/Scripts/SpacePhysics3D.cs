@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
-using UnityEditor;
+using System;
 
 public static class SpacePhysics3D
 {
@@ -119,76 +119,161 @@ public static class SpacePhysics3D
         return numerator / denominator;
     }
 
-    // Returns the Newtonian gravitational acceleration of an object with respect to its neighbors
+    // Returns the Newtonian gravitational acceleration of an object due to n-neighbors
     // This method calculates the first term of the Einstein-Infeld-Hoffmann equations for n-body systems
-    public static double3 NBodyAccelVector(AstronomicalObject self, IReadOnlyList<AstronomicalObject> neighborBodies)
+    public static double3 NBodyAccelVector(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
     {
-        double3 accumulatedAccelVector = double3.zero;
-
-        // Iterate through all neighboring bodies to calculate total acceleration on self
-        foreach (AstronomicalObject neighbor in neighborBodies)  // The "neighbor" variable is equal to "B" in the EIH equations 
-        {
-            if (neighbor == null || neighbor == self) continue;
-
-            accumulatedAccelVector += TwoBodyAccelVector(self, neighbor); // Sum of all acceleration vectors from neighbors
-        }
+        double3 accumulatedAccelVector = Sigma
+                                        (
+                                        bodies,
+                                        B =>
+                                        {
+                                            return (PhysicsConstants.G_SIM * B.MassKg * UnitVectorDirectionFrom(self, B))
+                                                   / (DistanceBetween(B, self) * DistanceBetween(B, self));
+                                        },
+                                        B => B != null && !ReferenceEquals(B, self)
+                                        );
 
         return accumulatedAccelVector;
+
+        // // Iterate through all neighboring bodies to calculate total acceleration on self
+        // foreach (AstronomicalObject neighbor in bodies)  // The "neighbor" variable is equal to "B" in the EIH equations 
+        // {
+        //     if (neighbor == null || neighbor == self) continue;
+
+        //     accumulatedAccelVector += TwoBodyAccelVector(self, neighbor); // Sum of all acceleration vectors from neighbors
+        // }
+
     }
 
-    // These methods solve the second term of the EIH equations
+    // These methods solve for the second term of the EIH equations
     // PLACEHOLDER METHOD
-    public static double3 SecondTerm(AstronomicalObject self, IReadOnlyList<AstronomicalObject> neighborBodies)
+    public static double3 SecondTerm(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
     {
         double3 secondTerm = double3.zero;
 
         double3 inverseSqLaw = 1 / (PhysicsConstants.SPEED_OF_LIGHT_M_PER_S * PhysicsConstants.SPEED_OF_LIGHT_M_PER_S);
-        double3 accelVectorAB = NBodyAccelVector(self, neighborBodies);
+        double3 accelVector_A = NBodyAccelVector(self, bodies);
         double3 bracket = double3.zero;
 
-        // Variables needed to solve the second term of the EIH equation
+        // Variables here are relative to the barycenter (barycentric vectors) and are needed to solve the second term of the EIH equation
+        GetBarycenterVectorsOf(bodies, out double3 barycenterPosition, out double3 barycenterVelocity);
 
-        double3 v_A = self.Velocity; // Velocity of self or object "A"
-        double speed_A = math.length(v_A); // Speed of self from velocity
-        double3 v2_A = math.square(speed_A); // Speed of "A" squared
+        // Positions relative to the barycenter
+        double3 position_A = GetBarycentricPositionOf(self, barycenterPosition);
+        double3 position_B = double3.zero;
 
-        double3 v_B = double3.zero; // Velocity of neighbor object "B"
-        double speed_B = math.length(v_B); // Speed magnitude of neighbor object "B" from velocity
-        double3 v2_B = math.square(speed_B); // Speed of neighbor object "B" squared
+        // Object "A"'s velocity and squared speed relative to the barycenter
+        double3 v_A = GetBarycentricVelocityOf(self, barycenterVelocity);
+        double v2_A = math.lengthsq(v_A);
 
-        double3 nUnitVect_AB = double3.zero; // Vector direction from B to A
-        double3 nUnitVect_BC = double3.zero; // Vector direction from C to B
+        // Object "B"'s velocity and squared speed relative to the barycenter
+        double3 v_B = double3.zero;
+        double v2_B = math.lengthsq(v_B);
+
+        // Unit pointing vectors
+        double3 n_AB = double3.zero;
+        double3 n_BC = double3.zero;
+
+        // NON barycentric-related variables
+        double3 accel_B = double3.zero;
+
+        double innerSum1 = 0.0;
+        double innerSum2 = 0.0;
 
 
-
-        foreach (AstronomicalObject B in neighborBodies)
+        foreach (AstronomicalObject B in bodies)
         {
             if (B == self) continue;
 
-            v_B = B.Velocity;
-            nUnitVect_AB = UnitVectorDirectionFrom(self, B);
+            v_B = GetBarycentricVelocityOf(B, barycenterPosition);
+            n_AB = UnitVectorDirectionFrom(self, B);
+            position_B = GetBarycentricPositionOf(B, barycenterPosition);
+            accel_B = NBodyAccelVector(B, bodies);
 
-            // bracket += (v2_A + (2 * v2_B)
-            //             - (4 * (v_A * v_B))
-            //             - ((3 / 2) * (nUnitVect_AB * v_B))
-            //             - (4 * ( / rAC))
-            //         );
+            foreach (AstronomicalObject C in bodies) // My incomplete attempt at solving C!=A 
+            {
+                if (C == self) continue;
+
+
+            }
+
+            // Building up the "bracket" expression
+            bracket += (v2_A + (2 * v2_B)
+                        - (4 * (v_A * v_B))
+                        - ((3 / 2) * (math.square(n_AB * v_B)))
+                        - (4 * innerSum1)
+                        - (innerSum2)
+                        + ((1 / 2) * ((position_B - position_A) * accel_B))
+                    );
         }
 
+        // Final formula to calculate for the second term
         return secondTerm = inverseSqLaw
-                            * accelVectorAB
+                            * accelVector_A
                             * bracket;
+    }
+
+    // Returns the result of the first inner sum inside the second term of the EIH equation
+    public static double InnerSumOne(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
+    {
+        double innerSum = Sigma(
+                        bodies,
+                        C =>
+                        {
+                            double numerator = PhysicsConstants.G_SIM * C.MassKg;
+                            double denominator = DistanceBetween(self, C);
+                            return numerator / denominator;
+                        },
+                        C => C != null && !ReferenceEquals(C, self)
+                        );
+
+        return innerSum;
+    }
+
+    // ******MATH HELPERS****** (I should probably move these methods to a different class)
+
+    // Scalar sigma: returns a "double" value type
+    private static double Sigma<T>(IEnumerable<T> source, Func<T, double> term, Func<T, bool> condition = null)
+    {
+        double sum = 0.0;
+
+        foreach (var x in source)
+        {
+            if (condition != null && !condition(x))
+                continue;
+
+            sum += term(x);
+        }
+
+        return sum;
+    }
+
+    // Vector sigma: returns a "double3" value type
+    private static double3 Sigma<T>(IEnumerable<T> source, Func<T, double3> term, Func<T, bool> condition = null)
+    {
+        double3 sum = double3.zero;
+
+        foreach (var x in source)
+        {
+            if (condition != null && !condition(x))
+                continue;
+
+            sum += term(x);   // term(x) is a double3
+        }
+
+        return sum;
     }
 
     // ******BARYCENTER METHODS****** //
     // BARYCENTER: The center of mass given an n-body system
 
     // Outputs the barycenter vectors (position & velocity) between two or more astronomical objects based on their masses, positions, and velocities
-    public static void GetBarycenterVectorsOf(List<AstronomicalObject> bodies, out double3 barycenterPosition, out double3 barycenterVelocity)
+    public static void GetBarycenterVectorsOf(IReadOnlyList<AstronomicalObject> bodies, out double3 barycenterPosition, out double3 barycenterVelocity)
     {
         if (bodies == null)
         {
-            Debug.LogError("[SpacePhysics3D] GetBarycenter: Invalid or Null AstronomicalObject references");
+            Debug.LogError($"[SpacePhysics3D] GetBarycenter: Invalid or Null AstronomicalObject list reference");
             barycenterPosition = double3.zero;
             barycenterVelocity = double3.zero;
             return;
@@ -196,7 +281,7 @@ public static class SpacePhysics3D
 
         if (bodies.Count <= 0)
         {
-            Debug.LogError("[SpacePhysics3D] GetBarycenter: Must have a minimum of 1 AstronomicalObject body in bodies");
+            Debug.LogError($"[SpacePhysics3D] GetBarycenter: Must have a minimum of 1 AstronomicalObject body in bodies");
             barycenterPosition = double3.zero;
             barycenterVelocity = double3.zero;
             return;
@@ -219,7 +304,7 @@ public static class SpacePhysics3D
 
         if (totalMassKg <= 0.0)
         {
-            Debug.LogError("[SpacePhysics3D] GetBarycenter: Cannot calculate with a totalMassKg of 0 or less");
+            Debug.LogError($"[SpacePhysics3D] GetBarycenter: Cannot calculate with a totalMassKg of 0 or less");
             barycenterPosition = double3.zero;
             barycenterVelocity = double3.zero;
             return;
@@ -237,7 +322,7 @@ public static class SpacePhysics3D
     {
         if (body == null)
         {
-            Debug.LogError("Invalid or null reference of an astronomical object.");
+            Debug.LogError($"[SpacePhysics3D] GetBarycentricPositionOf: Invalid or Null {body.GetType()} reference.");
             return double3.zero;
         }
 
@@ -250,7 +335,7 @@ public static class SpacePhysics3D
     {
         if (body == null)
         {
-            Debug.LogError("Invalid or Null AstronomicalObject reference.");
+            Debug.LogError($"[SpacePhysics3D] GetBarycentricVelocityOf: Invalid or Null {body.GetType()} reference.");
             return double3.zero;
         }
 
@@ -260,10 +345,10 @@ public static class SpacePhysics3D
 
     // Returns the barycentric acceleration vector of object a in an n-body system using the full-form Einstein-Infeld-Hoffmann equations
     // Incomplete - placeholder for future implementation
-    public static double3 NBodyBaryAccelVector(AstronomicalObject a, IReadOnlyList<AstronomicalObject> neighborBodies)
+    public static double3 NBodyBaryAccelerationOf(AstronomicalObject self, IReadOnlyList<AstronomicalObject> neighborBodies)
     {
         double3 accelVector = double3.zero;
-        accelVector = NBodyAccelVector(a, neighborBodies);
+        accelVector = NBodyAccelVector(self, neighborBodies);
 
         return accelVector;
     }
