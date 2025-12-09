@@ -184,7 +184,7 @@ public static class SpacePhysics3D
                 double3 baryVel_B = GetBarycentricVelocityOf(B, barycenterVelocity);
                 double baryVelSq_B = math.lengthsq(baryVel_B);
                 double3 baryPosition_B = GetBarycentricPositionOf(B, barycenterPosition);
-                double3 n_AB = UnitVectorDirectionFrom(self, B);
+                double3 n_BA = UnitVectorDirectionFrom(self, B);
 
                 // innerSum2 solves for the second inner sigma notation inside the bracket of the second term
                 double innerSum2 = Sigma(
@@ -193,13 +193,13 @@ public static class SpacePhysics3D
                     C => C != null && !ReferenceEquals(C, B)
                 );
 
-                double nAB_dot_vB = math.dot(n_AB, baryVel_B);
+                double nAB_dot_vB = math.dot(n_BA, baryVel_B);
 
                 double scalarBracket = baryVelSq_A // v2_A
                        + 2.0 * baryVelSq_B // 2 * (v2_B)
                        - 4.0 * math.dot(baryVel_A, baryVel_B) // 4 * (v_A · v_B)
-                       - (3.0 / 2.0) * (nAB_dot_vB * nAB_dot_vB) // 3/2 * (n_AB · n_AB)^2
-                       - 4.0 * (innerSum1) // 4 * (Σ_B≠A)
+                       - (3.0 / 2.0) * (nAB_dot_vB * nAB_dot_vB) // 3/2 * (n_AB · v_B)^2
+                       - 4.0 * (innerSum1) // 4 * (Σ_C≠A)
                        - innerSum2 // Σ_C≠B
                        + (1.0 / 2.0) * (math.dot((baryPosition_B - baryPosition_A), NBodyAccelVectorOf(B, bodies))); // 1/2 * ((x_B - x_A) · a_B)
 
