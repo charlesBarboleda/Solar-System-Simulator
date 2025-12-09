@@ -28,13 +28,16 @@ public static class PhysicsConstants
 
     // Derived gravitational constant in simulation units:
     // G_sim = G_SI * (T0^2 * M0 / L0^3)
-    public static readonly double G_SIM =
+    private static readonly double G_SIM =
         G_SI *
         (TIME_UNIT_SECONDS * TIME_UNIT_SECONDS * MASS_UNIT_KG) /
         (LENGTH_UNIT_METERS * LENGTH_UNIT_METERS * LENGTH_UNIT_METERS);
 
     // For T = 1 day, SIM_GRAV_CONSTANT ≈ 2.96e-4,
     // giving an orbital period of ~365 sim days at r=1, M=1.
+
+    // Final computed gravitational constant
+    public static readonly double G = G_SIM * SimulationSettings.Instance.GravityScale;
 
     public const double MIN_DISTANCE_SIM = 1e-4; // in sim length units (AU)
 
