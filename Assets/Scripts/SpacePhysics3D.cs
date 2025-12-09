@@ -2,6 +2,8 @@ using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
 using System;
+using Unity.VisualScripting;
+using System.Collections.Specialized;
 
 public static class SpacePhysics3D
 {
@@ -98,7 +100,7 @@ public static class SpacePhysics3D
     // Incomplete EIH equation (missing ThirdTerm() & FourthTerm())
     private static double3 Einstein_Infeld_Hoffmann(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
     {
-        double3 baryAccelVector = FirstTerm(self, bodies) + SecondTerm(self, bodies);
+        double3 baryAccelVector = FirstTerm(self, bodies) + SecondTerm(self, bodies) + ThirdTerm(self, bodies) + FourthTerm(self, bodies);
         return baryAccelVector;
     }
 
@@ -184,7 +186,7 @@ public static class SpacePhysics3D
                 double3 baryVel_B = GetBarycentricVelocityOf(B, barycenterVelocity);
                 double baryVelSq_B = math.lengthsq(baryVel_B);
                 double3 baryPosition_B = GetBarycentricPositionOf(B, barycenterPosition);
-                double3 n_BA = UnitVectorDirectionFrom(self, B);
+                double3 n_AB = UnitVectorDirectionFrom(self, B);
 
                 // innerSum2 solves for the second inner sigma notation inside the bracket of the second term
                 double innerSum2 = Sigma(
@@ -193,7 +195,7 @@ public static class SpacePhysics3D
                     C => C != null && !ReferenceEquals(C, B)
                 );
 
-                double nAB_dot_vB = math.dot(n_BA, baryVel_B);
+                double nAB_dot_vB = math.dot(n_AB, baryVel_B);
 
                 double scalarBracket = baryVelSq_A // v2_A
                        + 2.0 * baryVelSq_B // 2 * (v2_B)
@@ -210,6 +212,59 @@ public static class SpacePhysics3D
         );
 
         return secondTerm;
+    }
+
+    private static double3 ThirdTerm(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
+    {
+        double3 thirdTerm;
+
+        const double c = PhysicsConstants.SPEED_OF_LIGHT_M_PER_S;
+        double inverseSq_c = 1.0 / (c * c);
+
+        GetBarycenterVectorsOf(bodies, out double3 barycenterPosition, out double3 barycenterVelocity);
+        double3 baryVel_A = GetBarycentricVelocityOf(self, barycenterVelocity);
+
+        thirdTerm = Sigma(
+            bodies,
+            B =>
+            {
+                double rAB = DistanceBetween(self, B);
+                double inverse_r2 = 1.0 / (rAB * rAB);
+                double accelMagnitude_AB = (PhysicsConstants.G * B.MassKg) * inverse_r2;
+                double3 baryVel_B = GetBarycentricVelocityOf(B, barycenterVelocity);
+                double3 n_AB = UnitVectorDirectionFrom(self, B);
+
+                double scalarBracket = math.dot(n_AB, (4 * baryVel_A) - (3 * baryVel_B));
+                double3 vectorBracket = baryVel_A - baryVel_B;
+
+                return inverseSq_c * accelMagnitude_AB * (scalarBracket * vectorBracket);
+            },
+            B => B != null && !ReferenceEquals(B, self)
+            );
+
+        return thirdTerm;
+    }
+
+    private static double3 FourthTerm(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
+    {
+        double3 fourthTerm;
+
+        const double c = PhysicsConstants.SPEED_OF_LIGHT_M_PER_S;
+        double inverseSq_c = 7.0 / (2.0 * (c * c));
+
+        fourthTerm = Sigma(
+            bodies,
+            B =>
+            {
+                double3 accel_B = NBodyAccelVectorOf(B, bodies);
+
+                return inverseSq_c * accel_B;
+            },
+            B => B != null && !ReferenceEquals(self, B)
+        );
+
+        return fourthTerm;
+
     }
 
 
