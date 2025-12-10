@@ -2,8 +2,6 @@ using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
 using System;
-using Unity.VisualScripting;
-using System.Collections.Specialized;
 
 public static class SpacePhysics3D
 {
@@ -97,11 +95,14 @@ public static class SpacePhysics3D
 
     // ******EINSTEIN-INFELD-HOFFMANN EQUATION METHODS****** //
 
-    // Incomplete EIH equation (missing ThirdTerm() & FourthTerm())
-    private static double3 Einstein_Infeld_Hoffmann(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
+    // Complete EIH equation (First-order post-Newtonian correction or 1PN)
+    public static double3 Einstein_Infeld_Hoffmann(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
     {
-        double3 baryAccelVector = FirstTerm(self, bodies) + SecondTerm(self, bodies) + ThirdTerm(self, bodies) + FourthTerm(self, bodies);
-        return baryAccelVector;
+        double3 baryAccelVector_self = FirstTerm(self, bodies)
+                                       + SecondTerm(self, bodies)
+                                       + ThirdTerm(self, bodies)
+                                       + FourthTerm(self, bodies);
+        return baryAccelVector_self;
     }
 
     // Returns the gravitational acceleration vector on 'a' due to 'b' (2-body only) using Newton's law of universal gravitation
@@ -138,7 +139,6 @@ public static class SpacePhysics3D
 
         return accumulatedAccelVector;
     }
-
 
 
     // Solves the first term of the EIH equations
@@ -228,6 +228,7 @@ public static class SpacePhysics3D
             bodies,
             B =>
             {
+
                 double rAB = DistanceBetween(self, B);
                 double inverse_r2 = 1.0 / (rAB * rAB);
                 double accelMagnitude_AB = (PhysicsConstants.G * B.MassKg) * inverse_r2;
@@ -237,7 +238,9 @@ public static class SpacePhysics3D
                 double scalarBracket = math.dot(n_AB, (4 * baryVel_A) - (3 * baryVel_B));
                 double3 vectorBracket = baryVel_A - baryVel_B;
 
-                return inverseSq_c * accelMagnitude_AB * (scalarBracket * vectorBracket);
+                double3 brackets = scalarBracket * vectorBracket;
+
+                return inverseSq_c * accelMagnitude_AB * brackets;
             },
             B => B != null && !ReferenceEquals(B, self)
             );

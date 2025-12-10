@@ -2,38 +2,32 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
 using NUnit.Framework;
+using System.Linq;
+using Unity.VisualScripting;
 
 public class AstronomicalObject : MonoBehaviour
 {
     public string Name;
     public double MassKg;
 
-    [Tooltip("Object velocity in double3 instead of Vector3 to maintain precision over large distances.")]
+    [Tooltip("double3 Velocity instead of Vector3 to maintain precision over large distances.")]
     public double3 Velocity;
 
-    [Tooltip("Object position in double3 instead of Vector3 to maintain precision over large distances.")]
+    [Tooltip("double3 Position instead of Vector3 to maintain precision over large distances.")]
     public double3 Position;
 
-    [SerializeField] double3 _acceleration;
-
-    [Tooltip("Neighbors for N-body gravitational calculations. Neighbors are added automatically via trigger colliders.")]
-    [SerializeField] List<AstronomicalObject> StarSystem = new();
+    AstronomicalObject[] StarSystem => NBodyManager.Instance.SystemBodies;
 
 
-    void Awake()
+    void Start()
     {
         Position = (double3)(float3)transform.position; // initial sync from scene
         Velocity = double3.zero;
 
-        if (!StarSystem.Contains(this)) StarSystem.Add(this);
+        if (!StarSystem.Contains(this)) StarSystem.Append(this);
     }
 
-    void FixedUpdate()
-    {
-
-    }
-
-    void SyncPosition()
+    public void ApplyPosition()
     {
         if (!math.all(math.isfinite(Position)))
         {
@@ -50,7 +44,7 @@ public class AstronomicalObject : MonoBehaviour
         {
             if (other.TryGetComponent(out AstronomicalObject otherAstronomicalObject) && !StarSystem.Contains(otherAstronomicalObject))
             {
-                StarSystem.Add(otherAstronomicalObject);
+                StarSystem.Append(otherAstronomicalObject);
             }
         }
     }

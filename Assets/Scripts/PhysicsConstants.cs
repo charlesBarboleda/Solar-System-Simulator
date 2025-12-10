@@ -9,13 +9,13 @@ public static class PhysicsConstants
 
     // --- Real-world measurements ---
     // Sun constants
-    public const double SUN_MASS_KG = 1.9885e30; // wikipedia number            
-    public const double SUN_RADIUS_METERS = 6.9634e8; // wikipedia number
+    public const double SUN_MASS_KG = 1.9885e30;
+    public const double SUN_RADIUS_METERS = 6.9634e8;
     public static readonly double SUN_RADIUS_SIM = SUN_RADIUS_METERS / LENGTH_UNIT_METERS;
 
     // Earth constants
-    public const double EARTH_MASS_KG = 5.9722e24; // wikipedia number
-    public const double EARTH_RADIUS_METERS = 6.371e6; // wikipedia number
+    public const double EARTH_MASS_KG = 5.9722e24;
+    public const double EARTH_RADIUS_METERS = 6.371e6;
     public static readonly double EARTH_RADIUS_SIM = EARTH_RADIUS_METERS / LENGTH_UNIT_METERS;
 
     // --- Unity simulation units ---
