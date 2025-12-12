@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
-using NUnit.Framework;
 using System.Linq;
 using Unity.VisualScripting;
 
@@ -16,15 +14,68 @@ public class AstronomicalObject : MonoBehaviour
     [Tooltip("double3 Position instead of Vector3 to maintain precision over large distances.")]
     public double3 Position;
 
-    AstronomicalObject[] StarSystem => NBodyManager.Instance.SystemBodies;
 
+    // Testing Variables
+    double3 _initPos;
+    double _timeElapsed = 0.0;
 
     void Start()
     {
         Position = (double3)(float3)transform.position; // initial sync from scene
         Velocity = double3.zero;
 
-        if (!StarSystem.Contains(this)) StarSystem.Append(this);
+        if (Name == "Sun")
+        {
+            Position = new double3(0, 0, 0);
+
+            Velocity = new double3(0, 0, 0);
+
+            float sunDiameterUnity = (float)PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_SUN_DIAMETER_M);
+            transform.localScale = Vector3.one * sunDiameterUnity;
+
+            MassKg = PhysicsConstants.REAL_SOLAR_MASS_KG;
+
+            ApplyPosition();
+        }
+        else if (Name == "Earth")
+        {
+            double unityEarthToSun = PhysicsConstants.ToUnityUnitsFromAU(PhysicsConstants.REAL_EARTH_SUN_DISTANCE_AU);
+            Position = new double3(unityEarthToSun, 0, 0);
+
+            double GM = PhysicsConstants.UNITY_G * PhysicsConstants.REAL_SOLAR_MASS_KG;
+            double v = math.sqrt(GM / unityEarthToSun); // UnityUnits / day
+            Velocity = new double3(0.0, 0.0, v);
+
+            float earthDiameterUnity = (float)PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_EARTH_DIAMETER_M);
+            transform.localScale = Vector3.one * earthDiameterUnity;
+
+            MassKg = PhysicsConstants.REAL_EARTH_MASS_KG;
+
+            ApplyPosition();
+            _initPos = Position;
+        }
+        else if (Name == "Neptune")
+        {
+            Debug.Log("Entered Neptune statement");
+            Debug.Log($"Current {Name} position: {transform.localPosition}");
+            Position = new double3(PhysicsConstants.ToUnityUnitsFromAU(PhysicsConstants.REAL_NEPTUNE_SUN_DISTANCE_AU), 0, 0);
+            ApplyPosition();
+            Debug.Log("Attempting to move 'Neptune' to converted position");
+            Debug.Log($"Moved {Name} position: {transform.localPosition}");
+        }
+    }
+
+    void FixedUpdate()
+    {
+        if (Name == "Earth")
+        {
+            _timeElapsed += Time.fixedDeltaTime;
+            if (math.distance(Position, _initPos) <= 0.5)
+            {
+                Debug.Log($"Earth Orbit Period Duration: {_timeElapsed}.\nTime Scale: {SimulationSettings.Instance.TimeScale}");
+                _timeElapsed = 0.0;
+            }
+        }
     }
 
     public void ApplyPosition()
@@ -37,18 +88,5 @@ public class AstronomicalObject : MonoBehaviour
 
         transform.position = (Vector3)(float3)Position;
     }
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag(tag))
-        {
-            if (other.TryGetComponent(out AstronomicalObject otherAstronomicalObject) && !StarSystem.Contains(otherAstronomicalObject))
-            {
-                StarSystem.Append(otherAstronomicalObject);
-            }
-        }
-    }
-
-
 }
 

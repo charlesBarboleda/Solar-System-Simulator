@@ -50,7 +50,7 @@ public static class SpacePhysics3D
         return b.Position - a.Position;
     }
 
-    // Returns the distance between two astronomical objects in Unity units
+    // Returns the distance between two astronomical objects in Unity units ()
     public static double DistanceBetween(AstronomicalObject a, AstronomicalObject b)
     {
         if (a == null || b == null)
@@ -60,10 +60,10 @@ public static class SpacePhysics3D
         }
 
         double distance = math.distance(a.Position, b.Position);
-        if (distance < PhysicsConstants.MIN_DISTANCE_SIM)
+        if (distance < PhysicsConstants.UNITY_MIN_DISTANCE)
         {
-            Debug.LogWarning($"DistanceBetween: {a.Name} and {b.Name} are too close together; using MIN_DISTANCE_SIM to avoid singularity.");
-            return PhysicsConstants.MIN_DISTANCE_SIM;
+            Debug.LogWarning($"DistanceBetween: {a.Name} and {b.Name} are too close together; using UNITY_MIN_DISTANCE to avoid singularity.");
+            return PhysicsConstants.UNITY_MIN_DISTANCE;
         }
 
         return distance;
@@ -99,9 +99,9 @@ public static class SpacePhysics3D
     public static double3 Einstein_Infeld_Hoffmann(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
     {
         double3 baryAccelVector_self = FirstTerm(self, bodies)
-                                       + SecondTerm(self, bodies)
-                                       + ThirdTerm(self, bodies)
-                                       + FourthTerm(self, bodies);
+                                     + SecondTerm(self, bodies)
+                                     + ThirdTerm(self, bodies)
+                                     + FourthTerm(self, bodies);
         return baryAccelVector_self;
     }
 
@@ -120,7 +120,7 @@ public static class SpacePhysics3D
             return double3.zero;
         }
         // Numerator: (GConst * GScale) * MassB * Unit Direction Vector from A to B
-        double3 numerator = PhysicsConstants.G * b.MassKg * UnitVectorDirectionFrom(a, b);
+        double3 numerator = PhysicsConstants.UNITY_G * b.MassKg * UnitVectorDirectionFrom(a, b);
         // Denominator: Distance^2 between A and B
         double denominator = DistanceBetween(a, b) * DistanceBetween(a, b);
 
@@ -153,8 +153,8 @@ public static class SpacePhysics3D
         double3 secondTerm = double3.zero; // Store the result of the second term here
 
         // Constants 
-        const double c = PhysicsConstants.SPEED_OF_LIGHT_M_PER_S;
-        double G = PhysicsConstants.G;
+        const double c = PhysicsConstants.UNITY_SPEED_OF_LIGHT;
+        double G = PhysicsConstants.UNITY_G;
 
         // Inverse law of light speed used as a correction
         double inverseSq_c = 1.0 / (c * c);
@@ -218,7 +218,7 @@ public static class SpacePhysics3D
     {
         double3 thirdTerm;
 
-        const double c = PhysicsConstants.SPEED_OF_LIGHT_M_PER_S;
+        const double c = PhysicsConstants.UNITY_SPEED_OF_LIGHT;
         double inverseSq_c = 1.0 / (c * c);
 
         GetBarycenterVectorsOf(bodies, out double3 barycenterPosition, out double3 barycenterVelocity);
@@ -231,7 +231,7 @@ public static class SpacePhysics3D
 
                 double rAB = DistanceBetween(self, B);
                 double inverse_r2 = 1.0 / (rAB * rAB);
-                double accelMagnitude_AB = (PhysicsConstants.G * B.MassKg) * inverse_r2;
+                double accelMagnitude_AB = (PhysicsConstants.UNITY_G * B.MassKg) * inverse_r2;
                 double3 baryVel_B = GetBarycentricVelocityOf(B, barycenterVelocity);
                 double3 n_AB = UnitVectorDirectionFrom(self, B);
 
@@ -252,7 +252,7 @@ public static class SpacePhysics3D
     {
         double3 fourthTerm;
 
-        const double c = PhysicsConstants.SPEED_OF_LIGHT_M_PER_S;
+        const double c = PhysicsConstants.UNITY_SPEED_OF_LIGHT;
         double inverseSq_c = 7.0 / (2.0 * (c * c));
 
         fourthTerm = Sigma(
@@ -260,8 +260,10 @@ public static class SpacePhysics3D
             B =>
             {
                 double3 accel_B = NBodyAccelVectorOf(B, bodies);
+                double rAB = DistanceBetween(self, B);
+                double factor = PhysicsConstants.UNITY_G * B.MassKg / rAB;
 
-                return inverseSq_c * accel_B;
+                return inverseSq_c * accel_B * factor;
             },
             B => B != null && !ReferenceEquals(self, B)
         );

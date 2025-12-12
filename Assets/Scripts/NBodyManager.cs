@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.Mathematics;
 using System.Linq;
-using UnityEditor.Rendering;
 
 public class NBodyManager : MonoBehaviour
 {
@@ -9,10 +8,14 @@ public class NBodyManager : MonoBehaviour
 
     public AstronomicalObject[] SystemBodies;
 
-    private double3[] _accelerations; // sim units (AU / day^2)
-    private double _effectiveTime;
+    private double3[] _accelerations; // UnityUnits/day^2
+    private double DtSimDays => SimulationSettings.Instance.DeltaSimDays;
 
     [SerializeField] bool _debug = false;
+
+    [SerializeField] bool _useNewtonian = false;
+
+
 
     void Awake()
     {
@@ -47,8 +50,6 @@ public class NBodyManager : MonoBehaviour
             return;
         }
 
-        _effectiveTime = Time.deltaTime * SimulationSettings.Instance.TimeScale;
-
         // 1) Compute accelerations for every body inside SystemBodies
         for (int currentBody = 0; currentBody < SystemBodies.Count(); currentBody++)
         {
@@ -60,20 +61,22 @@ public class NBodyManager : MonoBehaviour
                 continue;
             }
 
-            _accelerations[currentBody] = SpacePhysics3D.Einstein_Infeld_Hoffmann(self, SystemBodies);
+            _accelerations[currentBody] = _useNewtonian
+                                        ? SpacePhysics3D.NBodyAccelVectorOf(self, SystemBodies)
+                                        : SpacePhysics3D.Einstein_Infeld_Hoffmann(self, SystemBodies);
         }
 
         // 2) Integrate velocity and position with a semi-implicit Euler
         for (int currentBody = 0; currentBody < SystemBodies.Count(); currentBody++)
         {
-            AstronomicalObject body = SystemBodies[currentBody];
-            if (body == null || body.MassKg <= 0.0)
+            AstronomicalObject self = SystemBodies[currentBody];
+            if (self == null || self.MassKg <= 0.0)
                 continue;
 
-            body.Velocity += _accelerations[currentBody] * _effectiveTime;
-            body.Position += body.Velocity * _effectiveTime;
+            self.Velocity += _accelerations[currentBody] * DtSimDays;
+            self.Position += self.Velocity * DtSimDays;
 
-            body.ApplyPosition();
+            self.ApplyPosition();
         }
 
         // Debugging

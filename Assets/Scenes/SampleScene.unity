@@ -192,7 +192,7 @@ Transform:
   m_GameObject: {fileID: 57486258}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 2000, y: 2000, z: 2000}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -348,7 +348,6 @@ GameObject:
   - component: {fileID: 107760895}
   - component: {fileID: 107760894}
   - component: {fileID: 107760893}
-  - component: {fileID: 107760892}
   - component: {fileID: 107760891}
   m_Layer: 0
   m_Name: Planet4
@@ -356,7 +355,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &107760891
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -369,7 +368,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
-  Name: Earth
+  Name: 
   MassKg: 8
   Velocity:
     x: 100
@@ -379,27 +378,6 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
---- !u!135 &107760892
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 107760890}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 100
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &107760893
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -466,7 +444,7 @@ Transform:
   m_GameObject: {fileID: 107760890}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -9.94, y: 0, z: 0.16}
+  m_LocalPosition: {x: -40, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -501,7 +479,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eabb12a3a1638694799e7587b99f9762, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimulationSettings
-  TimeScale: 10
+  TimeScale: 100
   GravityScale: 1
 --- !u!4 &178901027
 Transform:
@@ -714,7 +692,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 100000
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -741,13 +719,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 1000, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1101,12 +1079,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NBodyManager
   SystemBodies:
-  - {fileID: 1781321149}
   - {fileID: 1663054420}
-  - {fileID: 1738255523}
-  - {fileID: 1527299121}
-  - {fileID: 107760891}
-  _debug: 1
+  - {fileID: 1781321149}
+  _debug: 0
+  _useNewtonian: 1
 --- !u!4 &1519951262
 Transform:
   m_ObjectHideFlags: 0
@@ -1133,7 +1109,6 @@ GameObject:
   - component: {fileID: 1527299125}
   - component: {fileID: 1527299124}
   - component: {fileID: 1527299123}
-  - component: {fileID: 1527299122}
   - component: {fileID: 1527299121}
   m_Layer: 0
   m_Name: Planet3
@@ -1141,7 +1116,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1527299121
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1154,7 +1129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
-  Name: Earth
+  Name: 
   MassKg: 4
   Velocity:
     x: 100
@@ -1164,27 +1139,6 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
---- !u!135 &1527299122
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1527299120}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 100
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1527299123
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1251,7 +1205,7 @@ Transform:
   m_GameObject: {fileID: 1527299120}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.05, y: 0, z: -8.77}
+  m_LocalPosition: {x: 0, y: 0, z: 40}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1268,7 +1222,6 @@ GameObject:
   - component: {fileID: 1663054419}
   - component: {fileID: 1663054418}
   - component: {fileID: 1663054417}
-  - component: {fileID: 1663054416}
   - component: {fileID: 1663054420}
   m_Layer: 0
   m_Name: Sun
@@ -1277,27 +1230,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!135 &1663054416
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1663054415}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 100
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1663054417
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1366,7 +1298,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1403,15 +1335,14 @@ GameObject:
   - component: {fileID: 1738255527}
   - component: {fileID: 1738255526}
   - component: {fileID: 1738255525}
-  - component: {fileID: 1738255524}
   - component: {fileID: 1738255523}
   m_Layer: 0
-  m_Name: Planet2
+  m_Name: Neptune
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1738255523
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1424,7 +1355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
-  Name: Earth
+  Name: Neptune
   MassKg: 50
   Velocity:
     x: 100
@@ -1434,27 +1365,6 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
---- !u!135 &1738255524
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1738255522}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 100
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1738255525
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1521,7 +1431,7 @@ Transform:
   m_GameObject: {fileID: 1738255522}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.66, y: 0, z: -0.3}
+  m_LocalPosition: {x: 40, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1538,7 +1448,6 @@ GameObject:
   - component: {fileID: 1781321153}
   - component: {fileID: 1781321152}
   - component: {fileID: 1781321151}
-  - component: {fileID: 1781321150}
   - component: {fileID: 1781321149}
   m_Layer: 0
   m_Name: Earth
@@ -1569,27 +1478,6 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
---- !u!135 &1781321150
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1781321148}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 100
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1781321151
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1656,7 +1544,7 @@ Transform:
   m_GameObject: {fileID: 1781321148}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.38, y: 0, z: 11.72}
+  m_LocalPosition: {x: 0, y: 0, z: -50}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
