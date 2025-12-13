@@ -15,7 +15,7 @@ public static class PhysicsConstants
 
 
     // --- Unity world-space scaling (3D sim) ---
-    public const double UNITY_UNITS_PER_AU = 50.0;   // 1 AU ≈ 3000 Unity world-space units
+    public const double UNITY_UNITS_PER_AU = 50.0;   // 1 AU ≈ 3000 Unity world-space units 
     public const double UNITY_METERS_PER_UNIT = REAL_METERS_PER_AU / UNITY_UNITS_PER_AU;  // meters/Unity unit: 1 Unity unit ≈ (1/3000) AU
 
     // --- Unity time scaling ---
