@@ -1,6 +1,9 @@
 using UnityEngine;
 using Unity.Mathematics;
 using System.Linq;
+using UnityEngine.UIElements;
+using UnityEditor.UI;
+using System.Linq.Expressions;
 
 public class NBodyManager : MonoBehaviour
 {
@@ -8,8 +11,18 @@ public class NBodyManager : MonoBehaviour
 
     public AstronomicalObject[] SystemBodies;
 
-    private double3[] _accelerations; // UnityUnits/day^2
-    private double DtSimDays => SimulationSettings.Instance.DeltaSimDays;
+    [Header("Authorative Object States")]
+    string[] _names;
+    double[] _masses;
+    double3[] _accelerations, _velocities, _positions; // current (snapshot) vector properties
+
+    [Header("Predicted Object States")]
+    double3[] _positionsNext, _accelerationsNext, _velocityHalf; // next (predicted) vector properties
+
+
+
+
+    double DtSimDays => SimulationSettings.Instance.DeltaSimDays;
 
     [SerializeField] bool _debug = false;
 
@@ -31,61 +44,133 @@ public class NBodyManager : MonoBehaviour
 
     void Start()
     {
-        if (SystemBodies == null)
+        int numOfBodies = SystemBodies.Length;
+        if (SystemBodies == null || numOfBodies <= 0)
         {
             Debug.LogError("[NBodyManager] Start(): Invalid or Null SystemBodies.");
         }
-        if (SystemBodies.Count() <= 0)
+        else
         {
-            Debug.LogError("[NBodyManager] Start(): SystemBodies must have at least one AstronomicalObject element.");
-        }
+            _names = new string[numOfBodies];
+            _masses = new double[numOfBodies];
 
-        _accelerations = new double3[SystemBodies.Count()];
+            _accelerations = new double3[numOfBodies];
+            _accelerationsNext = new double3[numOfBodies];
+
+            _positions = new double3[numOfBodies];
+            _positionsNext = new double3[numOfBodies];
+
+            _velocities = new double3[numOfBodies];
+            _velocityHalf = new double3[numOfBodies];
+        }
     }
+
     void FixedUpdate()
     {
-        if (SystemBodies == null || SystemBodies.Count() <= 0)
+        int numOfBodies = SystemBodies?.Length ?? 0;
+        if (numOfBodies <= 0)
         {
             Debug.LogError("[NBodyManager] FixedUpdate(): Invalid or Null SystemBodies array.");
             return;
         }
 
-        // 1) Compute accelerations for every body inside SystemBodies
-        for (int currentBody = 0; currentBody < SystemBodies.Count(); currentBody++)
+        // 1) Compute accelerations for all bodies using the same current simulation state (same time-frame)
+        for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
         {
             AstronomicalObject self = SystemBodies[currentBody];
+            bool isValidBody = IsValidAstronomicalBody(self);
 
-            if (self == null || self.MassKg <= 0.0)
+            _accelerations[currentBody] = !isValidBody
+                                        ? double3.zero
+                                        : (_useNewtonian
+                                        ? SpacePhysics3D.NBodyAccelVectorOf(self, SystemBodies)
+                                        : SpacePhysics3D.Einstein_Infeld_Hoffmann(self, SystemBodies));
+        }
+
+        // 2) Compute the half-step velocities for all bodies
+        for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
+        {
+            AstronomicalObject self = SystemBodies[currentBody];
+            bool isValidBody = IsValidAstronomicalBody(self);
+
+            if (!isValidBody)
             {
-                _accelerations[currentBody] = double3.zero;
+                _velocityHalf[currentBody] = double3.zero;
                 continue;
             }
 
-            _accelerations[currentBody] = _useNewtonian
-                                        ? SpacePhysics3D.NBodyAccelVectorOf(self, SystemBodies)
-                                        : SpacePhysics3D.Einstein_Infeld_Hoffmann(self, SystemBodies);
+            _velocityHalf[currentBody] = self.Velocity + 0.5 * _accelerations[currentBody] * DtSimDays;
         }
 
-        // 2) Integrate velocity and position with a semi-implicit Euler
-        for (int currentBody = 0; currentBody < SystemBodies.Count(); currentBody++)
+        // 3) Compute the future positions for all bodies in the next update-frame using the half-step velocity
+        for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
         {
             AstronomicalObject self = SystemBodies[currentBody];
-            if (self == null || self.MassKg <= 0.0)
-                continue;
+            bool isValidBody = IsValidAstronomicalBody(self);
 
-            self.Velocity += _accelerations[currentBody] * DtSimDays;
-            self.Position += self.Velocity * DtSimDays;
+            if (!isValidBody) continue;
 
-            self.ApplyPosition();
+            _positionsNext[currentBody] = self.Position
+                                        + _velocityHalf[currentBody]
+                                        * DtSimDays;
+        }
+
+        // 4) Apply the predicted velocity (half-step) to the object's current velocity
+        for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
+        {
+            AstronomicalObject self = SystemBodies[currentBody];
+            bool isValidBody = IsValidAstronomicalBody(self);
+
+            if (!isValidBody) continue;
+
+            self.Velocity = _velocityHalf[currentBody];
+        }
+
+        // 5) Apply the next positions so the calculations use a consistent simulation state
+        for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
+        {
+            AstronomicalObject self = SystemBodies[currentBody];
+            bool isValidBody = IsValidAstronomicalBody(self);
+
+            if (isValidBody) continue;
+
+            self.Position = _positionsNext[currentBody];
+        }
+
+        // 6) Compute the next accelerations for the new positions
+        for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
+        {
+            AstronomicalObject self = SystemBodies[currentBody];
+            bool isValidBody = IsValidAstronomicalBody(self);
+
+            _accelerationsNext[currentBody] = !isValidBody
+                                            ? double3.zero
+                                            : (_useNewtonian
+                                            ? SpacePhysics3D.NBodyAccelVectorOf(self, SystemBodies)
+                                            : SpacePhysics3D.Einstein_Infeld_Hoffmann(self, SystemBodies));
+
+        }
+
+        // 7) Finalize velocity using half-step velocity and predicted accelerations
+        for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
+        {
+            AstronomicalObject self = SystemBodies[currentBody];
+            bool isValidBody = IsValidAstronomicalBody(self);
+
+            if (!isValidBody) continue;
+
+            self.Velocity = _velocityHalf[currentBody] + 0.5 * _accelerationsNext[currentBody] * DtSimDays;
+
+            self.UpdateVisualPosition();
         }
 
         // Debugging
         if (_debug)
         {
-            for (int currentBody = 0; currentBody < SystemBodies.Count(); currentBody++)
+            for (int currentBody = 0; currentBody < numOfBodies; currentBody++)
             {
                 AstronomicalObject body = SystemBodies[currentBody];
-                if (body == null || body.MassKg <= 0.0) return;
+                if (body == null || body.MassKg <= 0.0) continue;
 
                 SpacePhysics3D.GetBarycenterVectorsOf(SystemBodies, out double3 barycenterPosition, out double3 barycenterVelocity);
                 Debug.DrawLine(body.transform.position, new Vector3((float)barycenterPosition.x, (float)barycenterPosition.y, (float)barycenterPosition.z), Color.red);
@@ -93,6 +178,17 @@ public class NBodyManager : MonoBehaviour
 
         }
 
+    }
+
+    bool IsValidAstronomicalBody(AstronomicalObject body)
+    {
+        if (body == null || body.MassKg <= 0.0)
+        {
+            Debug.LogError($"[NBodyManager] IsValidAstronomicalBody(): Invalid or Null AstronomicalObject.");
+            return false;
+        }
+
+        return true;
     }
 }
 

@@ -2,6 +2,10 @@ using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
 using System;
+using System.Collections.ObjectModel;
+using Unity.VisualScripting;
+using Unity.VisualScripting.FullSerializer;
+
 
 public static class SpacePhysics3D
 {
@@ -17,19 +21,21 @@ public static class SpacePhysics3D
     // ******GENERAL HELPER METHODS****** // 
 
     // Returns the unit vector pointing from object A to object B (direction only, magnitude = 1)
-    public static double3 UnitVectorDirectionFrom(AstronomicalObject a, AstronomicalObject b)
+    public static double3 UnitVectorDirectionFrom(int a, int b, ReadOnlySpan<double3> pos)
     {
-        if (a == null || b == null)
+        if (a == b)
         {
-            Debug.LogError("UnitVectorDirectionFrom requires valid AstronomicalObject references.");
+            Debug.LogWarning($"[SpacePhysics3D] UnitVectorDirectionFrom(): Index 'a' and 'b' cannot be the same");
             return double3.zero;
         }
 
-        double3 direction = b.Position - a.Position;
-        double lenSq = math.lengthsq(direction);
-        const double epsilon = 1e-24; // tweak to accomodate for position scaling
+        double3 a_Position = pos[a];
+        double3 b_Position = pos[b];
 
-        if (lenSq < epsilon)
+        double3 direction = b_Position - a_Position;
+        double lenSq = math.lengthsq(direction);
+
+        if (lenSq < PhysicsConstants.UNITY_MIN_DISTANCE)
         {
             Debug.LogError("Objects are too close together to calculate a valid unit direction vector.");
             return double3.zero; // Return zero vector to avoid division by zero
@@ -39,54 +45,59 @@ public static class SpacePhysics3D
     }
 
     // Returns the separation vector between two astronomical objects in Unity units
-    public static double3 SeparationVectorFrom(AstronomicalObject a, AstronomicalObject b)
+    public static double3 SeparationVectorFrom(int a, int b, ReadOnlySpan<double3> pos)
     {
-        if (a == null || b == null)
+        if (a == b)
         {
-            Debug.LogError("SeparationVectorFrom requires valid AstronomicalObject references.");
+            Debug.LogWarning($"[SpacePhysics3D] SeparationVectorFrom(): Index 'a' and 'b' cannot be the same");
             return double3.zero;
         }
 
-        return b.Position - a.Position;
+        double3 a_Position = pos[a];
+        double3 b_Position = pos[b];
+
+        return b_Position - a_Position;
     }
 
     // Returns the distance between two astronomical objects in Unity units ()
-    public static double DistanceBetween(AstronomicalObject a, AstronomicalObject b)
+    public static double DistanceBetween(int a, int b, ReadOnlySpan<double3> pos)
     {
-        if (a == null || b == null)
+        if (a == b)
         {
-            Debug.LogError("DistanceBetween requires valid AstronomicalObject references.");
-            return double.NaN;
+            Debug.LogWarning($"[SpacePhysics3D] DistanceBetween(): Index 'a' and 'b' cannot be the same");
+            return 0.0;
         }
 
-        double distance = math.distance(a.Position, b.Position);
+        double3 a_Position = pos[a];
+        double3 b_Position = pos[b];
+
+        double distance = math.distance(a_Position, b_Position);
         if (distance < PhysicsConstants.UNITY_MIN_DISTANCE)
         {
-            Debug.LogWarning($"DistanceBetween: {a.Name} and {b.Name} are too close together; using UNITY_MIN_DISTANCE to avoid singularity.");
+            Debug.LogWarning($"DistanceBetween: 'a' and 'b' are too close together; using UNITY_MIN_DISTANCE to avoid singularity.");
             return PhysicsConstants.UNITY_MIN_DISTANCE;
         }
 
         return distance;
     }
 
-    // Returns the sum of all masses in kg from the provided list of astronomical objects
-    // Optionally excludes a specific body from the sum (calculating total mass of neighbors only)
-    public static double TotalSumMassKg(IReadOnlyList<AstronomicalObject> bodies, AstronomicalObject excludeBody = null)
+    // Returns the sum of all masses in kg from the provided array of masses
+    // Optionally excludes the "i" index of the collection
+    public static double TotalSumMassKg(ReadOnlySpan<double> masses, int i = -1)
     {
-        if (bodies == null || bodies.Count == 0)
+        if (masses == null || masses.Length == 0)
         {
-            Debug.LogError("TotalSumMassKg requires a non-empty list of AstronomicalObjects.");
+            Debug.LogError("TotalSumMassKg requires a non-empty collection of masses with type double.");
             return 0.0;
         }
 
         double totalMass = 0.0;
 
-        foreach (AstronomicalObject body in bodies)
+        for (int currentBody = 0; currentBody < masses.Length; currentBody++)
         {
-            if (body != null && body.MassKg > 0.0 && body != excludeBody)
-            {
-                totalMass += body.MassKg;
-            }
+            if (i > -1 && masses[currentBody] == masses[i]) continue;
+
+            totalMass += masses[currentBody];
         }
 
         return totalMass;
@@ -96,45 +107,50 @@ public static class SpacePhysics3D
     // ******EINSTEIN-INFELD-HOFFMANN EQUATION METHODS****** //
 
     // Complete EIH equation (First-order post-Newtonian correction or 1PN)
-    public static double3 Einstein_Infeld_Hoffmann(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
+    public static double3 Einstein_Infeld_Hoffmann(int a, ReadOnlySpan<double3> pos, ReadOnlySpan<double3> vel, ReadOnlySpan<double> mass)
     {
-        double3 baryAccelVector_self = FirstTerm(self, bodies)
-                                     + SecondTerm(self, bodies)
-                                     + ThirdTerm(self, bodies)
-                                     + FourthTerm(self, bodies);
-        return baryAccelVector_self;
+        double3 baryAccelVector_a = FirstTerm(a, pos, vel, mass)
+                                  + SecondTerm(a, pos, vel, mass)
+                                  + ThirdTerm(a, pos, vel, mass)
+                                  + FourthTerm(a, pos, vel, mass);
+
+        return baryAccelVector_a;
     }
 
     // Returns the gravitational acceleration vector on 'a' due to 'b' (2-body only) using Newton's law of universal gravitation
-    public static double3 TwoBodyAccelVectorOf(AstronomicalObject a, AstronomicalObject b)
+    public static double3 TwoBodyAccelVectorOf(int a, int b, ReadOnlySpan<double> mass, ReadOnlySpan<double3> pos)
     {
-        if (a == null || b == null)
+        if (a == b)
         {
-            Debug.LogError("TwoBodyAcceleration requires valid AstronomicalObject references.");
+            Debug.LogWarning($"[SpacePhysics3D] TwoBodyAccelVectorOf(): Index 'a' and 'b' cannot be the same");
             return double3.zero;
         }
 
-        if (a.MassKg <= 0.0 || b.MassKg <= 0.0)
+        double a_MassKg = mass[a];
+        double b_MassKg = mass[b];
+
+        if (a_MassKg <= 0.0 || b_MassKg <= 0.0)
         {
             Debug.LogError("TwoBodyAcceleration requires AstronomicalObjects to have a valid mass greater than zero.");
             return double3.zero;
         }
+
         // Numerator: (GConst * GScale) * MassB * Unit Direction Vector from A to B
-        double3 numerator = PhysicsConstants.UNITY_G * b.MassKg * UnitVectorDirectionFrom(a, b);
+        double3 numerator = PhysicsConstants.UNITY_G * b_MassKg * UnitVectorDirectionFrom(a, b, pos);
         // Denominator: Distance^2 between A and B
-        double denominator = DistanceBetween(a, b) * DistanceBetween(a, b);
+        double denominator = DistanceBetween(a, b, pos) * DistanceBetween(a, b, pos);
 
         return numerator / denominator;
     }
 
     // Returns the Newtonian gravitational acceleration of an object due to n-neighbors
     // This method calculates the first term of the Einstein-Infeld-Hoffmann equations for n-body systems
-    public static double3 NBodyAccelVectorOf(AstronomicalObject self, IReadOnlyList<AstronomicalObject> bodies)
+    public static double3 NBodyAccelVectorOf(int a, ReadOnlySpan<double> mass, ReadOnlySpan<double3> pos)
     {
         double3 accumulatedAccelVector = Sigma(
-         bodies,
-         B => TwoBodyAccelVectorOf(self, B),
-         B => B != null && !ReferenceEquals(B, self)
+         mass,
+         B => TwoBodyAccelVectorOf(a, B),
+         B => B != null && !ReferenceEquals(B, a)
      );
 
         return accumulatedAccelVector;
@@ -279,13 +295,20 @@ public static class SpacePhysics3D
     private static double Sigma<T>(IEnumerable<T> source, Func<T, double> term, Func<T, bool> condition = null)
     {
         double sum = 0.0;
+        int numOfElements = source.Count();
 
-        foreach (var x in source)
+        if (numOfElements <= 0)
         {
-            if (condition != null && !condition(x))
-                continue;
+            Debug.LogError($"Invalid number of elements inside {source} (<=0)");
+            return 0.0;
+        }
 
-            sum += term(x);
+        for (int currentBody = 0; currentBody < numOfElements; currentBody++)
+        {
+            var current = source[currentBody];
+            if (condition != null && !condition(currentBody)) continue;
+
+            sum += term(currentBody);
         }
 
         return sum;

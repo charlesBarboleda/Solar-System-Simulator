@@ -1083,7 +1083,7 @@ MonoBehaviour:
   - {fileID: 1663054420}
   - {fileID: 1781321149}
   _debug: 0
-  _useNewtonian: 0
+  _useNewtonian: 1
 --- !u!4 &1519951262
 Transform:
   m_ObjectHideFlags: 0
