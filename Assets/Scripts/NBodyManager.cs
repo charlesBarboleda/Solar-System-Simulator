@@ -20,6 +20,7 @@ public class NBodyManager : MonoBehaviour
 
     double DtSimDays => SimulationSettings.Instance.DeltaSimDays;
 
+    [SerializeField] AccelBMode _accelBMode = AccelBMode.FixedPointIterated;
     [SerializeField] bool _useNewtonian = false;
 
     [Header("Debugging & Diagnostics")]
@@ -60,7 +61,6 @@ public class NBodyManager : MonoBehaviour
         {
             _earthIndex = FindIndexByName(SystemBodies, "Earth");
             _sunIndex = FindIndexByName(SystemBodies, "Sun");
-            if (_earthIndex < 0 || _sunIndex < 0) _debug = false;
 
             _names = new string[numOfBodies];
             _masses = new double[numOfBodies];
@@ -75,7 +75,8 @@ public class NBodyManager : MonoBehaviour
             _velocityHalf = new double3[numOfBodies];
 
             SnapshotSystemState();
-            InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
+
+            if (_earthIndex < 0 || _sunIndex < 0) InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
         }
     }
 
@@ -102,7 +103,8 @@ public class NBodyManager : MonoBehaviour
                 _velocities,
                 _masses,
                 _accelerations,
-                _workspaceEIH
+                _workspaceEIH,
+                _accelBMode
             );
         }
 
@@ -123,7 +125,7 @@ public class NBodyManager : MonoBehaviour
         {
             if (_masses[a] <= 0.0)
             {
-                _positionsNext[a] = double3.zero;
+                _positionsNext[a] = _positions[a];
                 continue;
             }
 
@@ -143,7 +145,8 @@ public class NBodyManager : MonoBehaviour
                 _velocityHalf,          // important: predicted velocity state
                 _masses,
                 _accelerationsNext,
-                _workspaceEIH
+                _workspaceEIH,
+                _accelBMode
             );
         }
 
@@ -200,9 +203,14 @@ public class NBodyManager : MonoBehaviour
 
     bool IsValidAstronomicalBody(AstronomicalObject body)
     {
-        if (body == null || body.MassKg <= 0.0)
+        if (body == null)
         {
-            Debug.LogError($"[NBodyManager] IsValidAstronomicalBody(): Invalid or Null AstronomicalObject.");
+            Debug.LogWarning($"[NBodyManager] IsValidAstronomicalBody(): Invalid or Null AstronomicalObject.");
+            return false;
+        }
+        if (body.MassKg <= 0.0)
+        {
+            Debug.LogWarning($"[NBodyManager] IsValidAstronomicalBody(): {body.Name} must have MassKg > 0.0");
             return false;
         }
 
@@ -292,11 +300,12 @@ public class NBodyManager : MonoBehaviour
 
     int FindIndexByName(AstronomicalObject[] bodies, string targetName)
     {
-        for (int i = 0; i < bodies.Length; i++)
+        for (int a = 0; a < bodies.Length; a++)
         {
-            // Ordinal is typically fastest/correct for identifiers (case-sensitive)
-            if (string.Equals(bodies[i].Name, targetName, StringComparison.Ordinal))
-                return i;
+            AstronomicalObject body = bodies[a];
+            if (body == null) continue;
+            if (string.Equals(body.Name, targetName, StringComparison.Ordinal)) return a;
+
         }
         return -1; // not found
     }

@@ -2,6 +2,8 @@ using Unity.Mathematics;
 using UnityEngine;
 using System;
 
+
+
 public static class SpacePhysics3D
 {
     // Workspace to avoid per-frame allocations (reuse arrays).
@@ -85,7 +87,9 @@ public static class SpacePhysics3D
         ReadOnlySpan<double3> velocities,
         ReadOnlySpan<double> masses,
         Span<double3> outBarycentricAccelerations,
-        Workspace_EIH workspace)
+        Workspace_EIH workspace,
+        AccelBMode accelBMode = AccelBMode.NewtonianApprox,
+        int accelIterations = 2)
     {
         int bodyCount = positions.Length;
 
@@ -163,11 +167,11 @@ public static class SpacePhysics3D
         }
         double3[] accelApprox = workspace.AccelApprox;
         for (int a = 0; a < bodyCount; a++) accelApprox[a] = workspace.NewtonianAccel[a];
-        EnforceZeroCOMAcceleration(accelApprox, masses);
+
+        int iterations = (accelBMode == AccelBMode.FixedPointIterated) ? math.max(1, accelIterations) : 1;
 
         // 3) Fixed-point iterations: RHS of EIH contains a_B, so I iterate using accelApprox as a_B estimate.
-        const int accelIterations = 2;
-        for (int iter = 0; iter < accelIterations; iter++)
+        for (int iter = 0; iter < iterations; iter++)
         {
             // Clear correction sums each iteration
             for (int a = 0; a < bodyCount; a++)
@@ -210,8 +214,8 @@ public static class SpacePhysics3D
                     double3 accel_a_due_b = (G * mass_b) * (displacement_ab * invR3);
                     double3 accel_b_due_a = -(G * mass_a) * (displacement_ab * invR3);
 
-                    double n_dot_baryVel_b = math.dot(n_ab, baryVel_b);
-                    double n_dot_baryVel_a = math.dot(n_ba, baryVel_a);
+                    double n_ab_dot_baryVel_b = math.dot(n_ab, baryVel_b);
+                    double n_ba_dot_baryVel_a = math.dot(n_ba, baryVel_a);
 
                     double phi_a = workspace.PotentialPhi[a];
                     double phi_b = workspace.PotentialPhi[b];
@@ -223,7 +227,7 @@ public static class SpacePhysics3D
                           baryVelSq_a
                         + 2.0 * baryVelSq_b
                         - 4.0 * va_Dot_vb
-                        - (3.0 / 2.0) * (n_dot_baryVel_b * n_dot_baryVel_b)
+                        - (3.0 / 2.0) * (n_ab_dot_baryVel_b * n_ab_dot_baryVel_b)
                         - 4.0 * phi_a
                         - phi_b
                         + half_dx_dot_aB_for_a;
@@ -232,7 +236,7 @@ public static class SpacePhysics3D
                           baryVelSq_b
                         + 2.0 * baryVelSq_a
                         - 4.0 * va_Dot_vb
-                        - (3.0 / 2.0) * (n_dot_baryVel_a * n_dot_baryVel_a)
+                        - (3.0 / 2.0) * (n_ba_dot_baryVel_a * n_ba_dot_baryVel_a)
                         - 4.0 * phi_b
                         - phi_a
                         + half_dx_dot_aB_for_b;
@@ -249,7 +253,7 @@ public static class SpacePhysics3D
                     double scalarBracket3_for_b = math.dot(n_ab_for_b, (4.0 * baryVel_b) - (3.0 * baryVel_a));
                     workspace.ThirdTermSum[b] += invC2 * (G * mass_a * invR2) * scalarBracket3_for_b * (baryVel_b - baryVel_a);
 
-                    // TRUE a_B:
+                    // a_B estimate (Newtonian or iterated) used where RHS depends on acceleration
                     double fourthFactor_for_a = (7.0 / 2.0) * invC2 * (G * mass_b * invR);
                     double fourthFactor_for_b = (7.0 / 2.0) * invC2 * (G * mass_a * invR);
 
@@ -275,8 +279,8 @@ public static class SpacePhysics3D
 
             EnforceZeroCOMAcceleration(outBarycentricAccelerations, masses);
 
-            // 5) Feed back for next iteration
-            if (iter < accelIterations - 1)
+            // 5) Feed back for next iteration if using iterated mode
+            if (accelBMode == AccelBMode.FixedPointIterated && iter < iterations - 1)
             {
                 for (int a = 0; a < bodyCount; a++)
                     accelApprox[a] = outBarycentricAccelerations[a];
