@@ -480,7 +480,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eabb12a3a1638694799e7587b99f9762, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimulationSettings
-  TimeScale: 1
+  TimeScale: 100
   GravityScale: 1
 --- !u!4 &178901027
 Transform:
@@ -1082,8 +1082,7 @@ MonoBehaviour:
   SystemBodies:
   - {fileID: 1663054420}
   - {fileID: 1781321149}
-  _debug: 0
-  _useNewtonian: 1
+  _useNewtonian: 0
 --- !u!4 &1519951262
 Transform:
   m_ObjectHideFlags: 0

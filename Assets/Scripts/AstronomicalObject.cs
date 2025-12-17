@@ -10,10 +10,8 @@ public class AstronomicalObject : MonoBehaviour
     public string Name;
     public double MassKg;
 
-    [Tooltip("double3 Velocity instead of Vector3 to maintain precision over large distances.")]
     public double3 Velocity;
 
-    [Tooltip("double3 Position instead of Vector3 to maintain precision over large distances.")]
     public double3 Position;
 
 
@@ -60,12 +58,6 @@ public class AstronomicalObject : MonoBehaviour
             MassKg = PhysicsConstants.REAL_EARTH_MASS_KG;
 
             UpdateVisualPosition();
-
-            _initPos = Position;
-
-            double r0 = math.distance(Position, _initPos);
-            _orbitRadiusMin = r0;
-            _orbitRadiusMax = r0;
         }
         else if (Name == "Neptune")
         {
@@ -75,93 +67,6 @@ public class AstronomicalObject : MonoBehaviour
             UpdateVisualPosition();
             Debug.Log("Attempting to move 'Neptune' to converted position");
             Debug.Log($"Moved {Name} position: {transform.localPosition}");
-        }
-    }
-
-    void FixedUpdate()
-    {
-        EarthOrbitalValidations();
-    }
-
-    void EarthOrbitalValidations()
-    {
-        if (Name == "Earth")
-        {
-            _timeElapsed += Time.fixedDeltaTime;
-
-            // current radius from Sun
-            double currentRadius = math.length(Position - _sun.Position);
-
-            if (_totalOrbitsCompleted == 0 && _orbitRadiusMax == 0.0 && _orbitRadiusMin == 0.0)
-            {
-                _orbitRadiusMax = currentRadius;
-                _orbitRadiusMin = currentRadius;
-            }
-
-            if (currentRadius < _orbitRadiusMin) _orbitRadiusMin = currentRadius;
-            if (currentRadius > _orbitRadiusMax) _orbitRadiusMax = currentRadius;
-
-            // distance from starting point (for orbit completion detection)
-            double startDistance = math.distance(Position - _sun.Position, _initPos - _sun.Position);
-            double distanceEpsilon = 0.1;
-
-            if (!_waitingToExitStartRegion && startDistance <= distanceEpsilon)
-            {
-                double simDays = _timeElapsed
-                                 * SimulationSettings.Instance.TimeScale
-                                 * PhysicsConstants.UNITY_DAYS_PER_REAL_SECOND;
-
-                // Sampled Diagnostics
-                double semiMajorAxis_SamAU = ((_orbitRadiusMax + _orbitRadiusMin) / 2) / PhysicsConstants.UNITY_UNITS_PER_AU;
-                double eccentricity_Sam = (_orbitRadiusMax - _orbitRadiusMin) / (_orbitRadiusMax + _orbitRadiusMin);
-
-                double perihelion_SamAU = _orbitRadiusMin / PhysicsConstants.UNITY_UNITS_PER_AU;
-                double aphelion_SamAU = _orbitRadiusMax / PhysicsConstants.UNITY_UNITS_PER_AU;
-
-                double3 displacementVec = Position - _sun.Position;
-                double3 velocityVec = Velocity - _sun.Velocity;
-                double3 h = math.cross(displacementVec, velocityVec);
-                double angularMomentum_Sam = math.length(h);
-
-                double rMag = math.length(displacementVec);
-                double v2 = math.lengthsq(velocityVec);
-                double mu = PhysicsConstants.UNITY_G * _sun.MassKg;
-                double orbitalEnergy_Sam = 0.5 * v2 - (mu / rMag);
-
-                // Elements Diagnostics
-                double semiMajorAxis_ElemAU = (-mu / (2.0 * orbitalEnergy_Sam)) / PhysicsConstants.UNITY_UNITS_PER_AU;
-                double3 eccentricityVec = math.cross(velocityVec, h) / mu - (displacementVec / rMag);
-                double eccentricity_Elem = math.length(eccentricityVec);
-
-                double perihelion_ElemAU = (semiMajorAxis_ElemAU * (1.0 - eccentricity_Elem));
-                double aphelion_ElemAU = (semiMajorAxis_ElemAU * (1.0 + eccentricity_Elem));
-
-                _totalOrbitsCompleted++;
-
-                Debug.Log(
-                    $"[{_totalOrbitsCompleted}] TimeScale={SimulationSettings.Instance.TimeScale}, " +
-                    $"Period={simDays:F2} sim days, " +
-                    $"Perihelion=Sam: {perihelion_SamAU:F6} AU | Elem: {perihelion_ElemAU:F12} AU, " +
-                    $"Aphelion=Sam: {aphelion_SamAU:F6} AU | Elem: {aphelion_ElemAU:F12} AU, " +
-                    $"Semi-Major Axis=Sam: {semiMajorAxis_SamAU:F6} AU | Elem: {semiMajorAxis_ElemAU:F12} AU, " +
-                    $"Eccentricity=Sam: {eccentricity_Sam:F6} | Elem: {eccentricity_Elem:F12}, " +
-                    $"Angular Momentum={angularMomentum_Sam:F6},  "
-                    );
-
-
-                _timeElapsed = 0.0;
-
-                // reset min/max for next orbit starting from current radius
-                _orbitRadiusMin = currentRadius;
-                _orbitRadiusMax = currentRadius;
-
-                _waitingToExitStartRegion = true;
-            }
-            else if (_waitingToExitStartRegion && startDistance > distanceEpsilon)
-            {
-                // left the start region; ready to detect the next orbit
-                _waitingToExitStartRegion = false;
-            }
         }
     }
 
