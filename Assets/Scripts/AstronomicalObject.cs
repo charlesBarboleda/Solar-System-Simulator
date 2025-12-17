@@ -1,9 +1,5 @@
 using UnityEngine;
 using Unity.Mathematics;
-using System.Linq;
-using Unity.VisualScripting;
-using System.Xml.Serialization;
-using UnityEditor;
 
 public class AstronomicalObject : MonoBehaviour
 {
@@ -13,16 +9,6 @@ public class AstronomicalObject : MonoBehaviour
     public double3 Velocity;
 
     public double3 Position;
-
-
-    // Orbit Diagnostics Variables
-    double3 _initPos;
-    double _timeElapsed = 0.0;
-    double _orbitRadiusMin = 0.0;
-    double _orbitRadiusMax = 0.0;
-    int _totalOrbitsCompleted = 0;
-    bool _waitingToExitStartRegion;
-    [SerializeField] AstronomicalObject _sun;
 
 
     void Start()

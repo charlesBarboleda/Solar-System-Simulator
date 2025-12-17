@@ -10,12 +10,14 @@ public static class SpacePhysics3D
         public double3[] BarycentricPositions = Array.Empty<double3>();
         public double3[] BarycentricVelocities = Array.Empty<double3>();
 
-        public double[] PotentialPhi = Array.Empty<double>();          // phi[i] = Σ_{j≠i} G m_j / r_ij
-        public double3[] NewtonianAccel = Array.Empty<double3>();      // aNewton[i]
+        public double[] PotentialPhi = Array.Empty<double>();          // phi[a] = Σ_{b≠a} G m_b / r_ab
+        public double3[] NewtonianAccel = Array.Empty<double3>();      // aNewton[a]
+        public double3[] AccelApprox = Array.Empty<double3>();         // aApprox[a] ~ a_B used inside the RHS terms
 
         public double3[] SecondTermSum = Array.Empty<double3>();       // Σ second contributions
         public double3[] ThirdTermSum = Array.Empty<double3>();        // Σ third contributions
         public double3[] FourthTermSum = Array.Empty<double3>();       // Σ fourth contributions
+
 
         public void EnsureCapacity(int count)
         {
@@ -24,6 +26,7 @@ public static class SpacePhysics3D
 
             if (PotentialPhi.Length != count) PotentialPhi = new double[count];
             if (NewtonianAccel.Length != count) NewtonianAccel = new double3[count];
+            if (AccelApprox.Length != count) AccelApprox = new double3[count];
 
             if (SecondTermSum.Length != count) SecondTermSum = new double3[count];
             if (ThirdTermSum.Length != count) ThirdTermSum = new double3[count];
@@ -32,49 +35,49 @@ public static class SpacePhysics3D
     }
 
     /// <summary>
-    /// Computes Newtonian acceleration of "i"
-    /// Output accel must be length N.
+    /// Returns the Newtonian acceleration of "a"
+    /// Masses and positions must have the same length numOfBodies.
     /// </summary>
     public static double3 NBodyAccelVectorOf(
-        int i,
+        int a,
         ReadOnlySpan<double> masses,
         ReadOnlySpan<double3> positions)
     {
-        int n = positions.Length;
+        int numOfBodies = positions.Length;
 
-        if (masses.Length != n) return double3.zero;
-        if ((uint)i >= (uint)n) return double3.zero;
+        if (masses.Length != numOfBodies) return double3.zero;
+        if ((uint)a >= (uint)numOfBodies) return double3.zero;
 
         double G = PhysicsConstants.UNITY_G;
 
         double minDist = PhysicsConstants.UNITY_MIN_DISTANCE;
         double minDistSq = minDist * minDist;
 
-        double3 xi = positions[i];
-        double3 acc = double3.zero;
+        double3 pos_a = positions[a];
+        double3 totalAccel = double3.zero;
 
-        for (int j = 0; j < n; j++)
+        for (int b = 0; b < numOfBodies; b++)
         {
-            if (j == i) continue;
+            if (b == a) continue;
 
-            double mj = masses[j];
-            if (mj <= 0.0) continue;
+            double mass_b = masses[b];
+            if (mass_b <= 0.0) continue;
 
-            double3 dx = positions[j] - xi;          // x_j - x_i
-            double r2 = math.lengthsq(dx);
-            if (r2 < minDistSq) r2 = minDistSq;
+            double3 displacement_ab = positions[b] - pos_a;   // x_b - x_a
+            double r2_ab = math.lengthsq(displacement_ab);
+            if (r2_ab < minDistSq) r2_ab = minDistSq;
 
-            double invR = 1.0 / math.sqrt(r2);
-            double invR3 = invR / r2;
+            double invR = 1.0 / math.sqrt(r2_ab);
+            double invR3 = invR / r2_ab;
 
-            acc += (G * mj) * dx * invR3;
+            totalAccel += (G * mass_b) * displacement_ab * invR3;
         }
 
-        return acc;
+        return totalAccel;
     }
 
     /// <summary>
-    /// Computes EIH 1PN barycentric accelerations for ALL bodies in O(N^2).
+    /// Computes EIH 1PN barycentric accelerations for ALL bodies in O(accelIterations * N^2).
     /// Output accel must be length "bodyCount".
     /// </summary>
     public static void Einstein_Infeld_Hoffmann_1PN(
@@ -103,212 +106,200 @@ public static class SpacePhysics3D
         double G = PhysicsConstants.UNITY_G;
 
         // Minimum-distance handling (compare squared-to-squared)
-        double minDist = PhysicsConstants.UNITY_MIN_DISTANCE;
-        double minDistSq = minDist * minDist;
+        double minDistSq = PhysicsConstants.UNITY_MIN_DISTANCE * PhysicsConstants.UNITY_MIN_DISTANCE;
 
         // 1) Barycenter + barycentric vectors
         GetBarycenterVectorsOf(velocities, positions, masses, out double3 barycenterPosition, out double3 barycenterVelocity);
 
-        for (int i = 0; i < bodyCount; i++)
+        for (int a = 0; a < bodyCount; a++)
         {
-            workspace.BarycentricPositions[i] = positions[i] - barycenterPosition;
-            workspace.BarycentricVelocities[i] = velocities[i] - barycenterVelocity;
+            workspace.BarycentricPositions[a] = positions[a] - barycenterPosition;
+            workspace.BarycentricVelocities[a] = velocities[a] - barycenterVelocity;
 
-            workspace.PotentialPhi[i] = 0.0;
-            workspace.NewtonianAccel[i] = double3.zero;
+            workspace.PotentialPhi[a] = 0.0;
+            workspace.NewtonianAccel[a] = double3.zero;
+            workspace.AccelApprox[a] = double3.zero;
 
-            workspace.SecondTermSum[i] = double3.zero;
-            workspace.ThirdTermSum[i] = double3.zero;
-            workspace.FourthTermSum[i] = double3.zero;
+            workspace.SecondTermSum[a] = double3.zero;
+            workspace.ThirdTermSum[a] = double3.zero;
+            workspace.FourthTermSum[a] = double3.zero;
 
-            outBarycentricAccelerations[i] = double3.zero;
+            outBarycentricAccelerations[a] = double3.zero;
         }
 
         double3[] baryPositions = workspace.BarycentricPositions;
         double3[] baryVelocities = workspace.BarycentricVelocities;
 
         // 2) Compute Newtonian acceleration and potentials in one O(N^2) sweep
-        // phi[i] = Σ G m_j / r_ij
-        // aNewton[i] = Σ G m_j * (r_j - r_i) / r_ij^3
-        for (int i = 0; i < bodyCount - 1; i++)
+        // phi[a] = Σ G m_b / r_ab
+        // aNewton[a] = Σ G m_b * (r_b - r_a) / r_ab^3
+        for (int a = 0; a < bodyCount - 1; a++)
         {
-            double mass_i = masses[i];
-            if (mass_i <= 0.0) continue;
+            double mass_a = masses[a];
+            if (mass_a <= 0.0) continue;
 
-            for (int j = i + 1; j < bodyCount; j++)
+            for (int b = a + 1; b < bodyCount; b++)
             {
-                double mass_j = masses[j];
-                if (mass_j <= 0.0) continue;
+                double mass_b = masses[b];
+                if (mass_b <= 0.0) continue;
 
-                double3 displacement_ij = baryPositions[j] - baryPositions[i];
-                double r2 = math.lengthsq(displacement_ij);
-                if (r2 < minDistSq) r2 = minDistSq;
+                double3 displacement_ab = baryPositions[b] - baryPositions[a];
+                double r2_ab = math.lengthsq(displacement_ab);
+                if (r2_ab < minDistSq) r2_ab = minDistSq;
 
-                double invR = 1.0 / math.sqrt(r2);
-                double invR3 = invR / r2;
+                double invR = 1.0 / math.sqrt(r2_ab);
+                double invR3 = invR / r2_ab;
 
                 // Potential contributions
-                workspace.PotentialPhi[i] += (G * mass_j) * invR;
-                workspace.PotentialPhi[j] += (G * mass_i) * invR;
+                workspace.PotentialPhi[a] += (G * mass_b) * invR;
+                workspace.PotentialPhi[b] += (G * mass_a) * invR;
 
                 // Newtonian accel contributions (equal and opposite)
-                double3 directionOverR3 = displacement_ij * invR3;
+                double3 directionOverR3 = displacement_ab * invR3;
 
-                workspace.NewtonianAccel[i] += (G * mass_j) * directionOverR3;
-                workspace.NewtonianAccel[j] -= (G * mass_i) * directionOverR3;
+                workspace.NewtonianAccel[a] += (G * mass_b) * directionOverR3;
+                workspace.NewtonianAccel[b] -= (G * mass_a) * directionOverR3;
             }
         }
+        double3[] accelApprox = workspace.AccelApprox;
+        for (int a = 0; a < bodyCount; a++) accelApprox[a] = workspace.NewtonianAccel[a];
+        EnforceZeroCOMAcceleration(accelApprox, masses);
 
-        // 3) Compute Second/Third/Fourth term corrections in one O(N^2) sweep
-        for (int i = 0; i < bodyCount - 1; i++)
+        // 3) Fixed-point iterations: RHS of EIH contains a_B, so I iterate using accelApprox as a_B estimate.
+        const int accelIterations = 2;
+        for (int iter = 0; iter < accelIterations; iter++)
         {
-            double mass_i = masses[i];
-            if (mass_i <= 0.0) continue;
-
-            double3 baryVel_i = baryVelocities[i];
-            double baryVelSq_i = math.lengthsq(baryVel_i);
-
-            for (int j = i + 1; j < bodyCount; j++)
+            // Clear correction sums each iteration
+            for (int a = 0; a < bodyCount; a++)
             {
-                double mass_j = masses[j];
-                if (mass_j <= 0.0) continue;
-
-                double3 displacement_ij = baryPositions[j] - baryPositions[i];
-                double r2 = math.lengthsq(displacement_ij);
-                if (r2 < minDistSq) r2 = minDistSq;
-
-                double invR = 1.0 / math.sqrt(r2);
-                double invR2 = 1.0 / r2;
-                double invR3 = invR / r2;
-
-                double3 n_ij = displacement_ij * invR; // unit from i->j
-
-                double3 baryVel_j = baryVelocities[j];
-                double baryVelSq_j = math.lengthsq(baryVel_j);
-
-                double vi_Dot_vj = math.dot(baryVel_i, baryVel_j);
-
-                // Pair Newtonian accelerations (needed for "accel_A" style factor)
-                double3 accel_i_due_j = (G * mass_j) * (displacement_ij * invR3);
-                double3 accel_j_due_i = -(G * mass_i) * (displacement_ij * invR3);
-
-                // ----------------------------
-                // SECOND TERM 
-                // scalar bracket uses:
-                // v_A^2 + 2 v_B^2 -4(v_A·v_B) - 3/2 (n_AB·v_B)^2 -4 phi[A] - phi[B] + 1/2 ((x_B-x_A)·aNewton[B])
-                // ----------------------------
-
-                double n_dot_baryVel_j = math.dot(n_ij, baryVel_j);
-                double n_dot_baryVel_i = math.dot(n_ij, baryVel_i);
-
-                double phi_i = workspace.PotentialPhi[i];
-                double phi_j = workspace.PotentialPhi[j];
-
-                // 1/2 * ((x_B - x_A) · a_B)
-                // For i with B=j: (x_j - x_i) = displacement_ij
-                double half_dx_dot_aB_for_i = 0.5 * math.dot(displacement_ij, workspace.NewtonianAccel[j]);
-                // For j with B=i: (x_i - x_j) = -displacement_ij
-                double half_dx_dot_aB_for_j = 0.5 * math.dot(-displacement_ij, workspace.NewtonianAccel[i]);
-
-                double scalarBracket_for_i =
-                      baryVelSq_i
-                    + 2.0 * baryVelSq_j
-                    - 4.0 * vi_Dot_vj
-                    - (3.0 / 2.0) * (n_dot_baryVel_j * n_dot_baryVel_j)
-                    - 4.0 * phi_i
-                    - phi_j
-                    + half_dx_dot_aB_for_i;
-
-                double scalarBracket_for_j =
-                      baryVelSq_j
-                    + 2.0 * baryVelSq_i
-                    - 4.0 * vi_Dot_vj
-                    - (3.0 / 2.0) * (n_dot_baryVel_i * n_dot_baryVel_i)
-                    - 4.0 * phi_j
-                    - phi_i
-                    + half_dx_dot_aB_for_j;
-
-                workspace.SecondTermSum[i] += invC2 * accel_i_due_j * scalarBracket_for_i;
-                workspace.SecondTermSum[j] += invC2 * accel_j_due_i * scalarBracket_for_j;
-
-                // ----------------------------
-                // THIRD TERM
-                // (G m_B / r^2) * ( n_AB · (4 v_A - 3 v_B) ) * (v_A - v_B)
-                // ----------------------------
-
-                // A = i, B = j  => n_AB = (x_i - x_j)/r = -n_ij
-                double3 n_AB_for_i = -n_ij;
-                double scalarBracket3_for_i = math.dot(n_AB_for_i, (4.0 * baryVel_i) - (3.0 * baryVel_j));
-                workspace.ThirdTermSum[i] += invC2 * (G * mass_j * invR2) * scalarBracket3_for_i * (baryVel_i - baryVel_j);
-
-                // A = j, B = i  => n_AB = (x_j - x_i)/r = +n_ij
-                double3 n_AB_for_j = n_ij;
-                double scalarBracket3_for_j = math.dot(n_AB_for_j, (4.0 * baryVel_j) - (3.0 * baryVel_i));
-                workspace.ThirdTermSum[j] += invC2 * (G * mass_i * invR2) * scalarBracket3_for_j * (baryVel_j - baryVel_i);
-
-                // ----------------------------
-                // FOURTH TERM 
-                // (7 / (2 c^2)) * Σ (G m_B / r) * aNewton[B]
-                // ----------------------------
-
-                double fourthFactor_for_i = (7.0 / 2.0) * invC2 * (G * mass_j * invR);
-                double fourthFactor_for_j = (7.0 / 2.0) * invC2 * (G * mass_i * invR);
-
-                workspace.FourthTermSum[i] += fourthFactor_for_i * workspace.NewtonianAccel[j];
-                workspace.FourthTermSum[j] += fourthFactor_for_j * workspace.NewtonianAccel[i];
-            }
-        }
-
-        // 4) Final sum: aNewton + 1PN corrections
-        for (int i = 0; i < bodyCount; i++)
-        {
-            if (masses[i] <= 0.0)
-            {
-                outBarycentricAccelerations[i] = double3.zero;
-                continue;
+                workspace.SecondTermSum[a] = double3.zero;
+                workspace.ThirdTermSum[a] = double3.zero;
+                workspace.FourthTermSum[a] = double3.zero;
             }
 
-            outBarycentricAccelerations[i] = workspace.NewtonianAccel[i]
-                                           + workspace.SecondTermSum[i]
-                                           + workspace.ThirdTermSum[i]
-                                           + workspace.FourthTermSum[i];
-        }
 
-        // 5) Enforce barycentric output: subtract COM acceleration (prevents drift)
-        double totalMass = 0.0;
-        double3 aCM = double3.zero;
-
-        for (int i = 0; i < bodyCount; i++)
-        {
-            double mi = masses[i];
-            if (mi <= 0.0) continue;
-
-            totalMass += mi;
-            aCM += mi * outBarycentricAccelerations[i];
-        }
-
-        if (totalMass > 0.0)
-        {
-            aCM /= totalMass;
-            for (int i = 0; i < bodyCount; i++)
+            for (int a = 0; a < bodyCount - 1; a++)
             {
-                if (masses[i] <= 0.0) continue;
-                outBarycentricAccelerations[i] -= aCM;
+                double mass_a = masses[a];
+                if (mass_a <= 0.0) continue;
+
+                double3 baryVel_a = baryVelocities[a];
+                double baryVelSq_a = math.lengthsq(baryVel_a);
+
+                for (int b = a + 1; b < bodyCount; b++)
+                {
+                    double mass_b = masses[b];
+                    if (mass_b <= 0.0) continue;
+
+                    double3 displacement_ab = baryPositions[b] - baryPositions[a];
+                    double r2_ab = math.lengthsq(displacement_ab);
+                    if (r2_ab < minDistSq) r2_ab = minDistSq;
+
+                    double invR = 1.0 / math.sqrt(r2_ab);
+                    double invR2 = 1.0 / r2_ab;
+                    double invR3 = invR / r2_ab;
+
+                    double3 n_ab = -displacement_ab * invR; // unit vector direction from 'b' to 'a'
+                    double3 n_ba = -n_ab; // unit vector direction from 'a' to 'b'
+
+                    double3 baryVel_b = baryVelocities[b];
+                    double baryVelSq_b = math.lengthsq(baryVel_b);
+
+                    double va_Dot_vb = math.dot(baryVel_a, baryVel_b);
+
+                    double3 accel_a_due_b = (G * mass_b) * (displacement_ab * invR3);
+                    double3 accel_b_due_a = -(G * mass_a) * (displacement_ab * invR3);
+
+                    double n_dot_baryVel_b = math.dot(n_ab, baryVel_b);
+                    double n_dot_baryVel_a = math.dot(n_ba, baryVel_a);
+
+                    double phi_a = workspace.PotentialPhi[a];
+                    double phi_b = workspace.PotentialPhi[b];
+
+                    double half_dx_dot_aB_for_a = 0.5 * math.dot(displacement_ab, accelApprox[b]);
+                    double half_dx_dot_aB_for_b = 0.5 * math.dot(-displacement_ab, accelApprox[a]);
+
+                    double scalarBracket_for_a =
+                          baryVelSq_a
+                        + 2.0 * baryVelSq_b
+                        - 4.0 * va_Dot_vb
+                        - (3.0 / 2.0) * (n_dot_baryVel_b * n_dot_baryVel_b)
+                        - 4.0 * phi_a
+                        - phi_b
+                        + half_dx_dot_aB_for_a;
+
+                    double scalarBracket_for_b =
+                          baryVelSq_b
+                        + 2.0 * baryVelSq_a
+                        - 4.0 * va_Dot_vb
+                        - (3.0 / 2.0) * (n_dot_baryVel_a * n_dot_baryVel_a)
+                        - 4.0 * phi_b
+                        - phi_a
+                        + half_dx_dot_aB_for_b;
+
+                    workspace.SecondTermSum[a] += invC2 * accel_a_due_b * scalarBracket_for_a;
+                    workspace.SecondTermSum[b] += invC2 * accel_b_due_a * scalarBracket_for_b;
+
+                    // Third term
+                    double3 n_ab_for_a = n_ab;
+                    double scalarBracket3_for_a = math.dot(n_ab_for_a, (4.0 * baryVel_a) - (3.0 * baryVel_b));
+                    workspace.ThirdTermSum[a] += invC2 * (G * mass_b * invR2) * scalarBracket3_for_a * (baryVel_a - baryVel_b);
+
+                    double3 n_ab_for_b = n_ba;
+                    double scalarBracket3_for_b = math.dot(n_ab_for_b, (4.0 * baryVel_b) - (3.0 * baryVel_a));
+                    workspace.ThirdTermSum[b] += invC2 * (G * mass_a * invR2) * scalarBracket3_for_b * (baryVel_b - baryVel_a);
+
+                    // TRUE a_B:
+                    double fourthFactor_for_a = (7.0 / 2.0) * invC2 * (G * mass_b * invR);
+                    double fourthFactor_for_b = (7.0 / 2.0) * invC2 * (G * mass_a * invR);
+
+                    workspace.FourthTermSum[a] += fourthFactor_for_a * accelApprox[b];
+                    workspace.FourthTermSum[b] += fourthFactor_for_b * accelApprox[a];
+                }
+            }
+
+            // 4) Final sum: aNewton + 1PN corrections
+            for (int a = 0; a < bodyCount; a++)
+            {
+                if (masses[a] <= 0.0)
+                {
+                    outBarycentricAccelerations[a] = double3.zero;
+                    continue;
+                }
+
+                outBarycentricAccelerations[a] = workspace.NewtonianAccel[a]
+                                               + workspace.SecondTermSum[a]
+                                               + workspace.ThirdTermSum[a]
+                                               + workspace.FourthTermSum[a];
+            }
+
+            EnforceZeroCOMAcceleration(outBarycentricAccelerations, masses);
+
+            // 5) Feed back for next iteration
+            if (iter < accelIterations - 1)
+            {
+                for (int a = 0; a < bodyCount; a++)
+                    accelApprox[a] = outBarycentricAccelerations[a];
             }
         }
 
 #if UNITY_EDITOR
-        double3 check = double3.zero;
-        double msum = 0.0;
-        for (int i = 0; i < bodyCount; i++)
         {
-            double mi = masses[i];
-            if (mi <= 0.0) continue;
-            msum += mi;
-            check += mi * outBarycentricAccelerations[i];
+            double totalMass = 0.0;
+            double3 residual = double3.zero;
+
+            for (int a = 0; a < bodyCount; a++)
+            {
+                double m = masses[a];
+                if (m <= 0.0) continue;
+
+                totalMass += m;
+                residual += m * outBarycentricAccelerations[a];
+            }
+
+            if (totalMass > 0.0 && math.length(residual) > 1e-10)
+                Debug.LogWarning($"[SpacePhysics3D] COM accel residual: {residual}");
         }
-        if (msum > 0.0 && math.length(check) > 1e-10)
-            Debug.LogWarning($"[SpacePhysics3D] COM accel residual: {check}");
 #endif
 
     }
@@ -332,14 +323,14 @@ public static class SpacePhysics3D
         double3 weightedPositions = double3.zero;
         double totalMassKg = 0.0;
 
-        for (int i = 0; i < positions.Length; i++)
+        for (int a = 0; a < positions.Length; a++)
         {
-            double mass = masses[i];
-            if (mass <= 0.0) continue;
+            double mass_a = masses[a];
+            if (mass_a <= 0.0) continue;
 
-            weightedVelocities += velocities[i] * mass;
-            weightedPositions += positions[i] * mass;
-            totalMassKg += mass;
+            weightedVelocities += velocities[a] * mass_a;
+            weightedPositions += positions[a] * mass_a;
+            totalMassKg += mass_a;
         }
 
         if (totalMassKg <= 0.0)
@@ -357,13 +348,41 @@ public static class SpacePhysics3D
     }
 
 
+
+
     // --- Private helpers ---
-    static bool EnsureSameCount(int a, int b)
+    static void EnforceZeroCOMAcceleration(Span<double3> accelerations, ReadOnlySpan<double> masses)
     {
-        if (a != b)
+        double totalMass = 0.0;
+        double3 aCM = double3.zero;
+
+        int n = accelerations.Length;
+        for (int a = 0; a < n; a++)
+        {
+            double m = masses[a];
+            if (m <= 0.0) continue;
+
+            totalMass += m;
+            aCM += m * accelerations[a];
+        }
+
+        if (totalMass <= 0.0) return;
+
+        aCM /= totalMass;
+
+        for (int a = 0; a < n; a++)
+        {
+            if (masses[a] <= 0.0) continue;
+            accelerations[a] -= aCM;
+        }
+    }
+
+    static bool EnsureSameCount(int countA, int countB)
+    {
+        if (countA != countB)
         {
 #if UNITY_EDITOR
-            Debug.LogError($"[SpacePhysics3D] EnsureSameCount(): {a} must equal {b}");
+            Debug.LogError($"[SpacePhysics3D] EnsureSameCount(): {countA} must equal {countB}");
 #endif
             return false;
         }

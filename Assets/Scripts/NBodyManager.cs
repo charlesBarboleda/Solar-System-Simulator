@@ -23,7 +23,7 @@ public class NBodyManager : MonoBehaviour
     [SerializeField] bool _useNewtonian = false;
 
     [Header("Debugging & Diagnostics")]
-    bool _debug = false;
+    [SerializeField] bool _debug = false;
     int _earthIndex = 1;
     int _sunIndex = 0;
     double _orbitTimeSimDays;
@@ -81,8 +81,8 @@ public class NBodyManager : MonoBehaviour
 
     void FixedUpdate()
     {
-        int n = SystemBodies?.Length ?? 0;
-        if (n <= 0) return;
+        int numOfBodies = SystemBodies?.Length ?? 0;
+        if (numOfBodies <= 0) return;
 
         double dt = DtSimDays;
 
@@ -92,8 +92,8 @@ public class NBodyManager : MonoBehaviour
         // 1) a(t) for all bodies (batched)
         if (_useNewtonian)
         {
-            for (int i = 0; i < n; i++)
-                _accelerations[i] = (_masses[i] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(i, _masses, _positions);
+            for (int a = 0; a < numOfBodies; a++)
+                _accelerations[a] = (_masses[a] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(a, _masses, _positions);
         }
         else
         {
@@ -107,36 +107,36 @@ public class NBodyManager : MonoBehaviour
         }
 
         // 2) Kick: v(t+dt/2) = v(t) + 0.5*a(t)*dt
-        for (int i = 0; i < n; i++)
+        for (int a = 0; a < numOfBodies; a++)
         {
-            if (_masses[i] <= 0.0)
+            if (_masses[a] <= 0.0)
             {
-                _velocityHalf[i] = double3.zero;
+                _velocityHalf[a] = double3.zero;
                 continue;
             }
 
-            _velocityHalf[i] = _velocities[i] + 0.5 * _accelerations[i] * dt;
+            _velocityHalf[a] = _velocities[a] + 0.5 * _accelerations[a] * dt;
         }
 
         // 3) Drift: x(t+dt) = x(t) + v(t+dt/2)*dt
-        for (int i = 0; i < n; i++)
+        for (int a = 0; a < numOfBodies; a++)
         {
-            if (_masses[i] <= 0.0)
+            if (_masses[a] <= 0.0)
             {
-                _positionsNext[i] = double3.zero;
+                _positionsNext[a] = double3.zero;
                 continue;
             }
 
-            _positionsNext[i] = _positions[i] + _velocityHalf[i] * dt;
+            _positionsNext[a] = _positions[a] + _velocityHalf[a] * dt;
         }
 
         // 4) a(t+dt) using predicted state (x(t+dt), v(t+dt/2))
-        if (_useNewtonian) // use Newtonian 
+        if (_useNewtonian)
         {
-            for (int i = 0; i < n; i++)
-                _accelerationsNext[i] = (_masses[i] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(i, _masses, _positionsNext);
+            for (int a = 0; a < numOfBodies; a++)
+                _accelerationsNext[a] = (_masses[a] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(a, _masses, _positionsNext);
         }
-        else // use EIH
+        else
         {
             SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(
                 _positionsNext,
@@ -148,20 +148,19 @@ public class NBodyManager : MonoBehaviour
         }
 
         // 5) Kick: v(t+dt) = v(t+dt/2) + 0.5*a(t+dt)*dt
-        for (int i = 0; i < n; i++)
+        for (int a = 0; a < numOfBodies; a++)
         {
-            if (_masses[i] <= 0.0)
+            if (_masses[a] <= 0.0)
             {
-                _velocities[i] = double3.zero;
+                _velocities[a] = double3.zero;
                 continue;
             }
 
-            _velocities[i] = _velocityHalf[i] + 0.5 * _accelerationsNext[i] * dt;
+            _velocities[a] = _velocityHalf[a] + 0.5 * _accelerationsNext[a] * dt;
         }
 
         // 6) Commit authoritative next state to arrays (positions become positionsNext; velocities already updated)
         (_positions, _positionsNext) = (_positionsNext, _positions);
-
 
         // 7) Apply arrays -> bodies + visuals
         ApplySimulationStateFromArrays(_positions, _velocities);
@@ -188,13 +187,13 @@ public class NBodyManager : MonoBehaviour
     {
         int n = SystemBodies.Length;
 
-        for (int i = 0; i < n; i++)
+        for (int a = 0; a < n; a++)
         {
-            var body = SystemBodies[i];
+            var body = SystemBodies[a];
             if (!IsValidAstronomicalBody(body)) continue;
 
-            body.Position = positions[i];
-            body.Velocity = velocities[i];
+            body.Position = positions[a];
+            body.Velocity = velocities[a];
             body.UpdateVisualPosition();
         }
     }
@@ -212,24 +211,24 @@ public class NBodyManager : MonoBehaviour
 
     void SnapshotSystemState()
     {
-        int n = SystemBodies.Length;
+        int numOfBodies = SystemBodies.Length;
 
-        for (int i = 0; i < n; i++)
+        for (int a = 0; a < numOfBodies; a++)
         {
-            var body = SystemBodies[i];
+            AstronomicalObject body = SystemBodies[a];
 
             if (!IsValidAstronomicalBody(body))
             {
-                _masses[i] = 0.0;
-                _positions[i] = double3.zero;
-                _velocities[i] = double3.zero;
+                _masses[a] = 0.0;
+                _positions[a] = double3.zero;
+                _velocities[a] = double3.zero;
                 continue;
             }
 
-            _names[i] = body.name;
-            _masses[i] = body.MassKg;
-            _positions[i] = body.Position;
-            _velocities[i] = body.Velocity;
+            _names[a] = body.Name;
+            _masses[a] = body.MassKg;
+            _positions[a] = body.Position;
+            _velocities[a] = body.Velocity;
         }
     }
 
