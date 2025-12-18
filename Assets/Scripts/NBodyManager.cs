@@ -18,8 +18,6 @@ public class NBodyManager : MonoBehaviour
 
     private readonly SpacePhysics3D.Workspace_EIH _workspaceEIH = new();
 
-    double DtSimDays => SimulationSettings.Instance.DeltaSimDays;
-
     [SerializeField] AccelBMode _accelBMode = AccelBMode.FixedPointIterated;
     [SerializeField] bool _useNewtonian = false;
 
@@ -33,7 +31,6 @@ public class NBodyManager : MonoBehaviour
     bool _waitingToExit;
     double3 _initEarthRel;
     int _orbits;
-
 
 
     void Awake()
@@ -76,7 +73,8 @@ public class NBodyManager : MonoBehaviour
 
             SnapshotSystemState();
 
-            if (_earthIndex < 0 || _sunIndex < 0) InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
+            if (_earthIndex >= 0 && _sunIndex >= 0) InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
+            else _debug = false;
         }
     }
 
@@ -84,116 +82,92 @@ public class NBodyManager : MonoBehaviour
     {
         int numOfBodies = SystemBodies?.Length ?? 0;
         if (numOfBodies <= 0) return;
+        if (_masses == null || _masses.Length != numOfBodies)
+        {
+            Debug.LogError("State arrays not initialized / length mismatch.");
+            return;
+        }
 
-        double dt = DtSimDays;
+        // SnapshotSystemState(); 
 
-        // 0) Snapshot bodies -> arrays (authoritative state for this step)
-        SnapshotSystemState();
+        SimulationSettings.Instance.GetSubstepPlan(out int steps, out double dtStep, out double dtTotal);
+        if (steps <= 0) return;
 
-        // 1) a(t) for all bodies (batched)
+        for (int i = 0; i < steps; i++) IntegrateOneStep(dtStep, numOfBodies);
+
+        ApplySimulationStateFromArrays(_positions, _velocities);
+
+        if (_debug && _earthIndex >= 0 && _sunIndex >= 0 && _earthIndex < numOfBodies && _sunIndex < numOfBodies)
+        {
+            Diagnostics_SampledOrbit(
+                _earthIndex, _sunIndex,
+                dt: dtTotal,              // total sim time advanced this FixedUpdate
+                positions: _positions,
+                velocities: _velocities
+            );
+            // int logPositionEvery = 1; // Logs the position every x seconds
+            // _elapsedTime += Time.fixedDeltaTime;
+            // if (_elapsedTime >= logPositionEvery)
+            // {
+            //     Debug.Log($"Earth Authorative Position: {_positions[_earthIndex]}");
+            //     _elapsedTime = 0;
+            // }
+        }
+    }
+
+    // --- Private Helpers ---
+
+    // Main Integrator (velocity-Verlet leapfrog with half-step)
+    void IntegrateOneStep(double dt, int numOfBodies)
+    {
+        // 1) Compute acceleration of each body "a" using base Newtonian (one at a time)
         if (_useNewtonian)
         {
             for (int a = 0; a < numOfBodies; a++)
                 _accelerations[a] = (_masses[a] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(a, _masses, _positions);
         }
-        else
+        else // OR compute all body's accelerations at the same time using EIH
         {
-            SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(
-                _positions,
-                _velocities,
-                _masses,
-                _accelerations,
-                _workspaceEIH,
-                _accelBMode
-            );
+            SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positions, _velocities, _masses, _accelerations, _workspaceEIH, _accelBMode);
         }
 
-        // 2) Kick: v(t+dt/2) = v(t) + 0.5*a(t)*dt
+        // 2) Compute half-step velocity of each body "a" using its velocity & acceleration
         for (int a = 0; a < numOfBodies; a++)
-        {
-            if (_masses[a] <= 0.0)
-            {
-                _velocityHalf[a] = double3.zero;
-                continue;
-            }
+            _velocityHalf[a] = (_masses[a] <= 0.0) ? double3.zero : _velocities[a] + 0.5 * _accelerations[a] * dt;
 
-            _velocityHalf[a] = _velocities[a] + 0.5 * _accelerations[a] * dt;
-        }
-
-        // 3) Drift: x(t+dt) = x(t) + v(t+dt/2)*dt
+        // 3) Compute predicted position of each body "a" using its half-step velocity & position
         for (int a = 0; a < numOfBodies; a++)
-        {
-            if (_masses[a] <= 0.0)
-            {
-                _positionsNext[a] = _positions[a];
-                continue;
-            }
+            _positionsNext[a] = (_masses[a] <= 0.0) ? double3.zero : _positions[a] + _velocityHalf[a] * dt;
 
-            _positionsNext[a] = _positions[a] + _velocityHalf[a] * dt;
-        }
-
-        // 4) a(t+dt) using predicted state (x(t+dt), v(t+dt/2))
+        // 4) Compute predicted acceleration of each body "a" using its predicted position
         if (_useNewtonian)
         {
             for (int a = 0; a < numOfBodies; a++)
                 _accelerationsNext[a] = (_masses[a] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(a, _masses, _positionsNext);
         }
-        else
+        else // OR compute all body's predicted accelerations at the same time
         {
-            SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(
-                _positionsNext,
-                _velocityHalf,          // important: predicted velocity state
-                _masses,
-                _accelerationsNext,
-                _workspaceEIH,
-                _accelBMode
-            );
+            SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positionsNext, _velocityHalf, _masses, _accelerationsNext, _workspaceEIH, _accelBMode);
         }
 
-        // 5) Kick: v(t+dt) = v(t+dt/2) + 0.5*a(t+dt)*dt
+        // 5) Compute predicted velocities using half-step velocities & predicted accelerations
         for (int a = 0; a < numOfBodies; a++)
-        {
-            if (_masses[a] <= 0.0)
-            {
-                _velocities[a] = double3.zero;
-                continue;
-            }
+            _velocities[a] = (_masses[a] <= 0.0) ? double3.zero : _velocityHalf[a] + 0.5 * _accelerationsNext[a] * dt;
 
-            _velocities[a] = _velocityHalf[a] + 0.5 * _accelerationsNext[a] * dt;
-        }
-
-        // 6) Commit authoritative next state to arrays (positions become positionsNext; velocities already updated)
+        // 6) Commit and update positions 
         (_positions, _positionsNext) = (_positionsNext, _positions);
-
-        // 7) Apply arrays -> bodies + visuals
-        ApplySimulationStateFromArrays(_positions, _velocities);
-
-
-        if (_debug)
-        {
-            int earth = _earthIndex;
-            int sun = _sunIndex;
-
-            Diagnostics_SampledOrbit(
-                earth,
-                sun,
-                dt: DtSimDays,          // use sim dt directly
-                positions: _positions,
-                velocities: _velocities
-            );
-        }
     }
 
-
-    // --- Private Helpers ---
     void ApplySimulationStateFromArrays(double3[] positions, double3[] velocities)
     {
-        int n = SystemBodies.Length;
+        int numOfBodies = _masses.Length;
 
-        for (int a = 0; a < n; a++)
+        for (int a = 0; a < numOfBodies; a++)
         {
+            if (_masses[a] <= 0.0) continue;
+
             var body = SystemBodies[a];
-            if (!IsValidAstronomicalBody(body)) continue;
+            if (body == null) continue; // optional: log once at init instead
 
             body.Position = positions[a];
             body.Velocity = velocities[a];
@@ -267,9 +241,7 @@ public class NBodyManager : MonoBehaviour
         double3 r0 = _initEarthRel;
         double startDistance = math.length(r - r0);
 
-        // epsilon should be expressed in Unity units.
-        // If 1 AU == UNITY_UNITS_PER_AU, this is a small fraction of AU.
-        double epsilon = 1e-4 * PhysicsConstants.UNITY_UNITS_PER_AU;
+        double epsilon = PhysicsConstants.UNITY_MIN_DISTANCE;
 
         if (_waitingToExit)
         {
@@ -281,12 +253,17 @@ public class NBodyManager : MonoBehaviour
         {
             _orbits++;
 
-            double periAU = _orbitRMin / PhysicsConstants.UNITY_UNITS_PER_AU;
-            double apheAU = _orbitRMax / PhysicsConstants.UNITY_UNITS_PER_AU;
-            double aAU = ((_orbitRMin + _orbitRMax) * 0.5) / PhysicsConstants.UNITY_UNITS_PER_AU;
-            double eSam = (_orbitRMax - _orbitRMin) / (_orbitRMax + _orbitRMin);
+            double perihelionAU = _orbitRMin / PhysicsConstants.UNITY_UNITS_PER_AU;
+            double aphelionAU = _orbitRMax / PhysicsConstants.UNITY_UNITS_PER_AU;
+            double semiMajorAxisAU = ((_orbitRMin + _orbitRMax) * 0.5) / PhysicsConstants.UNITY_UNITS_PER_AU;
+            double eccentricitySam = (_orbitRMax - _orbitRMin) / (_orbitRMax + _orbitRMin);
 
-            Debug.Log($"[{_orbits}] Period={_orbitTimeSimDays:F2} sim days, Perihelion=Sam {periAU:F12} AU, Aphelion=Sam {apheAU:F12} AU, Semi-Major Axis=Sam {aAU:F12} AU, Eccentricity=Sam {eSam:F12}");
+            Debug.Log($"[{_orbits}] Period={_orbitTimeSimDays:F2} sim days, " +
+            $"Perihelion = Sam: {perihelionAU:F12} AU, | " +
+            $"Aphelion = Sam: {aphelionAU:F12} AU, | " +
+            $"Semi-Major Axis = Sam: {semiMajorAxisAU:F12} AU, | " +
+            $"Eccentricity = Sam: {eccentricitySam:F12} | ");
+
 
             // reset window
             _orbitTimeSimDays = 0.0;

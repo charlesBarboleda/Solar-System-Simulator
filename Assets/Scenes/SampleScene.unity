@@ -378,7 +378,7 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
-  _sun: {fileID: 0}
+  Initialized: 0
 --- !u!23 &107760893
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -482,6 +482,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SimulationSettings
   TimeScale: 100
   GravityScale: 1
+  MaxSubstepSimDays: 0.25
+  MaxSubstepsPerFixedUpdate: 256
 --- !u!4 &178901027
 Transform:
   m_ObjectHideFlags: 0
@@ -1082,7 +1084,9 @@ MonoBehaviour:
   SystemBodies:
   - {fileID: 1663054420}
   - {fileID: 1781321149}
+  _accelBMode: 0
   _useNewtonian: 0
+  _debug: 1
 --- !u!4 &1519951262
 Transform:
   m_ObjectHideFlags: 0
@@ -1139,7 +1143,7 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
-  _sun: {fileID: 0}
+  Initialized: 0
 --- !u!23 &1527299123
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1325,7 +1329,7 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
-  _sun: {fileID: 0}
+  Initialized: 0
 --- !u!1 &1738255522
 GameObject:
   m_ObjectHideFlags: 0
@@ -1367,7 +1371,7 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
-  _sun: {fileID: 0}
+  Initialized: 0
 --- !u!23 &1738255525
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1481,7 +1485,7 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
-  _sun: {fileID: 1663054420}
+  Initialized: 0
 --- !u!23 &1781321151
 MeshRenderer:
   m_ObjectHideFlags: 0

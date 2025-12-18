@@ -301,8 +301,8 @@ public static class SpacePhysics3D
                 residual += m * outBarycentricAccelerations[a];
             }
 
-            if (totalMass > 0.0 && math.length(residual) > 1e-10)
-                Debug.LogWarning($"[SpacePhysics3D] COM accel residual: {residual}");
+            // if (totalMass > 0.0 && math.length(residual) > 1e-10)
+            //     Debug.LogWarning($"[SpacePhysics3D] COM accel residual: {residual}");
         }
 #endif
 

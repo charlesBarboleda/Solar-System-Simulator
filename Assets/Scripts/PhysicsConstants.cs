@@ -50,7 +50,7 @@ public static class PhysicsConstants
     public const double REAL_EARTH_MASS_KG = 5.9722e24;
 
     // --- GUARDS ---
-    public const double UNITY_MIN_DISTANCE = 1e-4 * UNITY_UNITS_PER_AU;
+    public static double UNITY_MIN_DISTANCE = 1e-4 * UNITY_UNITS_PER_AU * SimulationSettings.Instance.TimeScale;
 
     // --- HELPERS ---
     // AU -> Unity units

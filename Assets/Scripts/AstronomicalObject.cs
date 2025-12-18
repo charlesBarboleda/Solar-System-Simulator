@@ -10,13 +10,17 @@ public class AstronomicalObject : MonoBehaviour
 
     public double3 Position;
 
+    public bool Initialized = false;
+    bool _sunInitialized = false;
+    bool _earthInitialized = false;
 
-    void Start()
+
+    void Awake()
     {
         Position = (double3)(float3)transform.position; // initial sync from scene
         Velocity = double3.zero;
 
-        if (Name == "Sun")
+        if (Name == "Sun" && !Initialized && !_sunInitialized)
         {
             Position = new double3(0, 0, 0);
 
@@ -28,8 +32,9 @@ public class AstronomicalObject : MonoBehaviour
             MassKg = PhysicsConstants.REAL_SOLAR_MASS_KG;
 
             UpdateVisualPosition();
+            _sunInitialized = true;
         }
-        else if (Name == "Earth")
+        else if (Name == "Earth" && !Initialized && !_earthInitialized)
         {
             double unityEarthToSun = PhysicsConstants.ToUnityUnitsFromAU(PhysicsConstants.REAL_EARTH_SUN_DISTANCE_AU);
             Position = new double3(unityEarthToSun, 0, 0);
@@ -44,6 +49,7 @@ public class AstronomicalObject : MonoBehaviour
             MassKg = PhysicsConstants.REAL_EARTH_MASS_KG;
 
             UpdateVisualPosition();
+            _earthInitialized = true;
         }
         else if (Name == "Neptune")
         {
@@ -54,6 +60,8 @@ public class AstronomicalObject : MonoBehaviour
             Debug.Log("Attempting to move 'Neptune' to converted position");
             Debug.Log($"Moved {Name} position: {transform.localPosition}");
         }
+
+        Initialized = true;
     }
 
     public void UpdateVisualPosition()
