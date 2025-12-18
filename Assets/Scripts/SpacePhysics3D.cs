@@ -170,7 +170,7 @@ public static class SpacePhysics3D
 
         int iterations = (accelBMode == AccelBMode.FixedPointIterated) ? math.max(1, accelIterations) : 1;
 
-        // 3) Fixed-point iterations: RHS of EIH contains a_B, so I iterate using accelApprox as a_B estimate.
+        // 3) Fixed-point iterations: RHS of EIH contains a_B, so iterate using accelApprox as a_B estimate
         for (int iter = 0; iter < iterations; iter++)
         {
             // Clear correction sums each iteration

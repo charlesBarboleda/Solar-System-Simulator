@@ -21,16 +21,19 @@ public class NBodyManager : MonoBehaviour
     [SerializeField] AccelBMode _accelBMode = AccelBMode.FixedPointIterated;
     [SerializeField] bool _useNewtonian = false;
 
-    [Header("Debugging & Diagnostics")]
+    [Header("Debugging")]
     [SerializeField] bool _debug = false;
+
     int _earthIndex = 1;
     int _sunIndex = 0;
-    double _orbitTimeSimDays;
-    double _orbitRMin = double.PositiveInfinity;
-    double _orbitRMax = 0.0;
-    bool _waitingToExit;
-    double3 _initEarthRel;
-    int _orbits;
+
+
+    [Header("System Invariants Diagnostics")]
+    [SerializeField] bool _diagnostics = false;
+    [SerializeField] int _diagEveryNSteps = 50;
+
+
+
 
 
     void Awake()
@@ -73,8 +76,9 @@ public class NBodyManager : MonoBehaviour
 
             SnapshotSystemState();
 
-            if (_earthIndex >= 0 && _sunIndex >= 0) InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
-            else _debug = false;
+            if (_earthIndex >= 0 && _sunIndex >= 0) SystemDiagnostics.InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
+            else _diagnostics = false;
+            if (_diagnostics) SystemDiagnostics.InitSystemInvariantBaseline(_masses, _positions, _velocities);
         }
     }
 
@@ -90,29 +94,35 @@ public class NBodyManager : MonoBehaviour
 
         // SnapshotSystemState(); 
 
-        SimulationSettings.Instance.GetSubstepPlan(out int steps, out double dtStep, out double dtTotal);
-        if (steps <= 0) return;
+        SimulationSettings.Instance.GetSubstepPlan(out int steps, out double dtStep, out double dtAdvanced, out double dtRequested);
+#if UNITY_EDITOR
+        if (_debug)
+        {
+            double baseDaysThisFixed = Time.fixedDeltaTime * PhysicsConstants.UNITY_DAYS_PER_REAL_SECOND;
+            double effectiveTimeScale = (baseDaysThisFixed > 0.0) ? (dtAdvanced / baseDaysThisFixed) : 0.0;
+            Debug.Log($"RequestedScale={SimulationSettings.Instance.TimeScale:F2}, EffectiveScale={effectiveTimeScale:F2}, steps={steps}, dtStep={dtStep:F6}d");
+        }
+#endif
 
-        for (int i = 0; i < steps; i++) IntegrateOneStep(dtStep, numOfBodies);
+        for (int i = 0; i < steps; i++)
+        {
+            IntegrateOneStep(dtStep, numOfBodies);
+            if (_diagnostics)
+            {
+                SystemDiagnostics.Diagnostics_OrbitByPeriapsis(
+                    _earthIndex,
+                    _sunIndex,
+                    dtStep,
+                    _positions,
+                    _velocities,
+                    PhysicsConstants.UNITY_G * (_masses[_sunIndex] + _masses[_earthIndex]));
+
+                SystemDiagnostics.StepSystemDiagnostics(dtStep, _diagEveryNSteps, _masses, _positions, _velocities);
+            }
+        }
 
         ApplySimulationStateFromArrays(_positions, _velocities);
 
-        if (_debug && _earthIndex >= 0 && _sunIndex >= 0 && _earthIndex < numOfBodies && _sunIndex < numOfBodies)
-        {
-            Diagnostics_SampledOrbit(
-                _earthIndex, _sunIndex,
-                dt: dtTotal,              // total sim time advanced this FixedUpdate
-                positions: _positions,
-                velocities: _velocities
-            );
-            // int logPositionEvery = 1; // Logs the position every x seconds
-            // _elapsedTime += Time.fixedDeltaTime;
-            // if (_elapsedTime >= logPositionEvery)
-            // {
-            //     Debug.Log($"Earth Authorative Position: {_positions[_earthIndex]}");
-            //     _elapsedTime = 0;
-            // }
-        }
     }
 
     // --- Private Helpers ---
@@ -212,67 +222,6 @@ public class NBodyManager : MonoBehaviour
             _positions[a] = body.Position;
             _velocities[a] = body.Velocity;
         }
-    }
-
-    void InitEarthDiagnostics(int earth, int sun, ReadOnlySpan<double3> positions)
-    {
-        _initEarthRel = positions[earth] - positions[sun];
-        _orbitTimeSimDays = 0.0;
-        _orbitRMin = double.PositiveInfinity;
-        _orbitRMax = 0.0;
-        _waitingToExit = true; // prevent immediate trigger at t=0
-        _orbits = 0;
-    }
-
-    void Diagnostics_SampledOrbit(
-        int earth, int sun,
-        double dt,
-        ReadOnlySpan<double3> positions,
-        ReadOnlySpan<double3> velocities)
-    {
-        _orbitTimeSimDays += dt;
-
-        double3 r = positions[earth] - positions[sun];
-        double radius = math.length(r);
-
-        if (radius < _orbitRMin) _orbitRMin = radius;
-        if (radius > _orbitRMax) _orbitRMax = radius;
-
-        double3 r0 = _initEarthRel;
-        double startDistance = math.length(r - r0);
-
-        double epsilon = PhysicsConstants.UNITY_MIN_DISTANCE;
-
-        if (_waitingToExit)
-        {
-            if (startDistance > epsilon) _waitingToExit = false;
-            return;
-        }
-
-        if (startDistance <= epsilon)
-        {
-            _orbits++;
-
-            double perihelionAU = _orbitRMin / PhysicsConstants.UNITY_UNITS_PER_AU;
-            double aphelionAU = _orbitRMax / PhysicsConstants.UNITY_UNITS_PER_AU;
-            double semiMajorAxisAU = ((_orbitRMin + _orbitRMax) * 0.5) / PhysicsConstants.UNITY_UNITS_PER_AU;
-            double eccentricitySam = (_orbitRMax - _orbitRMin) / (_orbitRMax + _orbitRMin);
-
-            Debug.Log($"[{_orbits}] Period={_orbitTimeSimDays:F2} sim days, " +
-            $"Perihelion = Sam: {perihelionAU:F12} AU, | " +
-            $"Aphelion = Sam: {aphelionAU:F12} AU, | " +
-            $"Semi-Major Axis = Sam: {semiMajorAxisAU:F12} AU, | " +
-            $"Eccentricity = Sam: {eccentricitySam:F12} | ");
-
-
-            // reset window
-            _orbitTimeSimDays = 0.0;
-            _orbitRMin = double.PositiveInfinity;
-            _orbitRMax = 0.0;
-
-            _waitingToExit = true;
-        }
-
     }
 
     int FindIndexByName(AstronomicalObject[] bodies, string targetName)

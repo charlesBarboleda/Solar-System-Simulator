@@ -482,8 +482,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SimulationSettings
   TimeScale: 100
   GravityScale: 1
-  MaxSubstepSimDays: 0.25
+  FixedStepSimDays: 0.01
   MaxSubstepsPerFixedUpdate: 256
+  MaxBacklogSimDays: 10
 --- !u!4 &178901027
 Transform:
   m_ObjectHideFlags: 0
@@ -1084,9 +1085,10 @@ MonoBehaviour:
   SystemBodies:
   - {fileID: 1663054420}
   - {fileID: 1781321149}
-  _accelBMode: 0
+  _accelBMode: 1
   _useNewtonian: 0
-  _debug: 1
+  _debug: 0
+  _diagnostics: 1
 --- !u!4 &1519951262
 Transform:
   m_ObjectHideFlags: 0
