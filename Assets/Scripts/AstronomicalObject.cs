@@ -29,16 +29,16 @@ public class AstronomicalObject : MonoBehaviour
         double3 rVec = new(unityEarthToSun, 0, 0);
         double r = math.length(rVec);
 
-        double totalGMass = PhysicsConstants.UNITY_G * (mass_Sun + mass_Earth);        // UU^3/day^2
-        double vRel = math.sqrt(totalGMass / r);                       // UU/day
+        double totalGMass = PhysicsConstants.UNITY_G * (mass_Sun + mass_Earth);
+        double vRel = math.sqrt(totalGMass / r);
 
-        double3 tHat = math.normalize(new double3(0, 0, 1));   // choose orbit plane
+        double3 tHat = math.normalize(new double3(0, 0, 1));
 
-        double3 vRelVec = vRel * tHat;                         // Earth relative to Sun
+        double3 vRelVec = vRel * tHat; // Earth relative to Sun
 
         double invTot = 1.0 / (mass_Sun + mass_Earth);
 
-        // Positions (COM at origin)
+        // Positions (relative to barycenter)
         double3 pos_Sun = -mass_Earth * invTot * rVec;
         double3 pos_Earth = mass_Sun * invTot * rVec;
 

@@ -128,45 +128,69 @@ public class NBodyManager : MonoBehaviour
 
     // --- Private Helpers ---
 
-    // Main Integrator (velocity-Verlet leapfrog with half-step)
+    // Main Integrator (velocity-Verlet for Newtonian, Heun/RK2 for EIH)
     void IntegrateOneStep(double dt, int numOfBodies)
     {
-        // 1) Compute acceleration of each body "a" using base Newtonian (one at a time)
         if (_useNewtonian)
         {
+            // 1) Acceleration of each body using base Newtonian (symmetric sweep)
+            SpacePhysics3D.NBodyAccelVectorFrom(_masses, _positions, _accelerations);
+
+            // 2) Half-step velocity of each body "a" using its velocity & acceleration
             for (int a = 0; a < numOfBodies; a++)
-                _accelerations[a] = (_masses[a] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(a, _masses, _positions);
+                _velocityHalf[a] = (_masses[a] <= 0.0) ? double3.zero : _velocities[a] + 0.5 * _accelerations[a] * dt;
+
+            // 3) Predicted position of each body "a" using its half-step velocity & position
+            for (int a = 0; a < numOfBodies; a++)
+                _positionsNext[a] = (_masses[a] <= 0.0) ? double3.zero : _positions[a] + _velocityHalf[a] * dt;
+
+            // 4) Predicted acceleration of each body "a" using its predicted position
+            SpacePhysics3D.NBodyAccelVectorFrom(_masses, _positionsNext, _accelerationsNext);
+
+            // 5) Predicted velocities using half-step velocities & predicted accelerations
+            for (int a = 0; a < numOfBodies; a++)
+                _velocities[a] = (_masses[a] <= 0.0) ? double3.zero : _velocityHalf[a] + 0.5 * _accelerationsNext[a] * dt;
+
+            // 6) Commit and update positions 
+            (_positions, _positionsNext) = (_positionsNext, _positions);
         }
-        else // OR compute all body's accelerations at the same time using EIH
+        else
         {
+            // Heun/RK2 for velocity-dependent acceleration (EIH)
             SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positions, _velocities, _masses, _accelerations, _workspaceEIH, _accelBMode);
-        }
 
-        // 2) Compute half-step velocity of each body "a" using its velocity & acceleration
-        for (int a = 0; a < numOfBodies; a++)
-            _velocityHalf[a] = (_masses[a] <= 0.0) ? double3.zero : _velocities[a] + 0.5 * _accelerations[a] * dt;
-
-        // 3) Compute predicted position of each body "a" using its half-step velocity & position
-        for (int a = 0; a < numOfBodies; a++)
-            _positionsNext[a] = (_masses[a] <= 0.0) ? double3.zero : _positions[a] + _velocityHalf[a] * dt;
-
-        // 4) Compute predicted acceleration of each body "a" using its predicted position
-        if (_useNewtonian)
-        {
             for (int a = 0; a < numOfBodies; a++)
-                _accelerationsNext[a] = (_masses[a] <= 0.0) ? double3.zero : SpacePhysics3D.NBodyAccelVectorOf(a, _masses, _positionsNext);
-        }
-        else // OR compute all body's predicted accelerations at the same time
-        {
+            {
+                if (_masses[a] <= 0.0)
+                {
+                    _velocityHalf[a] = double3.zero;
+                    _positionsNext[a] = double3.zero;
+                    continue;
+                }
+
+                double3 v0 = _velocities[a];
+                _velocityHalf[a] = v0 + _accelerations[a] * dt; // predictor velocity
+                _positionsNext[a] = _positions[a] + v0 * dt;     // predictor position
+            }
+
             SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positionsNext, _velocityHalf, _masses, _accelerationsNext, _workspaceEIH, _accelBMode);
+
+            for (int a = 0; a < numOfBodies; a++)
+            {
+                if (_masses[a] <= 0.0)
+                {
+                    _velocities[a] = double3.zero;
+                    _positions[a] = double3.zero;
+                    continue;
+                }
+
+                double3 v0 = _velocities[a];
+                double3 v1 = _velocityHalf[a];
+
+                _velocities[a] = v0 + 0.5 * (_accelerations[a] + _accelerationsNext[a]) * dt;
+                _positions[a] = _positions[a] + 0.5 * (v0 + v1) * dt;
+            }
         }
-
-        // 5) Compute predicted velocities using half-step velocities & predicted accelerations
-        for (int a = 0; a < numOfBodies; a++)
-            _velocities[a] = (_masses[a] <= 0.0) ? double3.zero : _velocityHalf[a] + 0.5 * _accelerationsNext[a] * dt;
-
-        // 6) Commit and update positions 
-        (_positions, _positionsNext) = (_positionsNext, _positions);
     }
 
     void ApplySimulationStateFromArrays(double3[] positions, double3[] velocities)

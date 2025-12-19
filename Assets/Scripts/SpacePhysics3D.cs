@@ -37,45 +37,53 @@ public static class SpacePhysics3D
     }
 
     /// <summary>
-    /// Returns the Newtonian acceleration of "a"
+    /// Computes the Newtonian acceleration for all bodies in an n-body system
     /// Masses and positions must have the same length numOfBodies.
     /// </summary>
-    public static double3 NBodyAccelVectorOf(
-        int a,
+    public static void NBodyAccelVectorFrom(
         ReadOnlySpan<double> masses,
-        ReadOnlySpan<double3> positions)
+        ReadOnlySpan<double3> positions,
+        Span<double3> outNewtonianAccelerations)
     {
         int numOfBodies = positions.Length;
 
-        if (masses.Length != numOfBodies) return double3.zero;
-        if ((uint)a >= (uint)numOfBodies) return double3.zero;
-
-        double G = PhysicsConstants.UNITY_G;
-
-        double minDist = PhysicsConstants.UNITY_MIN_DISTANCE;
-        double minDistSq = minDist * minDist;
-
-        double3 pos_a = positions[a];
-        double3 totalAccel = double3.zero;
-
-        for (int b = 0; b < numOfBodies; b++)
+        if (!EnsureSameCount(masses.Length, numOfBodies) || outNewtonianAccelerations.Length != numOfBodies)
         {
-            if (b == a) continue;
-
-            double mass_b = masses[b];
-            if (mass_b <= 0.0) continue;
-
-            double3 displacement_ab = positions[b] - pos_a;   // x_b - x_a
-            double r2_ab = math.lengthsq(displacement_ab);
-            if (r2_ab < minDistSq) r2_ab = minDistSq;
-
-            double invR = 1.0 / math.sqrt(r2_ab);
-            double invR3 = invR / r2_ab;
-
-            totalAccel += (G * mass_b) * displacement_ab * invR3;
+#if UNITY_EDITOR
+            Debug.LogError("[SpacePhysics3D] NBodyAccelVectorOf(): span size mismatch.");
+#endif
+            return;
         }
 
-        return totalAccel;
+        double G = PhysicsConstants.UNITY_G;
+        double minDistSq = PhysicsConstants.UNITY_MIN_DISTANCE * PhysicsConstants.UNITY_MIN_DISTANCE;
+
+        for (int a = 0; a < numOfBodies; a++)
+            outNewtonianAccelerations[a] = double3.zero;
+
+        for (int a = 0; a < numOfBodies - 1; a++)
+        {
+            double3 pos_a = positions[a];
+            double mass_a = masses[a];
+            if (mass_a <= 0.0) continue;
+
+            for (int b = a + 1; b < numOfBodies; b++)
+            {
+                double3 pos_b = positions[b];
+                double mass_b = masses[b];
+                if (mass_b <= 0.0) continue;
+
+                double3 displacement_ab = pos_b - pos_a;
+                double r2_ab = math.lengthsq(displacement_ab);
+                if (r2_ab < minDistSq) r2_ab = minDistSq;
+
+                double invR = 1.0 / math.sqrt(r2_ab);
+                double invR3 = invR / r2_ab;
+
+                outNewtonianAccelerations[a] += (G * mass_b) * displacement_ab * invR3;
+                outNewtonianAccelerations[b] -= (G * mass_a) * displacement_ab * invR3;
+            }
+        }
     }
 
     /// <summary>

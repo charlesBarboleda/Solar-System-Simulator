@@ -5,8 +5,6 @@ using UnityEngine;
 
 public static class NBodyDiagnostics
 {
-
-
     static double _orbitTimeSimDays;
     static bool _waitingToExit;
     static double3 _initEarthRel;
