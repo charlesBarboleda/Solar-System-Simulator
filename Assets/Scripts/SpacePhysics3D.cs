@@ -11,6 +11,7 @@ public static class SpacePhysics3D
     {
         public double3[] BarycentricPositions = Array.Empty<double3>();
         public double3[] BarycentricVelocities = Array.Empty<double3>();
+        public bool[] ActiveMask = Array.Empty<bool>();
 
         public double[] PotentialPhi = Array.Empty<double>();          // phi[a] = Σ_{b≠a} G m_b / r_ab
         public double3[] NewtonianAccel = Array.Empty<double3>();      // aNewton[a]
@@ -25,6 +26,7 @@ public static class SpacePhysics3D
         {
             if (BarycentricPositions.Length != count) BarycentricPositions = new double3[count];
             if (BarycentricVelocities.Length != count) BarycentricVelocities = new double3[count];
+            if (ActiveMask.Length != count) ActiveMask = new bool[count];
 
             if (PotentialPhi.Length != count) PotentialPhi = new double[count];
             if (NewtonianAccel.Length != count) NewtonianAccel = new double3[count];
@@ -65,16 +67,17 @@ public static class SpacePhysics3D
         {
             double3 pos_a = positions[a];
             double mass_a = masses[a];
-            if (mass_a <= 0.0) continue;
+            if (!IsValidMass(mass_a) || !IsFinite(pos_a)) continue;
 
             for (int b = a + 1; b < numOfBodies; b++)
             {
                 double3 pos_b = positions[b];
                 double mass_b = masses[b];
-                if (mass_b <= 0.0) continue;
+                if (!IsValidMass(mass_b) || !IsFinite(pos_b)) continue;
 
                 double3 displacement_ab = pos_b - pos_a;
                 double r2_ab = math.lengthsq(displacement_ab);
+                if (!IsFinite(r2_ab)) continue;
                 if (r2_ab < minDistSq) r2_ab = minDistSq;
 
                 double invR = 1.0 / math.sqrt(r2_ab);
@@ -106,7 +109,13 @@ public static class SpacePhysics3D
 
         if (outBarycentricAccelerations.Length != bodyCount)
         {
-            Debug.LogError("[SpacePhysics3D] ComputeEinsteinInfeldHoffmann1PN(): output span size mismatch.");
+            Debug.LogError("[SpacePhysics3D] Einstein_Infeld_Hoffmann_1PN(): output span size mismatch");
+            return;
+        }
+
+        if (workspace == null)
+        {
+            Debug.LogError("[SpacePhysics3D] Einstein_Infeld_Hoffmann_1PN(): workspace is null");
             return;
         }
 
@@ -120,23 +129,48 @@ public static class SpacePhysics3D
         // Minimum-distance handling (compare squared-to-squared)
         double minDistSq = PhysicsConstants.UNITY_MIN_DISTANCE * PhysicsConstants.UNITY_MIN_DISTANCE;
 
-        // 1) Barycenter vectors
-        GetBarycenterVectorsFrom(velocities, positions, masses, out double3 barycenterPosition, out double3 barycenterVelocity);
+        // 1) Barycenter vectors 
+        double3 weightedPositions = double3.zero;
+        double3 weightedVelocities = double3.zero;
+        double totalMass = 0.0;
 
         for (int a = 0; a < bodyCount; a++)
         {
-            workspace.BarycentricPositions[a] = positions[a] - barycenterPosition;
-            workspace.BarycentricVelocities[a] = velocities[a] - barycenterVelocity;
+            double mass_a = masses[a];
+            bool isActive = IsValidMass(mass_a) && IsFinite(positions[a]) && IsFinite(velocities[a]);
+            workspace.ActiveMask[a] = isActive;
+
+            if (isActive)
+            {
+                weightedPositions += positions[a] * mass_a;
+                weightedVelocities += velocities[a] * mass_a;
+                totalMass += mass_a;
+            }
 
             workspace.PotentialPhi[a] = 0.0;
             workspace.NewtonianAccel[a] = double3.zero;
             workspace.AccelApprox[a] = double3.zero;
+
+            workspace.BarycentricPositions[a] = double3.zero;
+            workspace.BarycentricVelocities[a] = double3.zero;
 
             workspace.SecondTermSum[a] = double3.zero;
             workspace.ThirdTermSum[a] = double3.zero;
             workspace.FourthTermSum[a] = double3.zero;
 
             outBarycentricAccelerations[a] = double3.zero;
+        }
+
+        if (totalMass <= 0.0)
+            return;
+
+        GetBarycenterVectorsFrom(totalMass, weightedPositions, weightedVelocities, out double3 barycenterPosition, out double3 barycenterVelocity);
+
+        for (int a = 0; a < bodyCount; a++)
+        {
+            if (!workspace.ActiveMask[a]) continue;
+            workspace.BarycentricPositions[a] = positions[a] - barycenterPosition;
+            workspace.BarycentricVelocities[a] = velocities[a] - barycenterVelocity;
         }
 
         double3[] baryPositions = workspace.BarycentricPositions;
@@ -148,15 +182,16 @@ public static class SpacePhysics3D
         for (int a = 0; a < bodyCount - 1; a++)
         {
             double mass_a = masses[a];
-            if (mass_a <= 0.0) continue;
+            if (!workspace.ActiveMask[a]) continue;
 
             for (int b = a + 1; b < bodyCount; b++)
             {
                 double mass_b = masses[b];
-                if (mass_b <= 0.0) continue;
+                if (!workspace.ActiveMask[b]) continue;
 
                 double3 displacement_ab = baryPositions[b] - baryPositions[a];
                 double r2_ab = math.lengthsq(displacement_ab);
+                if (!IsFinite(r2_ab)) continue;
                 if (r2_ab < minDistSq) r2_ab = minDistSq;
 
                 double invR = 1.0 / math.sqrt(r2_ab);
@@ -193,7 +228,7 @@ public static class SpacePhysics3D
             for (int a = 0; a < bodyCount - 1; a++)
             {
                 double mass_a = masses[a];
-                if (mass_a <= 0.0) continue;
+                if (!workspace.ActiveMask[a]) continue;
 
                 double3 baryVel_a = baryVelocities[a];
                 double baryVelSq_a = math.lengthsq(baryVel_a);
@@ -201,10 +236,11 @@ public static class SpacePhysics3D
                 for (int b = a + 1; b < bodyCount; b++)
                 {
                     double mass_b = masses[b];
-                    if (mass_b <= 0.0) continue;
+                    if (!workspace.ActiveMask[b]) continue;
 
                     double3 displacement_ab = baryPositions[b] - baryPositions[a];
                     double r2_ab = math.lengthsq(displacement_ab);
+                    if (!IsFinite(r2_ab)) continue;
                     if (r2_ab < minDistSq) r2_ab = minDistSq;
 
                     double invR = 1.0 / math.sqrt(r2_ab);
@@ -273,7 +309,7 @@ public static class SpacePhysics3D
             // 4) Final sum: aNewton + 1PN corrections
             for (int a = 0; a < bodyCount; a++)
             {
-                if (masses[a] <= 0.0)
+                if (!workspace.ActiveMask[a])
                 {
                     outBarycentricAccelerations[a] = double3.zero;
                     continue;
@@ -294,26 +330,6 @@ public static class SpacePhysics3D
                     accelApprox[a] = outBarycentricAccelerations[a];
             }
         }
-
-#if UNITY_EDITOR
-        {
-            double totalMass = 0.0;
-            double3 residual = double3.zero;
-
-            for (int a = 0; a < bodyCount; a++)
-            {
-                double m = masses[a];
-                if (m <= 0.0) continue;
-
-                totalMass += m;
-                residual += m * outBarycentricAccelerations[a];
-            }
-
-            // if (totalMass > 0.0 && math.length(residual) > 1e-10)
-            //     Debug.LogWarning($"[SpacePhysics3D] COM accel residual: {residual}");
-        }
-#endif
-
     }
 
     // --- Barycenter methods ---
@@ -338,7 +354,7 @@ public static class SpacePhysics3D
         for (int a = 0; a < positions.Length; a++)
         {
             double mass_a = masses[a];
-            if (mass_a <= 0.0) continue;
+            if (!IsValidMass(mass_a) || !IsFinite(positions[a]) || !IsFinite(velocities[a])) continue;
 
             weightedVelocities += velocities[a] * mass_a;
             weightedPositions += positions[a] * mass_a;
@@ -389,7 +405,7 @@ public static class SpacePhysics3D
         for (int a = 0; a < numOfBodies; a++)
         {
             double m = masses[a];
-            if (m <= 0.0) continue;
+            if (!IsValidMass(m)) continue;
 
             totalMass += m;
             aCM += m * accelerations[a];
@@ -401,7 +417,8 @@ public static class SpacePhysics3D
 
         for (int a = 0; a < numOfBodies; a++)
         {
-            if (masses[a] <= 0.0) continue;
+            if (!IsValidMass(masses[a])) continue;
+
             accelerations[a] -= aCM;
         }
     }
@@ -417,4 +434,10 @@ public static class SpacePhysics3D
         }
         return true;
     }
+
+    static bool IsValidMass(double mass) => mass > 0.0 && IsFinite(mass);
+
+    static bool IsFinite(double3 value) => math.all(math.isfinite(value));
+
+    static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
 }

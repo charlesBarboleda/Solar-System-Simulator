@@ -19,8 +19,8 @@ public class NBodyManager : MonoBehaviour
 
     private readonly SpacePhysics3D.Workspace_EIH _workspaceEIH = new();
 
+    [SerializeField] GravityModel _gravityModel = GravityModel.EIH;
     [SerializeField] AccelBMode _accelBMode = AccelBMode.FixedPointIterated;
-    [SerializeField] bool _useNewtonian = false;
 
     [Header("Debugging")]
     [SerializeField] bool _debug = false;
@@ -128,68 +128,67 @@ public class NBodyManager : MonoBehaviour
 
     // --- Private Helpers ---
 
-    // Main Integrator (velocity-Verlet for Newtonian, Heun/RK2 for EIH)
+    // Main Integrator
     void IntegrateOneStep(double dt, int numOfBodies)
     {
-        if (_useNewtonian)
+        switch (_gravityModel)
         {
-            // 1) Acceleration of each body using base Newtonian (symmetric sweep)
-            SpacePhysics3D.NBodyAccelVectorFrom(_masses, _positions, _accelerations);
+            case GravityModel.Newtonian: // velocity-Verlet leapfrog half-step variant for Newtonian
+                SpacePhysics3D.NBodyAccelVectorFrom(_masses, _positions, _accelerations);
 
-            // 2) Half-step velocity of each body "a" using its velocity & acceleration
-            for (int a = 0; a < numOfBodies; a++)
-                _velocityHalf[a] = (_masses[a] <= 0.0) ? double3.zero : _velocities[a] + 0.5 * _accelerations[a] * dt;
+                for (int a = 0; a < numOfBodies; a++)
+                    _velocityHalf[a] = (_masses[a] <= 0.0) ? double3.zero : _velocities[a] + 0.5 * _accelerations[a] * dt;
 
-            // 3) Predicted position of each body "a" using its half-step velocity & position
-            for (int a = 0; a < numOfBodies; a++)
-                _positionsNext[a] = (_masses[a] <= 0.0) ? double3.zero : _positions[a] + _velocityHalf[a] * dt;
+                for (int a = 0; a < numOfBodies; a++)
+                    _positionsNext[a] = (_masses[a] <= 0.0) ? double3.zero : _positions[a] + _velocityHalf[a] * dt;
 
-            // 4) Predicted acceleration of each body "a" using its predicted position
-            SpacePhysics3D.NBodyAccelVectorFrom(_masses, _positionsNext, _accelerationsNext);
+                SpacePhysics3D.NBodyAccelVectorFrom(_masses, _positionsNext, _accelerationsNext);
 
-            // 5) Predicted velocities using half-step velocities & predicted accelerations
-            for (int a = 0; a < numOfBodies; a++)
-                _velocities[a] = (_masses[a] <= 0.0) ? double3.zero : _velocityHalf[a] + 0.5 * _accelerationsNext[a] * dt;
+                for (int a = 0; a < numOfBodies; a++)
+                    _velocities[a] = (_masses[a] <= 0.0) ? double3.zero : _velocityHalf[a] + 0.5 * _accelerationsNext[a] * dt;
 
-            // 6) Commit and update positions 
-            (_positions, _positionsNext) = (_positionsNext, _positions);
-        }
-        else
-        {
-            // Heun/RK2 for velocity-dependent acceleration (EIH)
-            SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positions, _velocities, _masses, _accelerations, _workspaceEIH, _accelBMode);
+                (_positions, _positionsNext) = (_positionsNext, _positions);
 
-            for (int a = 0; a < numOfBodies; a++)
-            {
-                if (_masses[a] <= 0.0)
+                break;
+
+            case GravityModel.EIH: // Heun/RK2 for EIH
+
+                SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positions, _velocities, _masses, _accelerations, _workspaceEIH, _accelBMode);
+
+                for (int a = 0; a < numOfBodies; a++)
                 {
-                    _velocityHalf[a] = double3.zero;
-                    _positionsNext[a] = double3.zero;
-                    continue;
+                    if (_masses[a] <= 0.0)
+                    {
+                        _velocityHalf[a] = double3.zero;
+                        _positionsNext[a] = double3.zero;
+                        continue;
+                    }
+
+                    double3 v0 = _velocities[a];
+                    _velocityHalf[a] = v0 + _accelerations[a] * dt; // predictor velocity
+                    _positionsNext[a] = _positions[a] + v0 * dt;     // predictor position
                 }
 
-                double3 v0 = _velocities[a];
-                _velocityHalf[a] = v0 + _accelerations[a] * dt; // predictor velocity
-                _positionsNext[a] = _positions[a] + v0 * dt;     // predictor position
-            }
+                SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positionsNext, _velocityHalf, _masses, _accelerationsNext, _workspaceEIH, _accelBMode);
 
-            SpacePhysics3D.Einstein_Infeld_Hoffmann_1PN(_positionsNext, _velocityHalf, _masses, _accelerationsNext, _workspaceEIH, _accelBMode);
-
-            for (int a = 0; a < numOfBodies; a++)
-            {
-                if (_masses[a] <= 0.0)
+                for (int a = 0; a < numOfBodies; a++)
                 {
-                    _velocities[a] = double3.zero;
-                    _positions[a] = double3.zero;
-                    continue;
+                    if (_masses[a] <= 0.0)
+                    {
+                        _velocities[a] = double3.zero;
+                        _positions[a] = double3.zero;
+                        continue;
+                    }
+
+                    double3 v0 = _velocities[a];
+                    double3 v1 = _velocityHalf[a];
+
+                    _velocities[a] = v0 + 0.5 * (_accelerations[a] + _accelerationsNext[a]) * dt;
+                    _positions[a] = _positions[a] + 0.5 * (v0 + v1) * dt;
                 }
 
-                double3 v0 = _velocities[a];
-                double3 v1 = _velocityHalf[a];
+                break;
 
-                _velocities[a] = v0 + 0.5 * (_accelerations[a] + _accelerationsNext[a]) * dt;
-                _positions[a] = _positions[a] + 0.5 * (v0 + v1) * dt;
-            }
         }
     }
 

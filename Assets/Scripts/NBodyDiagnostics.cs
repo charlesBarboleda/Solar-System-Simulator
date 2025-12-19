@@ -5,9 +5,10 @@ using UnityEngine;
 
 public static class NBodyDiagnostics
 {
-    static double _orbitTimeSimDays;
-    static bool _waitingToExit;
-    static double3 _initEarthRel;
+    struct Workspace_Dianosis
+    {
+
+    }
     static int _orbits;
     static bool _hasPrevRdot;
     static double _prevRdot;
@@ -24,11 +25,8 @@ public static class NBodyDiagnostics
 
     public static void InitEarthDiagnostics(int earth, int sun, ReadOnlySpan<double3> positions)
     {
-        _initEarthRel = positions[earth] - positions[sun];
-        _orbitTimeSimDays = 0.0;
         _rMin = double.PositiveInfinity;
         _rMax = 0.0;
-        _waitingToExit = true;
         _orbits = 0;
     }
 
