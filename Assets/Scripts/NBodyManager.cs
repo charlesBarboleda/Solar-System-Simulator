@@ -7,6 +7,7 @@ public class NBodyManager : MonoBehaviour
     public static NBodyManager Instance { get; private set; }
 
     public AstronomicalObject[] SystemBodies;
+    double G;
 
     [Header("Authorative Object States")]
     string[] _names;
@@ -35,7 +36,6 @@ public class NBodyManager : MonoBehaviour
 
 
 
-
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -50,6 +50,7 @@ public class NBodyManager : MonoBehaviour
 
     void Start()
     {
+        G = PhysicsConstants.UNITY_G;
         if (SystemBodies == null) return;
 
         int numOfBodies = SystemBodies.Length;
@@ -76,9 +77,9 @@ public class NBodyManager : MonoBehaviour
 
             SnapshotSystemState();
 
-            if (_earthIndex >= 0 && _sunIndex >= 0) SystemDiagnostics.InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
+            if (_earthIndex >= 0 && _sunIndex >= 0) NBodyDiagnostics.InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
             else _diagnostics = false;
-            if (_diagnostics) SystemDiagnostics.InitSystemInvariantBaseline(_masses, _positions, _velocities);
+            if (_diagnostics) NBodyDiagnostics.InitSystemInvariantBaseline(_masses, _positions, _velocities, G);
         }
     }
 
@@ -109,7 +110,7 @@ public class NBodyManager : MonoBehaviour
             IntegrateOneStep(dtStep, numOfBodies);
             if (_diagnostics)
             {
-                SystemDiagnostics.Diagnostics_OrbitByPeriapsis(
+                NBodyDiagnostics.Diagnostics_OrbitByPeriapsis(
                     _earthIndex,
                     _sunIndex,
                     dtStep,
@@ -117,7 +118,7 @@ public class NBodyManager : MonoBehaviour
                     _velocities,
                     PhysicsConstants.UNITY_G * (_masses[_sunIndex] + _masses[_earthIndex]));
 
-                SystemDiagnostics.StepSystemDiagnostics(dtStep, _diagEveryNSteps, _masses, _positions, _velocities);
+                NBodyDiagnostics.StepSystemDiagnostics(dtStep, _diagEveryNSteps, _masses, _positions, _velocities, G);
             }
         }
 

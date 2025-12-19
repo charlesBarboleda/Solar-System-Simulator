@@ -112,8 +112,8 @@ public static class SpacePhysics3D
         // Minimum-distance handling (compare squared-to-squared)
         double minDistSq = PhysicsConstants.UNITY_MIN_DISTANCE * PhysicsConstants.UNITY_MIN_DISTANCE;
 
-        // 1) Barycenter + barycentric vectors
-        GetBarycenterVectorsOf(velocities, positions, masses, out double3 barycenterPosition, out double3 barycenterVelocity);
+        // 1) Barycenter vectors
+        GetBarycenterVectorsFrom(velocities, positions, masses, out double3 barycenterPosition, out double3 barycenterVelocity);
 
         for (int a = 0; a < bodyCount; a++)
         {
@@ -277,7 +277,7 @@ public static class SpacePhysics3D
                                                + workspace.FourthTermSum[a];
             }
 
-            EnforceZeroCOMAcceleration(outBarycentricAccelerations, masses);
+            EnforceZeroBaryAcceleration(outBarycentricAccelerations, masses);
 
             // 5) Feed back for next iteration if using iterated mode
             if (accelBMode == AccelBMode.FixedPointIterated && iter < iterations - 1)
@@ -308,8 +308,8 @@ public static class SpacePhysics3D
 
     }
 
-    // --- Barycenter methods (unchanged behavior, but keep them correct and tight) ---
-    public static void GetBarycenterVectorsOf(
+    // --- Barycenter methods ---
+    public static void GetBarycenterVectorsFrom(
         ReadOnlySpan<double3> velocities,
         ReadOnlySpan<double3> positions,
         ReadOnlySpan<double> masses,
@@ -351,17 +351,34 @@ public static class SpacePhysics3D
         barycenterVelocity = weightedVelocities / totalMassKg;
     }
 
+    public static void GetBarycenterVectorsFrom(
+        double totalMassKg,
+        double3 sumWeightedPos,
+        double3 sumWeightedVel,
+        out double3 barycenterPosition,
+        out double3 barycenterVelocity
+    )
+    {
+        if (totalMassKg <= 0.0)
+        {
+            barycenterPosition = double3.zero;
+            barycenterVelocity = double3.zero;
+            return;
+        }
 
+        barycenterPosition = sumWeightedPos / totalMassKg;
+        barycenterVelocity = sumWeightedVel / totalMassKg;
+    }
 
 
     // --- Private helpers ---
-    static void EnforceZeroCOMAcceleration(Span<double3> accelerations, ReadOnlySpan<double> masses)
+    static void EnforceZeroBaryAcceleration(Span<double3> accelerations, ReadOnlySpan<double> masses)
     {
         double totalMass = 0.0;
         double3 aCM = double3.zero;
 
-        int n = accelerations.Length;
-        for (int a = 0; a < n; a++)
+        int numOfBodies = accelerations.Length;
+        for (int a = 0; a < numOfBodies; a++)
         {
             double m = masses[a];
             if (m <= 0.0) continue;
@@ -374,7 +391,7 @@ public static class SpacePhysics3D
 
         aCM /= totalMass;
 
-        for (int a = 0; a < n; a++)
+        for (int a = 0; a < numOfBodies; a++)
         {
             if (masses[a] <= 0.0) continue;
             accelerations[a] -= aCM;

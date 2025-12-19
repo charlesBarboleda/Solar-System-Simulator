@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Mathematics;
+using System;
 
 public class AstronomicalObject : MonoBehaviour
 {
@@ -20,33 +21,50 @@ public class AstronomicalObject : MonoBehaviour
         Position = (double3)(float3)transform.position; // initial sync from scene
         Velocity = double3.zero;
 
+        double mass_Sun = PhysicsConstants.REAL_SOLAR_MASS_KG;
+        double mass_Earth = PhysicsConstants.REAL_EARTH_MASS_KG;
+
+        double unityEarthToSun = PhysicsConstants.ToUnityUnitsFromAU(PhysicsConstants.REAL_EARTH_SUN_DISTANCE_AU);
+
+        double3 rVec = new(unityEarthToSun, 0, 0);
+        double r = math.length(rVec);
+
+        double totalGMass = PhysicsConstants.UNITY_G * (mass_Sun + mass_Earth);        // UU^3/day^2
+        double vRel = math.sqrt(totalGMass / r);                       // UU/day
+
+        double3 tHat = math.normalize(new double3(0, 0, 1));   // choose orbit plane
+
+        double3 vRelVec = vRel * tHat;                         // Earth relative to Sun
+
+        double invTot = 1.0 / (mass_Sun + mass_Earth);
+
+        // Positions (COM at origin)
+        double3 pos_Sun = -mass_Earth * invTot * rVec;
+        double3 pos_Earth = mass_Sun * invTot * rVec;
+
+        // Velocities (total momentum = 0)
+        double3 vel_Sun = -mass_Earth * invTot * vRelVec;
+        double3 vel_Earth = mass_Sun * invTot * vRelVec;
+
         if (Name == "Sun" && !Initialized && !_sunInitialized)
         {
-            Position = new double3(0, 0, 0);
-
-            Velocity = new double3(0, 0, 0);
 
             float sunDiameterUnity = (float)PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_SUN_DIAMETER_M);
             transform.localScale = Vector3.one * sunDiameterUnity;
 
-            MassKg = PhysicsConstants.REAL_SOLAR_MASS_KG;
+            Position = pos_Sun;
+            Velocity = vel_Sun;
 
             UpdateVisualPosition();
             _sunInitialized = true;
         }
         else if (Name == "Earth" && !Initialized && !_earthInitialized)
         {
-            double unityEarthToSun = PhysicsConstants.ToUnityUnitsFromAU(PhysicsConstants.REAL_EARTH_SUN_DISTANCE_AU);
-            Position = new double3(unityEarthToSun, 0, 0);
-
-            double GM = PhysicsConstants.UNITY_G * PhysicsConstants.REAL_SOLAR_MASS_KG;
-            double v = math.sqrt(GM / unityEarthToSun); // UnityUnits / day
-            Velocity = new double3(0.0, 0.0, v);
-
             float earthDiameterUnity = (float)PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_EARTH_DIAMETER_M);
             transform.localScale = Vector3.one * earthDiameterUnity;
 
-            MassKg = PhysicsConstants.REAL_EARTH_MASS_KG;
+            Position = pos_Earth;
+            Velocity = vel_Earth;
 
             UpdateVisualPosition();
             _earthInitialized = true;
