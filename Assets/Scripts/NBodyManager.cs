@@ -216,9 +216,9 @@ public class NBodyManager : MonoBehaviour
             Debug.LogWarning($"[NBodyManager] IsValidAstronomicalBody(): Invalid or Null AstronomicalObject.");
             return false;
         }
-        if (body.MassKg <= 0.0)
+        if (body.Data.Mass <= 0.0)
         {
-            Debug.LogWarning($"[NBodyManager] IsValidAstronomicalBody(): {body.Name} must have MassKg > 0.0");
+            Debug.LogWarning($"[NBodyManager] IsValidAstronomicalBody(): {body.Data.Name} must have Mass > 0.0");
             return false;
         }
 
@@ -241,8 +241,8 @@ public class NBodyManager : MonoBehaviour
                 continue;
             }
 
-            _names[a] = body.Name;
-            _masses[a] = body.MassKg;
+            _names[a] = body.Data.Name;
+            _masses[a] = body.Data.Mass;
             _positions[a] = body.Position;
             _velocities[a] = body.Velocity;
         }
@@ -254,7 +254,7 @@ public class NBodyManager : MonoBehaviour
         {
             AstronomicalObject body = bodies[a];
             if (body == null) continue;
-            if (string.Equals(body.Name, targetName, StringComparison.Ordinal)) return a;
+            if (string.Equals(body.Data.Name, targetName, StringComparison.Ordinal)) return a;
 
         }
         return -1; // not found

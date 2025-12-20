@@ -349,7 +349,7 @@ public static class SpacePhysics3D
 
         double3 weightedVelocities = double3.zero;
         double3 weightedPositions = double3.zero;
-        double totalMassKg = 0.0;
+        double totalMass = 0.0;
 
         for (int a = 0; a < positions.Length; a++)
         {
@@ -358,40 +358,40 @@ public static class SpacePhysics3D
 
             weightedVelocities += velocities[a] * mass_a;
             weightedPositions += positions[a] * mass_a;
-            totalMassKg += mass_a;
+            totalMass += mass_a;
         }
 
-        if (totalMassKg <= 0.0)
+        if (totalMass <= 0.0)
         {
 #if UNITY_EDITOR
-            Debug.LogError("[SpacePhysics3D] GetBarycenterVectorsOf(): totalMassKg must be > 0");
+            Debug.LogError("[SpacePhysics3D] GetBarycenterVectorsOf(): totalMass must be > 0");
 #endif
             barycenterPosition = double3.zero;
             barycenterVelocity = double3.zero;
             return;
         }
 
-        barycenterPosition = weightedPositions / totalMassKg;
-        barycenterVelocity = weightedVelocities / totalMassKg;
+        barycenterPosition = weightedPositions / totalMass;
+        barycenterVelocity = weightedVelocities / totalMass;
     }
 
     public static void GetBarycenterVectorsFrom(
-        double totalMassKg,
+        double totalMass,
         double3 sumWeightedPos,
         double3 sumWeightedVel,
         out double3 barycenterPosition,
         out double3 barycenterVelocity
     )
     {
-        if (totalMassKg <= 0.0)
+        if (totalMass <= 0.0)
         {
             barycenterPosition = double3.zero;
             barycenterVelocity = double3.zero;
             return;
         }
 
-        barycenterPosition = sumWeightedPos / totalMassKg;
-        barycenterVelocity = sumWeightedVel / totalMassKg;
+        barycenterPosition = sumWeightedPos / totalMass;
+        barycenterVelocity = sumWeightedVel / totalMass;
     }
 
 
