@@ -23,4 +23,4 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
-  VisualAppearance: {fileID: 0}
+  VisualAppearance: {fileID: 2100000, guid: 8a5995a14cffc46c9946c25b14f7c26c, type: 2}
