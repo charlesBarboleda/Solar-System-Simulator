@@ -43,6 +43,11 @@ public static class PhysicsConstants
     public const double REAL_URANUS_SUN_DISTANCE_AU = 19.2;
     public const double REAL_NEPTUNE_SUN_DISTANCE_AU = 30;
 
+    // -- Real-world miscellaneous measurements
+    public const double REAL_SATURN_MIN_RING_DISTANCE_FROM_CENTER_M = 71708500;
+    public const double REAL_SATURN_MAX_RING_DISTANCE_FROM_CENTER_M = 140180000;
+
+
     // -- Real-world planetary body mass in kg
     public const double REAL_SOLAR_MASS_KG = REAL_KG_PER_SOLAR_MASS;
     public const double REAL_EARTH_MASS_KG = 5.9722e24;

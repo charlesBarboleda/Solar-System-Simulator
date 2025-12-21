@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Saturn
   Mass: 5.6834e+26
-  Diameter: 116464000
+  Diameter: 118482000
   StartVelocity:
     x: 0
     y: 0
