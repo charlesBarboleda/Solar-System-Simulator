@@ -6,6 +6,8 @@ public class BodyData : ScriptableObject
 {
     public string Name;
 
+    public BodyType Type;
+
     [Tooltip("Mass in KILOGRAMS")]
     public double Mass;
 

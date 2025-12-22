@@ -117,6 +117,7 @@ MonoBehaviour:
   _meshRenderer: {fileID: 2673229607728045120}
   _ringMesh: {fileID: 4300000, guid: 8aa4a8814028a42fea37772e41f89781, type: 3}
   _ring: {fileID: 9182944174656608284}
+  _verticesTest: {fileID: 0}
 --- !u!1 &9182944174656608284
 GameObject:
   m_ObjectHideFlags: 0
@@ -129,7 +130,7 @@ GameObject:
   - component: {fileID: 2713546579845754413}
   - component: {fileID: 2870454410981310956}
   m_Layer: 0
-  m_Name: Ring
+  m_Name: VisualRing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -145,7 +146,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.3072958, y: 1.3072958, z: 1.3072958}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 5700916059668748313}

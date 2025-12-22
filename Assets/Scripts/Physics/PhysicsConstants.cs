@@ -65,4 +65,14 @@ public static class PhysicsConstants
     // km -> m -> Unity units
     public static double ToUnityUnitsFromKM(double km) => (km * 1000.0) / UNITY_METERS_PER_UNIT;
 
+    // Unity units -> m -> km
+    public static double ToKMFromUnityUnits(double unityUnits) => (unityUnits * UNITY_METERS_PER_UNIT) / 1000.0;
+
+    // Unity units -> m 
+    public static double ToMFromUnityUnits(double unityUnits) => unityUnits * UNITY_METERS_PER_UNIT;
+
+    // Unity units -> AU
+    public static double ToAUFromUnityUnits(double unityUnits) => unityUnits / UNITY_UNITS_PER_AU;
+
+
 }

@@ -1,6 +1,4 @@
-using System;
 using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,10 +8,15 @@ public class VerticesTest : MonoBehaviour
     [SerializeField] Mesh _ringMesh;
     [SerializeField] Transform _ringGameObject;
     Vector3[] _initVertices, _vertices, _outerRingVertices;
-    float _maxSqrMagnitude;
+    float _maxDistance;
     int[] _initTriangles, _triangles;
 
-    double _fRingDistance => PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_SATURN_MAX_RING_DISTANCE_FROM_CENTER_M);
+    double _maxRingDistance => PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_SATURN_MAX_RING_DISTANCE_FROM_CENTER_M);
+    double _minRingDistance => PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_SATURN_MIN_RING_DISTANCE_FROM_CENTER_M);
+
+    [SerializeField] private Renderer saturnRenderer;
+    [SerializeField] private Renderer ringRenderer;
+
 
 
     void Start()
@@ -28,51 +31,66 @@ public class VerticesTest : MonoBehaviour
             _initTriangles = _ringMesh.triangles;
             _triangles = _ringMesh.triangles;
 
-            _maxSqrMagnitude = 0f;
+            _maxDistance = 0f;
+            Debug.Log($"Target Min Distance: {_minRingDistance}");
+            Debug.Log($"Target Max Distance: {_maxRingDistance}");
 
-            Debug.Log($"Target SqrMag (F-RING): {_fRingDistance}");
-
-            // for (int i = 0; i < _triangles.Length; i++)
-            // {
-            //     _triangles[i].
-            // }
         }
     }
     void Update()
     {
-        if (Keyboard.current.dKey.wasPressedThisFrame)
-        {
-            for (int i = 0; i < _vertices.Length; i++)
-            {
-                _maxSqrMagnitude = math.max(_vertices[i].sqrMagnitude, _maxSqrMagnitude);
-                if (_maxSqrMagnitude - _vertices[i].sqrMagnitude <= 1e-4)
-                {
-                    // Debug.Log($"Found Max Vertex At: {_vertices[i]} || SqrMag: {_vertices[i].sqrMagnitude}");
-                    // Debug.DrawLine(_ringGameObject.position, _vertices[i], Color.red, Mathf.Infinity);
-                    float multiplier = Mathf.Sqrt((float)_fRingDistance) / _vertices[i].x;
 
-                    _vertices[i].x *= multiplier;
-                    _vertices[i].z *= multiplier;
-                }
+        if (Keyboard.current.zKey.wasPressedThisFrame)
+        {
+            float rMinUU;
+            float rMaxUU;
+
+            var v = _ringMesh.vertices;
+
+            // Use the mesh bounds center as the ring center in local space, then convert to world.
+            Vector3 centerWorld = _ringGameObject.TransformPoint(_ringMesh.bounds.center);
+
+            rMinUU = float.PositiveInfinity;
+            rMaxUU = 0f;
+
+            for (int i = 0; i < v.Length; i++)
+            {
+                Vector3 pWorld = _ringGameObject.TransformPoint(v[i]);
+
+                float dx = pWorld.x - centerWorld.x;
+                float dz = pWorld.z - centerWorld.z;
+
+                float r = Mathf.Sqrt(dx * dx + dz * dz);
+
+                if (r < rMinUU) rMinUU = r;
+                if (r > rMaxUU) rMaxUU = r;
             }
 
-            Debug.Log($"Max Measured SqrMag: {_maxSqrMagnitude}");
-
-            _ringMesh.vertices = _vertices;
-            _ringMesh.RecalculateBounds();
-
-            _vertices = _ringMesh.vertices;
+            Debug.Log($"rMin: {rMinUU} || rMax: {rMaxUU}");
         }
-
-        if (Keyboard.current.aKey.wasPressedThisFrame)
-        {
-            Debug.Log($"Reset vertices to original");
-
-            _ringMesh.vertices = _initVertices;
-            _ringMesh.RecalculateBounds();
-            _vertices = _ringMesh.vertices;
-        }
-
     }
+
+    public void LogRadii()
+    {
+        // Saturn world radius (assuming it's roughly spherical)
+        float saturnWorldRadius = saturnRenderer.bounds.extents.x;
+
+        // Ring inner/outer world radii from bounds (approx, but good first check)
+        // For a flat ring, extents.x is roughly outer radius IF centered properly.
+        float ringOuterApprox = ringRenderer.bounds.extents.x;
+
+        Debug.Log($"Saturn world radius: {saturnWorldRadius}");
+        Debug.Log($"Saturn target world radius: {PhysicsConstants.ToUnityUnitsFromKM(58232)}");
+        Debug.Log($"Ring outer approx radius: {ringOuterApprox}");
+        Debug.Log($"Outer/Planet ratio (approx): {ringOuterApprox / saturnWorldRadius}");
+    }
+
+    // void OnDrawGizmos()
+    // {
+    //     if (!Application.isPlaying || _vertices == null) return;
+    //     Gizmos.color = Color.red;
+    //     for (int i = 0; i < _vertices.Length; i++)
+    //         Gizmos.DrawWireSphere(_vertices[i], 0.1f);
+    // }
 
 }
