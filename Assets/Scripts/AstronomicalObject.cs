@@ -67,7 +67,12 @@ public class AstronomicalObject : MonoBehaviour
             Initialized = true;
         }
 
-        // Saturn temp init
+        // Temp init
+        // SaturnTempInit();
+    }
+
+    void SaturnTempInit()
+    {
         if (_ringMesh != null || _ring != null)
         {
             double targetMin = PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_SATURN_MIN_RING_DISTANCE_FROM_CENTER_M);
@@ -100,6 +105,7 @@ public class AstronomicalObject : MonoBehaviour
             Debug.Log($"New World-Space Max Radius: {newWorldMaxRadius}");
 
         }
+
     }
 
     static double GetLocalMinRadius(Mesh mesh)
