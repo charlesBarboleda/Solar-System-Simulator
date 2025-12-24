@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Sun
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Sun
+  Type: 2
   Mass: 1.98847e+30
   Diameter: 695700000
   StartVelocity:

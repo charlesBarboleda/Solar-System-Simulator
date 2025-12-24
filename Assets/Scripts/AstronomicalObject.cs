@@ -20,7 +20,11 @@ public class AstronomicalObject : MonoBehaviour
 
     void Awake()
     {
-        if (_meshRenderer == null) TryGetComponent(out _meshRenderer);
+        if (_meshRenderer == null || !TryGetComponent(out _meshRenderer))
+        {
+            Debug.LogError($"No MeshRenderer component found on {name}. Cannot Initialize.");
+            return;
+        }
         Initialize();
     }
 
@@ -61,6 +65,14 @@ public class AstronomicalObject : MonoBehaviour
             // Init Material/Appearance
             if (Data.VisualAppearance != null && _meshRenderer != null) _meshRenderer.material = Data.VisualAppearance;
             else Debug.LogWarning($"No material assigned for {Data.Name}");
+
+            // Init Particles
+            switch (Data.Type)
+            {
+                case BodyType.Star:
+
+                    break;
+            }
 
             UpdateVisualPosition();
 
