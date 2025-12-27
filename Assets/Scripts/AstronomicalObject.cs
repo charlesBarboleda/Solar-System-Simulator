@@ -1,22 +1,11 @@
 using UnityEngine;
 using Unity.Mathematics;
-using UnityEngine.Rendering;
-using System;
-using System.Drawing;
-using Mono.Cecil.Cil;
-using Unity.VisualScripting;
-using UnityEngine.SocialPlatforms;
 
-public class AstronomicalObject : MonoBehaviour
+public class AstronomicalObject : SimulationObject
 {
     public BodyData Data;
-
-    public double3 Velocity;
-    public double3 Position;
-
     public bool Initialized = false;
     [SerializeField] MeshRenderer _meshRenderer;
-
 
     void Awake()
     {
@@ -28,16 +17,6 @@ public class AstronomicalObject : MonoBehaviour
         Initialize();
     }
 
-    public void UpdateVisualPosition()
-    {
-        if (!math.all(math.isfinite(Position)))
-        {
-            Debug.LogError($"{name}: Invalid Position in SyncPosition: {Position}");
-            return; // prevents writing NaN into Transform 
-        }
-
-        transform.position = (Vector3)(float3)Position;
-    }
 
     void Initialize()
     {
@@ -74,11 +53,11 @@ public class AstronomicalObject : MonoBehaviour
                     break;
             }
 
-            UpdateVisualPosition();
+            UpdateTransform();
 
             Initialized = true;
         }
     }
-
 }
+
 

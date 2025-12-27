@@ -1,8 +1,9 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Mathematics;
 
-public class MovementController : MonoBehaviour
+public class MovementController : SimulationObject
 {
     public float CustomSpeedKmPerSec = 10f;
 
@@ -22,6 +23,11 @@ public class MovementController : MonoBehaviour
         _verticalMoveAction = InputSystem.actions.FindAction("MoveUpDown");
         _moveAction?.Enable();
         _verticalMoveAction?.Enable();
+
+        Position = (double3)(float3)transform.position;
+        RenderSpace.SetAnchor(this);
+        RenderSpace.SetOrigin(Position);
+        UpdateTransform();
     }
 
     void Update()
@@ -60,6 +66,7 @@ public class MovementController : MonoBehaviour
         // Convert km/s -> UnityUnits/s
         float speedUnitsPerSec = (kmPerUnit > 0f) ? (_currentSpeedKmPerSec / kmPerUnit) : 0f;
 
-        transform.position += speedUnitsPerSec * Time.deltaTime * moveDirection.normalized;
+        Position += (double3)(float3)(speedUnitsPerSec * Time.deltaTime * moveDirection.normalized);
     }
+
 }

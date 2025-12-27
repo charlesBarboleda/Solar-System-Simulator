@@ -33,7 +33,9 @@ public class NBodyManager : MonoBehaviour
     [SerializeField] bool _diagnostics = false;
     [SerializeField] int _diagEveryNSteps = 50;
 
-
+    [Header("Rendering Settings")]
+    public SimulationObject AnchorObject;
+    double3 _anchorPosition;
 
 
     void Awake()
@@ -201,13 +203,13 @@ public class NBodyManager : MonoBehaviour
             if (_masses[a] <= 0.0) continue;
 
             var body = SystemBodies[a];
-            if (body == null) continue; // optional: log once at init instead
+            if (body == null) continue;
 
             body.Position = positions[a];
             body.Velocity = velocities[a];
-            body.UpdateVisualPosition();
         }
     }
+
 
     bool IsValidAstronomicalBody(AstronomicalObject body)
     {
