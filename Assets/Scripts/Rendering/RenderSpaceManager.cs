@@ -4,17 +4,17 @@ using UnityEngine;
 public class RenderSpaceManager : MonoBehaviour
 {
     SimulationObject AnchorObject => RenderSpace.Anchor;
-    SimulationObject[] _simulationObjects;
+    public SimulationObject[] SimulationObjects;
 
     void Start()
     {
         // Find all SimulationObjects in the scene
-        _simulationObjects = FindObjectsByType<SimulationObject>(FindObjectsSortMode.None);
+        SimulationObjects = FindObjectsByType<SimulationObject>(FindObjectsSortMode.None);
     }
 
     void LateUpdate()
     {
-        if (AnchorObject == null || _simulationObjects == null || _simulationObjects.Length == 0)
+        if (AnchorObject == null || SimulationObjects == null || SimulationObjects.Length == 0)
             return;
 
         double3 delta = AnchorObject.Position - RenderSpace.Origin;
@@ -25,9 +25,9 @@ public class RenderSpaceManager : MonoBehaviour
 
         }
 
-        for (int i = 0; i < _simulationObjects.Length; i++)
+        for (int i = 0; i < SimulationObjects.Length; i++)
         {
-            _simulationObjects[i].UpdateTransform();
+            SimulationObjects[i].UpdateTransform();
         }
     }
 }

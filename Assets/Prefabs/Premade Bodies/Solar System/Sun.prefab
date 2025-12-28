@@ -4860,7 +4860,6 @@ GameObject:
   - component: {fileID: 6339607701970248752}
   - component: {fileID: 672657889159871701}
   - component: {fileID: 5457047973709925531}
-  - component: {fileID: 2455594971189824321}
   m_Layer: 0
   m_Name: Sun
   m_TagString: Untagged
@@ -4955,41 +4954,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
+  _authoritativePosition:
+    x: 0
+    y: 0
+    z: 0
+  _localPosition: {x: 0, y: 0, z: 0}
   Data: {fileID: 11400000, guid: 01453d21cef8dd749b485437582b602d, type: 2}
-  Velocity:
-    x: 0
-    y: 0
-    z: 0
-  Position:
-    x: 0
-    y: 0
-    z: 0
   Initialized: 0
   _meshRenderer: {fileID: 672657889159871701}
---- !u!205 &2455594971189824321
-LODGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2689115849984590809}
-  serializedVersion: 2
-  m_LocalReferencePoint: {x: 0, y: 0, z: 0}
-  m_Size: 1
-  m_FadeMode: 0
-  m_AnimateCrossFading: 0
-  m_LastLODIsBillboard: 0
-  m_LODs:
-  - screenRelativeHeight: 0.6
-    fadeTransitionWidth: 0
-    renderers: []
-  - screenRelativeHeight: 0.3
-    fadeTransitionWidth: 0
-    renderers: []
-  - screenRelativeHeight: 0.1
-    fadeTransitionWidth: 0
-    renderers: []
-  m_Enabled: 1
 --- !u!1 &5543065772000279526
 GameObject:
   m_ObjectHideFlags: 0

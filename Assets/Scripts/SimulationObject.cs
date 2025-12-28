@@ -7,10 +7,11 @@ public class SimulationObject : MonoBehaviour, ISimulationObject
     public double3 Velocity { get; set; }
 
     [Header("Debugging Vectors")]
+    [SerializeField] bool _debugPositions = false;
     [SerializeField] double3 _authoritativePosition;
     [SerializeField] Vector3 _localPosition;
 
-    public virtual void UpdateTransform()
+    public void UpdateTransform()
     {
         if (!math.all(math.isfinite(Position)))
         {
@@ -21,9 +22,24 @@ public class SimulationObject : MonoBehaviour, ISimulationObject
         transform.position = (Vector3)(float3)RenderSpace.ToLocal(Position);
     }
 
+    public void TeleportTo(double3 newPosition)
+    {
+        Position = newPosition;
+        UpdateTransform();
+    }
+
+    public void TeleportTo(SimulationObject targetObject)
+    {
+        Position = targetObject.Position;
+        UpdateTransform();
+    }
+
     void LateUpdate()
     {
-        _authoritativePosition = Position;
-        _localPosition = (Vector3)(float3)RenderSpace.ToLocal(Position);
+        if (_debugPositions)
+        {
+            _authoritativePosition = Position;
+            _localPosition = (Vector3)(float3)RenderSpace.ToLocal(Position);
+        }
     }
 }

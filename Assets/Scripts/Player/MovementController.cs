@@ -14,7 +14,7 @@ public class MovementController : SimulationObject
     InputAction _verticalMoveAction;
 
     public float SpeedKmPerSec => _currentSpeedKmPerSec;
-    const double MAX_SPEED_KM_PER_SEC = (PhysicsConstants.REAL_SPEED_OF_LIGHT_M_PER_S / 1000.0) * 50; // Max speed is 50x speed of light
+    const double MAX_SPEED_KM_PER_SEC = (PhysicsConstants.REAL_SPEED_OF_LIGHT_M_PER_S / 1000.0) * 1000; // Max speed is 50x speed of light
     const float MIN_SPEED_KM_PER_SEC = 0f;
 
     void Start()
@@ -68,5 +68,6 @@ public class MovementController : SimulationObject
 
         Position += (double3)(float3)(speedUnitsPerSec * Time.deltaTime * moveDirection.normalized);
     }
+
 
 }
