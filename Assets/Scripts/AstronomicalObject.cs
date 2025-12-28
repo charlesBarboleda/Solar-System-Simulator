@@ -17,7 +17,6 @@ public class AstronomicalObject : SimulationObject
         Initialize();
     }
 
-
     void Initialize()
     {
         if (Data == null)
@@ -58,6 +57,7 @@ public class AstronomicalObject : SimulationObject
             Initialized = true;
         }
     }
+
 }
 
 
