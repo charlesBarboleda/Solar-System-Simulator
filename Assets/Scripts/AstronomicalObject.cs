@@ -32,32 +32,34 @@ public class AstronomicalObject : SimulationObject
             Velocity = Data.StartVelocity;
 
             // Init size
-            float UnityDiameter = (float)PhysicsConstants.ToUnityUnitsFromM(Data.Diameter);
-            if (UnityDiameter > 0) transform.localScale = Vector3.one * UnityDiameter;
-            else Debug.LogWarning($"Diameter is too small for {Data.Name}");
-
-            float baseDiameterLocal = _meshRenderer.localBounds.size.x;
-            float UniformScale = UnityDiameter / baseDiameterLocal;
-            _meshRenderer.transform.localScale = Vector3.one * UniformScale;
-
-            // Init Material/Appearance
-            if (Data.VisualAppearance != null && _meshRenderer != null) _meshRenderer.material = Data.VisualAppearance;
-            else Debug.LogWarning($"No material assigned for {Data.Name}");
-
-            // Init Particles
-            switch (Data.Type)
+            if (Data.Type == BodyType.Star || Data.Type == BodyType.Planet || Data.Type == BodyType.Moon)
             {
-                case BodyType.Star:
+                float UnityDiameter = (float)PhysicsConstants.ToUnityUnitsFromM(Data.Diameter);
+                if (UnityDiameter > 0) transform.localScale = Vector3.one * UnityDiameter;
+                else Debug.LogWarning($"Diameter is too small for {Data.Name}");
 
-                    break;
+                float baseDiameterLocal = _meshRenderer.localBounds.size.x;
+                float UniformScale = UnityDiameter / baseDiameterLocal;
+                _meshRenderer.transform.localScale = Vector3.one * UniformScale;
             }
-
-            UpdateTransform();
-
-            Initialized = true;
         }
-    }
 
+        // Init Material/Appearance
+        if (Data.VisualAppearance != null && _meshRenderer != null) _meshRenderer.material = Data.VisualAppearance;
+        else Debug.LogWarning($"No material assigned for {Data.Name}");
+
+        // Init Particles
+        switch (Data.Type)
+        {
+            case BodyType.Planet:
+                break;
+        }
+
+        UpdateTransform();
+
+        Initialized = true;
+    }
 }
+
 
 

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Venus
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Venus
+  Type: 0
   Mass: 4.867e+24
   Diameter: 12104000
   StartVelocity:
@@ -20,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 0
+    x: 450
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: 58cb1c700baee41b683c8a01e77d0619, type: 2}

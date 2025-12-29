@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Saturn
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Saturn
+  Type: 0
   Mass: 5.6834e+26
   Diameter: 118482000
   StartVelocity:
@@ -20,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 0
+    x: 300
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: 3b93dc7ab96024123abc24e04ca01e32, type: 2}

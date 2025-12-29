@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Mercury
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Mercury
+  Type: 0
   Mass: 3.3011e+23
   Diameter: 4879000
   StartVelocity:
@@ -20,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 0
+    x: 150
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: ab6161919f1cb4e40a36aa58f68a2c92, type: 2}

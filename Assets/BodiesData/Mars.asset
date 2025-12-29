@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Mars
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Mars
+  Type: 0
   Mass: 6.4171e+23
   Diameter: 6779000
   StartVelocity:
@@ -20,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 0
+    x: 100
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: 8a5995a14cffc46c9946c25b14f7c26c, type: 2}

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Earth
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Earth
+  Type: 0
   Mass: 5.9722e+24
   Diameter: 12742000
   StartVelocity:

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Uranus
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Uranus
+  Type: 0
   Mass: 8.681e+25
   Diameter: 50724000
   StartVelocity:
@@ -20,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 0
+    x: 400
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: 7d7d4e53bd1724858a2c2e5923290ccc, type: 2}

@@ -21,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 600000
+    x: 350
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: 1e14bb05546c54c5592fd7918d09db74, type: 2}

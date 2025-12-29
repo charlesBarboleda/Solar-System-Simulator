@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Jupiter
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Jupiter
+  Type: 0
   Mass: 1.8982e+27
   Diameter: 139820000
   StartVelocity:
@@ -20,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 0
+    x: 50
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: 957a2e19e0e14495fbce6467614c3e43, type: 2}

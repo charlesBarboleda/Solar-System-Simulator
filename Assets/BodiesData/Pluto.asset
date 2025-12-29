@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Pluto
   m_EditorClassIdentifier: Assembly-CSharp::BodyData
   Name: Pluto
+  Type: 0
   Mass: 1.3025e+22
   Diameter: 1188300
   StartVelocity:
@@ -20,7 +21,7 @@ MonoBehaviour:
     y: 0
     z: 0
   StartPosition:
-    x: 0
+    x: 250
     y: 0
     z: 0
   VisualAppearance: {fileID: 2100000, guid: 89e79642fd54940e0a8465ce67a29db3, type: 2}
