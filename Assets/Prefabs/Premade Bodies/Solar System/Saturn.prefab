@@ -104,20 +104,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
-  Data: {fileID: 11400000, guid: 7f4555d6fd7abb64d91dc69a2d28fa13, type: 2}
-  Velocity:
-    x: 100
-    y: 100
-    z: 100
-  Position:
+  _debugPositions: 0
+  _authoritativePosition:
     x: 0
     y: 0
     z: 0
+  _localPosition: {x: 0, y: 0, z: 0}
+  Data:
+    Name: Saturn
+    Type: 0
+    Mass: 5.6834e+26
+    Diameter: 118482000
+    StartVelocity:
+      x: 0
+      y: 0
+      z: 0
+    StartPosition:
+      x: 300
+      y: 0
+      z: 0
+    VisualAppearance: {fileID: 2100000, guid: 3b93dc7ab96024123abc24e04ca01e32, type: 2}
   Initialized: 0
   _meshRenderer: {fileID: 2673229607728045120}
-  _ringMesh: {fileID: 4300000, guid: 8aa4a8814028a42fea37772e41f89781, type: 3}
-  _ring: {fileID: 9182944174656608284}
-  _verticesTest: {fileID: 0}
 --- !u!1 &9182944174656608284
 GameObject:
   m_ObjectHideFlags: 0

@@ -17,9 +17,9 @@ public class RenderSpaceManager : MonoBehaviour
         if (AnchorObject == null || SimulationObjects == null || SimulationObjects.Length == 0)
             return;
 
-        double3 delta = AnchorObject.Position - RenderSpace.Origin;
+        double3 distanceBetween = AnchorObject.Position - RenderSpace.Origin;
 
-        if (math.length(delta) > RenderSpace.RenderingThresholdDistance)
+        if (math.length(distanceBetween) > RenderSpace.RenderingThresholdDistance)
         {
             RenderSpace.SetOrigin(AnchorObject.Position);
 

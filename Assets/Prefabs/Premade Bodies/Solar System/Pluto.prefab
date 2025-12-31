@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4027206140694857561}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 40, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -103,14 +103,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
-  Data: {fileID: 11400000, guid: 36613cad174b7ae4e82acb3401606706, type: 2}
-  Velocity:
-    x: 100
-    y: 100
-    z: 100
-  Position:
+  _debugPositions: 0
+  _authoritativePosition:
     x: 0
     y: 0
     z: 0
+  _localPosition: {x: 0, y: 0, z: 0}
+  Data:
+    Name: Pluto
+    Type: 0
+    Mass: 1.3025e+22
+    Diameter: 1188300
+    StartVelocity:
+      x: 0
+      y: 0
+      z: 0
+    StartPosition:
+      x: 250
+      y: 0
+      z: 0
+    VisualAppearance: {fileID: 2100000, guid: 89e79642fd54940e0a8465ce67a29db3, type: 2}
   Initialized: 0
   _meshRenderer: {fileID: 77172281362072855}

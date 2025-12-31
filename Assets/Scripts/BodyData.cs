@@ -1,8 +1,8 @@
 using UnityEngine;
 using Unity.Mathematics;
 
-[CreateAssetMenu(menuName = "Create Astronomical Body/Data")]
-public class BodyData : ScriptableObject
+[System.Serializable]
+public struct BodyData
 {
     public string Name;
 

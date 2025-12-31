@@ -1,17 +1,20 @@
+using Unity.Mathematics;
+
 public static class PhysicsConstants
 {
     // --- SI Real-world constants (base reference units) ---
     private const double REAL_G_SI = 6.67430e-11;    // m^3 / (kg s^2)
     public const double REAL_SPEED_OF_LIGHT_M_PER_S = 299792458.0;    // m / s
-    private const double REAL_SECONDS_PER_DAY = 86400;
+    public const double REAL_SECONDS_PER_DAY = 86400;
 
     // --- Real-world conversion constants (SI <-> astro) ---
     public const double REAL_METERS_PER_AU = 1.495978707e11; // m in 1 AU
     public const double REAL_KG_PER_SOLAR_MASS = 1.98847e30;  // kg in 1 solar mass
 
     // --- Unity world-space scaling (3D sim) ---
-    public const double UNITY_UNITS_PER_AU = 20000.0;   // DEFAULT VALUE: 3000 Unity world-space units ≈ 1 AU
+    public const double UNITY_UNITS_PER_AU = 50;   // DEFAULT VALUE: 3000 Unity world-space units ≈ 1 AU
     public const double UNITY_METERS_PER_UNIT = REAL_METERS_PER_AU / UNITY_UNITS_PER_AU;  // meters/Unity unit: 1 Unity unit ≈ (1/3000) AU
+    public const double UNITY_SIZE_SCALE_FACTOR = 1.0;
 
     // --- Unity time scaling ---
     public const double UNITY_DAYS_PER_REAL_SECOND = 1.0;
@@ -53,7 +56,7 @@ public static class PhysicsConstants
     public const double REAL_EARTH_MASS_KG = 5.9722e24;
 
     // --- GUARDS ---
-    public const double UNITY_MIN_DISTANCE = 1e-4 * UNITY_UNITS_PER_AU;
+    public const double UNITY_MIN_DISTANCE = 1e-4;
 
     // --- HELPERS ---
     // AU -> Unity units
@@ -65,6 +68,10 @@ public static class PhysicsConstants
     // km -> m -> Unity units
     public static double ToUnityUnitsFromKM(double km) => (km * 1000.0) / UNITY_METERS_PER_UNIT;
 
+    // km/s -> Unity units/day
+    public static double ToUnityUnitsFromKMPerSec(double kmps) =>
+        (kmps * 1000.0) / UNITY_METERS_PER_UNIT * REAL_SECONDS_PER_DAY;
+
     // Unity units -> m -> km
     public static double ToKMFromUnityUnits(double unityUnits) => (unityUnits * UNITY_METERS_PER_UNIT) / 1000.0;
 
@@ -73,5 +80,6 @@ public static class PhysicsConstants
 
     // Unity units -> AU
     public static double ToAUFromUnityUnits(double unityUnits) => unityUnits / UNITY_UNITS_PER_AU;
+
 
 }

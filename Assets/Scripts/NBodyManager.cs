@@ -17,7 +17,7 @@ public class NBodyManager : MonoBehaviour
     [Header("Predicted Object States")]
     double3[] _positionsNext, _accelerationsNext, _velocityHalf; // next (predicted) vector properties
 
-    private readonly SpacePhysics3D.Workspace_EIH _workspaceEIH = new();
+    readonly SpacePhysics3D.Workspace_EIH _workspaceEIH = new();
 
     [SerializeField] GravityModel _gravityModel = GravityModel.EIH;
     [SerializeField] AccelBMode _accelBMode = AccelBMode.FixedPointIterated;
@@ -28,15 +28,9 @@ public class NBodyManager : MonoBehaviour
     int _earthIndex = 1;
     int _sunIndex = 0;
 
-
     [Header("System Invariants Diagnostics")]
     [SerializeField] bool _diagnostics = false;
-    [SerializeField] int _diagEveryNSteps = 50;
-
-    [Header("Rendering Settings")]
-    public SimulationObject AnchorObject;
-    double3 _anchorPosition;
-
+    NBodyDiagnostics.Workspace_Diagnosis _diagWorkspace = new();
 
     void Awake()
     {
@@ -78,10 +72,6 @@ public class NBodyManager : MonoBehaviour
             _velocityHalf = new double3[numOfBodies];
 
             SnapshotSystemState();
-
-            if (_earthIndex >= 0 && _sunIndex >= 0) NBodyDiagnostics.InitEarthDiagnostics(_earthIndex, _sunIndex, _positions);
-            else _diagnostics = false;
-            if (_diagnostics) NBodyDiagnostics.InitSystemInvariantBaseline(_masses, _positions, _velocities, G);
         }
     }
 
@@ -106,21 +96,35 @@ public class NBodyManager : MonoBehaviour
             Debug.Log($"RequestedScale={SimulationSettings.Instance.TimeScale:F2}, EffectiveScale={effectiveTimeScale:F2}, steps={steps}, dtStep={dtStep:F6}d");
         }
 #endif
+        NBodyDiagnostics.EnsureInitialized(ref _diagWorkspace, numOfBodies);
 
         for (int i = 0; i < steps; i++)
         {
+            NBodyDiagnostics.SnapshotBeforeStep(ref _diagWorkspace, _positions, _velocities);
             IntegrateOneStep(dtStep, numOfBodies);
+            SimulationSettings.Instance.AdvanceSimTime(dtStep);
             if (_diagnostics)
             {
-                NBodyDiagnostics.Diagnostics_OrbitByPeriapsis(
-                    _earthIndex,
-                    _sunIndex,
-                    dtStep,
-                    _positions,
-                    _velocities,
-                    PhysicsConstants.UNITY_G * (_masses[_sunIndex] + _masses[_earthIndex]));
+                // epoch JD(TDB) for 2025-Jan-01 00:00:00 TDB is 2460676.5
+                NBodyDiagnostics.LogAtDailyMidnightBoundaries(
+                    ref _diagWorkspace,
+                    epochJdTdb: 2460676.5,
+                    dtStepDays: dtStep,
+                    positionsAfter: _positions,
+                    velocitiesAfter: _velocities,
+                    bodyNameOf: idx => SystemBodies[idx].Data.Name,
+                    logBodyIndex: -1 // -1 logs all, or pass e.g. _venusIndex
+                );
 
-                NBodyDiagnostics.StepSystemDiagnostics(dtStep, _diagEveryNSteps, _masses, _positions, _velocities, G);
+                // NBodyDiagnostics.Diagnostics_OrbitByPeriapsis(
+                //     _earthIndex,
+                //     _sunIndex,
+                //     dtStep,
+                //     _positions,
+                //     _velocities,
+                //     PhysicsConstants.UNITY_G * (_masses[_sunIndex] + _masses[_earthIndex]));
+
+                // NBodyDiagnostics.StepSystemDiagnostics(dtStep, _diagEveryNSteps, _masses, _positions, _velocities, G);
             }
         }
 

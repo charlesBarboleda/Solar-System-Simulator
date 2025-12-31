@@ -22,6 +22,10 @@ public class SimulationSettings : MonoBehaviour
     [Tooltip("Clamp backlog so it doesn't grow without bound if warp > CPU budget.")]
     [Min(0)] public double MaxBacklogSimDays = 10.0; // allow up to 10 sim days of "debt"
 
+    [Header("Simulation Time State")]
+    public double SimDays { get; private set; }
+    public double SimSeconds => SimDays * PhysicsConstants.REAL_SECONDS_PER_DAY;
+
     double _simDebtDays; // accumulated sim time waiting to be simulated
 
     double RequestedSimDaysThisFixedUpdate =>
@@ -36,6 +40,7 @@ public class SimulationSettings : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        ResetClock();
     }
 
     public void GetSubstepPlan(out int steps, out double dtStepDays, out double dtAdvancedDays, out double dtRequestedDays)
@@ -70,5 +75,16 @@ public class SimulationSettings : MonoBehaviour
         if (steps == MaxSubstepsPerFixedUpdate && stepsWanted > steps)
             Debug.LogWarning($"[SimulationSettings] CPU cap hit. Requested={dtRequestedDays:F6}d, Advanced={dtAdvancedDays:F6}d, Debt={_simDebtDays:F6}d");
 #endif
+    }
+
+    public void AdvanceSimTime(double dtDays)
+    {
+        SimDays += dtDays;
+    }
+
+    void ResetClock()
+    {
+        SimDays = 0.0;
+        _simDebtDays = 0.0;
     }
 }

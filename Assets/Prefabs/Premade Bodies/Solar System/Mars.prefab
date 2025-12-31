@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 605364279170997296}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 40, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -103,14 +103,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
-  Data: {fileID: 11400000, guid: f9462375b47733a49a2b34ec463a8ffe, type: 2}
-  Velocity:
-    x: 100
-    y: 100
-    z: 100
-  Position:
+  _debugPositions: 0
+  _authoritativePosition:
     x: 0
     y: 0
     z: 0
+  _localPosition: {x: 0, y: 0, z: 0}
+  Data:
+    Name: Mars
+    Type: 0
+    Mass: 6.4171e+23
+    Diameter: 6779000
+    StartVelocity:
+      x: 0
+      y: 0
+      z: 0
+    StartPosition:
+      x: 100
+      y: 0
+      z: 0
+    VisualAppearance: {fileID: 2100000, guid: 8a5995a14cffc46c9946c25b14f7c26c, type: 2}
   Initialized: 0
   _meshRenderer: {fileID: 3456969182159831105}

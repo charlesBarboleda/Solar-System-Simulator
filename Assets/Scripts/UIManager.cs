@@ -1,8 +1,11 @@
 using UnityEngine;
 using TMPro;
+using Unity.AppUI.UI;
 
 public class UIManager : MonoBehaviour
 {
+    [Header("Simulation State UI")]
+    [SerializeField] TextMeshProUGUI _simulationTimePassedText;
     [Header("Simulation Settings UI")]
     [SerializeField] TextMeshProUGUI _timeScaleText;
     [SerializeField] TextMeshProUGUI _gravityScaleText;
@@ -22,6 +25,10 @@ public class UIManager : MonoBehaviour
 
         if (_gravityScaleText != null)
             _gravityScaleText.text = $"Gravity Scale: {SimulationSettings.Instance.GravityScale:F1}x";
+
+        var t = System.TimeSpan.FromSeconds(SimulationSettings.Instance.SimSeconds);
+        if (_simulationTimePassedText != null)
+            _simulationTimePassedText.text = $"Sim Time: {SimulationSettings.Instance.SimDays:F3} days  ({t:dd\\.hh\\:mm\\:ss})";
 
     }
 }
