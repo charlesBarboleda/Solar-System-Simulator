@@ -1,6 +1,7 @@
+using Unity.AppUI.UI;
 using UnityEngine;
 
-public enum Format
+public enum HorizonFormat
 {
     text,
     json
@@ -49,22 +50,21 @@ public struct HorizonsSearchSettings
 {
     public const string HORIZONS_BASE_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?";
     public string Result;
-    Format _formatType;
-    public readonly string FormatType
+    HorizonFormat _horizonFormatType;
+    public readonly string HorizonFormatType
     {
         get
         {
-            return "format=" + $"'{_formatType}'";
+            return "format=" + $"{_horizonFormatType}";
         }
     }
 
-    [Tooltip("The body to display ephemeris for. Must be a valid Horizons ID.")]
-    int _command; // ID of the object
+    string _command;
     public string Command
     {
         get
         {
-            return "COMMAND=" + $"'{Command}'";
+            return "COMMAND=" + $"'{_command}'";
         }
     }
 
@@ -103,7 +103,7 @@ public struct HorizonsSearchSettings
             return "CENTER=" + $"'{_coordinateCenter}'";
         }
     }
-    string _startTime; // Format: YYYY-MM-DD HH:MM:SS
+    string _startTime; // HorizonFormat: YYYY-MM-DD HH:MM:SS
     public readonly string StartTime
     {
         get
@@ -111,7 +111,7 @@ public struct HorizonsSearchSettings
             return "START_TIME=" + $"'{_startTime}'";
         }
     }
-    string _stopTime;  // Format: YYYY-MM-DD HH:MM:SS
+    string _stopTime;  // HorizonFormat: YYYY-MM-DD HH:MM:SS
     public string StopTime
     {
         get
@@ -183,15 +183,15 @@ public struct HorizonsSearchSettings
     public string EmailAddress;
 
     public HorizonsSearchSettings(
-        int command,
+        string command,
         string coordinateCenter,
         string startTime,
         string stopTime,
         int stepSizeValue,
-        Format formatType = Format.json,
+        HorizonFormat horizonFormatType = HorizonFormat.json,
         bool objData = true,
         bool makeEphemeris = true,
-        StepSizeUnit stepSizeUnit = global::StepSizeUnit.days,
+        StepSizeUnit stepSizeUnit = StepSizeUnit.days,
         EphemerisType ephemerisType = global::EphemerisType.VECTORS,
         ReferencePlane refPlane = global::ReferencePlane.ECLIPTIC,
         ReferenceSystem referenceSystem = global::ReferenceSystem.ICRF,
@@ -207,7 +207,7 @@ public struct HorizonsSearchSettings
         _stopTime = stopTime;
         _stepSizeUnit = stepSizeUnit;
         _stepSizeValue = stepSizeValue;
-        _formatType = formatType;
+        _horizonFormatType = horizonFormatType;
         _objData = objData;
         _makeEphemeris = makeEphemeris;
         _ephemerisType = ephemerisType;
@@ -222,7 +222,7 @@ public struct HorizonsSearchSettings
     public readonly string BuildQuery(HorizonsSearchSettings _settings)
     {
         string result = HORIZONS_BASE_URL;
-        result += _settings.FormatType + "&";
+        result += _settings.HorizonFormatType + "&";
         result += _settings.Command + "&";
         result += _settings.ObjData + "&";
         result += _settings.MakeEphemeris + "&";
@@ -234,11 +234,10 @@ public struct HorizonsSearchSettings
         result += _settings.StepSize + "&";
         result += _settings.ReferenceSystem + "&";
         result += _settings.OutputUnit + "&";
-        result += _settings.VecTable + "&";
+        result += _settings.VecTable;
 
         return result;
     }
-
 
 }
 

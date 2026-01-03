@@ -1,15 +1,60 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework.Interfaces;
 using UnityEngine;
+using UnityEngine.Networking;
+
 
 public class HorizonsAPIManager : MonoBehaviour
 {
+    [Header("Search Settings")]
+    public HorizonFormat FormatType;
+    public string BodyID;
+    public string CenterID;
+    public bool ObjectData;
+    public bool MakeEphemeris;
+    public EphemerisType EphemerisType;
+    public string StartTime;
+    public string StopTime;
+    public StepSizeUnit StepSizeUnit;
+    public int StepSizeValue;
+    public ReferencePlane ReferencePlane;
+    public ReferenceSystem ReferenceSystem;
+    public OutputUnits OutputUnits;
+    public int VectorTable;
+
+    // Result
+    public string HorizonsResults;
+
+    [Header("Data Parsing")]
+    public ParsableData[] ParsableData;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         HorizonsSearchSettings _settings = new(
-
+            command: BodyID,
+            coordinateCenter: CenterID,
+            startTime: StartTime,
+            stopTime: StopTime,
+            stepSizeValue: StepSizeValue,
+            stepSizeUnit: StepSizeUnit,
+            horizonFormatType: HorizonFormat.json,
+            objData: ObjectData,
+            makeEphemeris: MakeEphemeris,
+            ephemerisType: EphemerisType,
+            refPlane: ReferencePlane,
+            referenceSystem: ReferenceSystem,
+            outputUnits: OutputUnits,
+            vecTable: VectorTable
         );
 
+        string url = _settings.BuildQuery(_settings);
+        Debug.Log($"API Request URL: {url}");
+        StartCoroutine(GetResult(url));
     }
 
     // Update is called once per frame
@@ -17,4 +62,32 @@ public class HorizonsAPIManager : MonoBehaviour
     {
 
     }
+
+    IEnumerator GetResult(string URL)
+    {
+        UnityWebRequest www = UnityWebRequest.Get(URL);
+        yield return www.SendWebRequest();
+
+        if (www.result != UnityWebRequest.Result.Success)
+        {
+            Debug.Log(www.error);
+        }
+        else
+        {
+            HorizonsResults = www.downloadHandler.text;
+            HorizonsResponse response = HorizonsResponse.CreateFromJSON(HorizonsResults);
+            string[] formattedResponse = HorizonsParser.FormatResponse(response: response, removeWhiteSpace: true, lowercase: true);
+            foreach (var line in formattedResponse)
+            {
+                Debug.Log(line);
+            }
+            HorizonsParser.TryParseData(ParsableData, formattedResponse, out string[] dataValue);
+            foreach (var value in dataValue)
+            {
+                Debug.Log(value); // TODO: Figure out why only "Mass" is outputted to the console with no value.
+            }
+
+        }
+    }
 }
+
