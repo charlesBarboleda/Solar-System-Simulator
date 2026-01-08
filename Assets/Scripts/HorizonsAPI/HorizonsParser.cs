@@ -2,7 +2,6 @@ using Unity.Mathematics;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
-using System.Linq;
 using System.Globalization;
 
 
@@ -152,7 +151,7 @@ public static class HorizonsParser
 
         }
 
-        // Object Ephemeris Formatting (TODO: Most likely scrap everything here and redo it)
+        // Object Ephemeris Formatting
         for (int i = ephemerisVectorsStartIndex + 1; i < ephemerisVectorsEndIndex; i += 3) // Iterate over each ephemeris date, which contains position and velocity vectors
         {
             int dateIndex = -1;
@@ -167,9 +166,8 @@ public static class HorizonsParser
                 velIndex = i + 2;
             }
 
-            EphemerisSample ephemeris = ParseVectors(splitResults[dateIndex], splitResults[posIndex], splitResults[velIndex]);
-
-            formattedVectors.Add(ephemeris);
+            if (TryParseVectors(splitResults[dateIndex], splitResults[posIndex], splitResults[velIndex], out EphemerisSample ephemeris))
+                formattedVectors.Add(ephemeris);
         }
 
         for (int i = bodyDataEndIndex; i < splitResults.Length; i++)
@@ -206,64 +204,140 @@ public static class HorizonsParser
             ParsableData.StopTime => "stoptime",
             ParsableData.StepSize => "step-size",
             ParsableData.Positions => "",
+            ParsableData.Velocities => "",
             _ => "Invalid Parsable Data",
         };
     }
 
-    // Velocity Vector Format Example: "XV=-3.271541395225262E+07YV=1.428771211383301E+08ZV=1.914442883169651E+04"
     // Position Vector Format Example: "X=-3.271541395225262E+07Y=1.428771211383301E+08Z=1.914442883169651E+04"
-    static EphemerisSample ParseVectors(string date, string positions, string velocities, int maxDigitValue = 21)
+    // Velocity Vector Format Example: "XV=-3.271541395225262E+07YV=1.428771211383301E+08ZV=1.914442883169651E+04"
+    static bool TryParseVectors(string date, string positions, string velocities, out EphemerisSample ephemeris)
     {
-        if (!TryParseTriplet(positions, out double3 pos))
-            throw new FormatException($"Failed to parse positions: '{positions}'");
+        ephemeris = default;
 
-        if (!TryParseTriplet(velocities, out double3 vel, treatAsVelocity: true))
-            throw new FormatException($"Failed to parse velocities: '{velocities}'");
+        // Find start index of position labels
+        int xPosIdx = positions.IndexOf("X=");
+        int yPosIdx = positions.IndexOf("Y=");
+        int zPosIdx = positions.IndexOf("Z=");
+        int posValuesIdx = "X=".Length; // The label's position value index offset
 
-        return new EphemerisSample(date: date, position: pos, velocity: vel);
-    }
+        // Find start index of velocity labels
+        int xVelIdx = velocities.IndexOf("XV=");
+        if (xVelIdx < 0) xVelIdx = velocities.IndexOf("VX=");
+        int yVelIdx = velocities.IndexOf("YV=");
+        if (yVelIdx < 0) yVelIdx = velocities.IndexOf("VY=");
+        int zVelIdx = velocities.IndexOf("ZV=");
+        if (zVelIdx < 0) zVelIdx = velocities.IndexOf("VZ=");
+        int velValuesIdx = "XV=".Length; // The label's velocity value index offset
 
-    static bool TryParseTriplet(string s, out double3 v, bool treatAsVelocity = false)
-    {
-        v = default;
-        if (string.IsNullOrWhiteSpace(s)) return false;
+        // Guard against non-valid index
+        if (xPosIdx < 0 || yPosIdx < 0 || zPosIdx < 0 || xVelIdx < 0 || yVelIdx < 0 || zVelIdx < 0) return false;
 
-        if (treatAsVelocity)
+        var posLabelsIdxValue = new (char Axis, int Idx)[]
         {
-            if (TryParseLabeledTriplet(s, "VX=", "VY=", "VZ=", out v)) return true;
-            if (TryParseLabeledTriplet(s, "XV=", "YV=", "ZV=", out v)) return true;
-        }
+            ('X', xPosIdx),
+            ('Y', yPosIdx),
+            ('Z', zPosIdx),
+        };
+        Array.Sort(posLabelsIdxValue, (a, b) => a.Idx.CompareTo(b.Idx)); // Sort 'posLabelsIdx' ascending by Idx
 
-        return TryParseLabeledTriplet(s, "X=", "Y=", "Z=", out v);
-    }
+        var velLabelsIdxValue = new (char Axis, int Idx)[]
+        {
+            ('X', xVelIdx),
+            ('Y', yVelIdx),
+            ('Z', zVelIdx),
+        };
+        Array.Sort(velLabelsIdxValue, (a, b) => a.Idx.CompareTo(b.Idx)); // Sort 'velLabelsIdx' ascending by Idx
 
-    static bool TryParseLabeledTriplet(string s, string xLabel, string yLabel, string zLabel, out double3 v)
-    {
-        v = default;
+        var firstPos = posLabelsIdxValue[0];
+        var secondPos = posLabelsIdxValue[1];
+        var thirdPos = posLabelsIdxValue[2];
 
-        int xIdx = s.IndexOf(xLabel, StringComparison.OrdinalIgnoreCase);
-        int yIdx = s.IndexOf(yLabel, StringComparison.OrdinalIgnoreCase);
-        int zIdx = s.IndexOf(zLabel, StringComparison.OrdinalIgnoreCase);
+        var firstVel = velLabelsIdxValue[0];
+        var secondVel = velLabelsIdxValue[1];
+        var thirdVel = velLabelsIdxValue[2];
 
-        if (xIdx < 0 || yIdx < 0 || zIdx < 0) return false;
-        if (!(xIdx < yIdx && yIdx < zIdx)) return false;
+        // Slice without allocating new strings
+        int p1Start = firstPos.Idx + posValuesIdx;
+        int p1Len = secondPos.Idx - p1Start;
+        ReadOnlySpan<char> rawPos1 = positions.AsSpan(p1Start, p1Len);
+        int p2Start = secondPos.Idx + posValuesIdx;
+        int p2Len = thirdPos.Idx - p2Start;
+        ReadOnlySpan<char> rawPos2 = positions.AsSpan(p2Start, p2Len);
+        int p3Start = thirdPos.Idx + posValuesIdx;
+        ReadOnlySpan<char> rawPos3 = positions.AsSpan(p3Start);
 
-        int xStart = xIdx + xLabel.Length;
-        int yStart = yIdx + yLabel.Length;
-        int zStart = zIdx + zLabel.Length;
+        int v1Start = firstVel.Idx + velValuesIdx;
+        int v1Len = secondVel.Idx - v1Start;
+        ReadOnlySpan<char> rawVel1 = velocities.AsSpan(v1Start, v1Len);
+        int v2Start = secondVel.Idx + velValuesIdx;
+        int v2Len = thirdVel.Idx - v2Start;
+        ReadOnlySpan<char> rawVel2 = velocities.AsSpan(v2Start, v2Len);
+        int v3Start = thirdVel.Idx + velValuesIdx;
+        ReadOnlySpan<char> rawVel3 = velocities.AsSpan(v3Start);
 
-        string xText = s.Substring(xStart, yIdx - xStart).Trim();
-        string yText = s.Substring(yStart, zIdx - yStart).Trim();
-        string zText = s.Substring(zStart).Trim();
+        if (!TryBuildDouble3(firstPos, rawPos1, secondPos, rawPos2, thirdPos, rawPos3, out var pos)) return false;
+        if (!TryBuildDouble3(firstVel, rawVel1, secondVel, rawVel2, thirdVel, rawVel3, out var vel)) return false;
 
-        const NumberStyles style = NumberStyles.Float | NumberStyles.AllowLeadingSign;
-        var culture = CultureInfo.InvariantCulture;
-
-        if (!double.TryParse(xText, style, culture, out double x)) return false;
-        if (!double.TryParse(yText, style, culture, out double y)) return false;
-        if (!double.TryParse(zText, style, culture, out double z)) return false;
-
-        v = new double3(x, y, z);
+        ephemeris = new(
+            date: date,
+            position: pos,
+            velocity: vel
+        );
         return true;
     }
+
+    static bool TryParseDoubleInvariant(ReadOnlySpan<char> s, out double value)
+    {
+        s = s.Trim();
+        if (s.Length > 0 && s[^1] == ',') s = s[..^1];
+
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (c == 'D' || c == 'd')
+            {
+                var tmp = s.ToString().Replace('D', 'E').Replace('d', 'E');
+                return double.TryParse(tmp, NumberStyles.Float | NumberStyles.AllowLeadingSign,
+                    CultureInfo.InvariantCulture, out value);
+            }
+        }
+
+        return double.TryParse(s, NumberStyles.Float | NumberStyles.AllowLeadingSign,
+            CultureInfo.InvariantCulture, out value);
+    }
+
+    static bool TryBuildDouble3(
+     (char Axis, int Idx) a1, ReadOnlySpan<char> v1,
+     (char Axis, int Idx) a2, ReadOnlySpan<char> v2,
+     (char Axis, int Idx) a3, ReadOnlySpan<char> v3,
+     out double3 result)
+    {
+        result = default;
+
+        if (!TryParseDoubleInvariant(v1, out var d1)) return false;
+        if (!TryParseDoubleInvariant(v2, out var d2)) return false;
+        if (!TryParseDoubleInvariant(v3, out var d3)) return false;
+
+        double x = 0, y = 0, z = 0;
+
+        static void Assign(ref double x, ref double y, ref double z, char axis, double val)
+        {
+            switch (axis)
+            {
+                case 'X': x = val; break;
+                case 'Y': y = val; break;
+                case 'Z': z = val; break;
+            }
+        }
+
+        Assign(ref x, ref y, ref z, a1.Axis, d1);
+        Assign(ref x, ref y, ref z, a2.Axis, d2);
+        Assign(ref x, ref y, ref z, a3.Axis, d3);
+
+        result = new double3(x, y, z);
+        return true;
+    }
+
+
 }

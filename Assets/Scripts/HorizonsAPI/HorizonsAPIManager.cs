@@ -60,10 +60,10 @@ public class HorizonsAPIManager : MonoBehaviour
             HorizonsResults = www.downloadHandler.text;
             HorizonsResponse response = HorizonsResponse.CreateFromJSON(HorizonsResults);
             string[] formattedResponse = HorizonsParser.FormatResponse(response: response, removeWhiteSpace: _removeWhiteSpace, lowercase: _lowerCase);
-            // foreach (var line in formattedResponse)
-            // {
-            //     Debug.Log(line);
-            // }
+            foreach (var line in formattedResponse)
+            {
+                Debug.Log(line);
+            }
             // HorizonsParser.TryParseData(ParsableData, formattedResponse, out string[] dataValue);
             // foreach (var value in dataValue)
             // {
