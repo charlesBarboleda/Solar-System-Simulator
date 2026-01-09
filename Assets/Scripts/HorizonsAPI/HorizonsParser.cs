@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 using System.Globalization;
+using Mono.Cecil.Cil;
 
 
 public enum ParsableData
@@ -84,11 +85,11 @@ public static class HorizonsParser
     }
 
 
-    public static string[] FormatResponse(HorizonsResponse response, bool removeWhiteSpace = false, bool lowercase = false)
+    public static string[] FormatResponse(HorizonsResponse response, out List<EphemerisSample> formattedVectors, bool lowercase = false)
     {
-        string[] splitResults = response.result.Replace(" ", "").Split('\n');
+        string[] splitResults = response?.result?.Replace(" ", "").Split('\n');
         List<string> formattedBodyData = new();
-        List<EphemerisSample> formattedVectors = new();
+        formattedVectors = new();
 
         int bodyDataStartIndex = -1;
         int bodyDataEndIndex = -1;
@@ -121,7 +122,7 @@ public static class HorizonsParser
             string row = splitResults[i];
             if (string.IsNullOrEmpty(row) || row.Length < 2)
             {
-                formattedBodyData.Add(row ?? string.Empty);
+                formattedBodyData?.Add(row ?? string.Empty);
                 continue;
             }
 
@@ -141,12 +142,12 @@ public static class HorizonsParser
 
             if (splitIndex == -1)
             {
-                formattedBodyData.Add(row);
+                formattedBodyData?.Add(row);
             }
             else
             {
-                formattedBodyData.Add(row[..splitIndex]);
-                formattedBodyData.Add(row[splitIndex..]);
+                formattedBodyData?.Add(row[..splitIndex]);
+                formattedBodyData?.Add(row[splitIndex..]);
             }
 
         }
@@ -167,29 +168,19 @@ public static class HorizonsParser
             }
 
             if (TryParseVectors(splitResults[dateIndex], splitResults[posIndex], splitResults[velIndex], out EphemerisSample ephemeris))
-                formattedVectors.Add(ephemeris);
+                formattedVectors?.Add(ephemeris);
         }
 
         for (int i = bodyDataEndIndex; i < splitResults.Length; i++)
         {
-            formattedBodyData.Add(splitResults[i]);
+            formattedBodyData?.Add(splitResults[i]);
         }
 
-        if (removeWhiteSpace)
-            for (int i = 0; i < splitResults.Length; i++)
-                splitResults[i] = splitResults[i].Replace(" ", "");
         if (lowercase)
             for (int i = 0; i < splitResults.Length; i++)
                 splitResults[i] = splitResults[i].ToLower();
 
-        foreach (var e in formattedVectors)
-        {
-            Debug.Log($"Date: {e.Date}");
-            Debug.Log($"Position: {e.Position}");
-            Debug.Log($"Velocity: {e.Velocity}");
-        }
-
-        return formattedBodyData.ToArray();
+        return formattedBodyData?.ToArray();
     }
 
     static string ParsableDataToString(ParsableData parsableData)
@@ -276,15 +267,67 @@ public static class HorizonsParser
         int v3Start = thirdVel.Idx + velValuesIdx;
         ReadOnlySpan<char> rawVel3 = velocities.AsSpan(v3Start);
 
-        if (!TryBuildDouble3(firstPos, rawPos1, secondPos, rawPos2, thirdPos, rawPos3, out var pos)) return false;
-        if (!TryBuildDouble3(firstVel, rawVel1, secondVel, rawVel2, thirdVel, rawVel3, out var vel)) return false;
+        if (!TryBuildDouble3(firstPos, rawPos1, secondPos, rawPos2, thirdPos, rawPos3, out double3 pos)) return false;
+        if (!TryBuildDouble3(firstVel, rawVel1, secondVel, rawVel2, thirdVel, rawVel3, out double3 vel)) return false;
+
+        if (!TryParseJD(rawDate: date, out double dateJD) || !TryBuildDateTime(dateDouble: dateJD, dateTime: out DateTimeOffset dateTime)) return false;
 
         ephemeris = new(
-            date: date,
+            date: dateTime,
             position: pos,
             velocity: vel
         );
+
         return true;
+    }
+
+    // Julian Date string/double expected format: 2460676.500000000
+    static bool TryBuildDateTime(out DateTimeOffset dateTime, double dateDouble)
+    {
+        dateTime = default;
+        if (!IsValidJulianDayTDB(dateDouble)) return false;
+
+        const double JD_UNIX_EPOCH = 2440587.5; // 1970-01-01 00:00:00 UTC
+        double daysSinceUnix = dateDouble - JD_UNIX_EPOCH;
+
+        long ticks = (long)Math.Round(daysSinceUnix * TimeSpan.TicksPerDay);
+
+        dateTime = DateTimeOffset.UnixEpoch.AddTicks(ticks);
+
+        return true;
+    }
+
+    static bool TryParseJD(string rawDate, out double doubleJD)
+    {
+        doubleJD = default;
+        const int JD_FORMAT_LENGTH = 17;
+
+        if (rawDate.Length < JD_FORMAT_LENGTH || string.IsNullOrWhiteSpace(rawDate)) return false;
+        rawDate = rawDate.Trim();
+
+        int equalsIdx = rawDate.IndexOf('=');
+        if (equalsIdx < 0) return false;
+
+        string jdDate = rawDate[..equalsIdx];
+        // Debug.Log($"Raw string JD Date: {jdDate}");
+        if (jdDate.Length != JD_FORMAT_LENGTH) return false;
+
+        ReadOnlySpan<char> spanJDDate = new(jdDate.ToCharArray());
+        if (!double.TryParse(spanJDDate, NumberStyles.Float, CultureInfo.InvariantCulture, out doubleJD))
+        {
+            // Debug.Log($"Converted <string> -> <double> JD Date: {doubleJD}");
+            return false;
+        }
+        Debug.Log($"Converted <string> -> <double> JD Date: {doubleJD}");
+
+        return true;
+    }
+
+    static bool IsValidJulianDayTDB(double jd)
+    {
+        if (double.IsNaN(jd) || double.IsInfinity(jd)) return false;
+
+        return jd > 0 && jd < 10_000_000;
     }
 
     static bool TryParseDoubleInvariant(ReadOnlySpan<char> s, out double value)
@@ -298,8 +341,11 @@ public static class HorizonsParser
             if (c == 'D' || c == 'd')
             {
                 var tmp = s.ToString().Replace('D', 'E').Replace('d', 'E');
-                return double.TryParse(tmp, NumberStyles.Float | NumberStyles.AllowLeadingSign,
-                    CultureInfo.InvariantCulture, out value);
+                return double.TryParse(
+                        tmp,
+                        NumberStyles.Float | NumberStyles.AllowLeadingSign,
+                        CultureInfo.InvariantCulture, out value
+                        );
             }
         }
 

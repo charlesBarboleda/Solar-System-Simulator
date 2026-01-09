@@ -30,7 +30,6 @@ public class HorizonsAPIManager : MonoBehaviour
 
     [Header("Data Parsing")]
     public ParsableData[] ParsableData;
-    [SerializeField] bool _removeWhiteSpace = false;
     [SerializeField] bool _lowerCase = false;
 
 
@@ -59,10 +58,14 @@ public class HorizonsAPIManager : MonoBehaviour
         {
             HorizonsResults = www.downloadHandler.text;
             HorizonsResponse response = HorizonsResponse.CreateFromJSON(HorizonsResults);
-            string[] formattedResponse = HorizonsParser.FormatResponse(response: response, removeWhiteSpace: _removeWhiteSpace, lowercase: _lowerCase);
+            string[] formattedResponse = HorizonsParser.FormatResponse(response: response, lowercase: _lowerCase, formattedVectors: out List<EphemerisSample> formattedVectors);
             foreach (var line in formattedResponse)
             {
                 Debug.Log(line);
+            }
+            foreach (var date in formattedVectors)
+            {
+                Debug.Log($"Date: {date.Date}\nPos:{date.Position}\nVel:{date.Velocity}");
             }
             // HorizonsParser.TryParseData(ParsableData, formattedResponse, out string[] dataValue);
             // foreach (var value in dataValue)
@@ -73,7 +76,7 @@ public class HorizonsAPIManager : MonoBehaviour
         }
     }
 
-    [ContextMenu("Run Horizon API search")]
+    [ContextMenu("Run Horizon API search test")]
     void HorizonTest()
     {
         HorizonsSearchSettings _settings = new(

@@ -6,6 +6,7 @@ public class UIManager : MonoBehaviour
 {
     [Header("Simulation State UI")]
     [SerializeField] TextMeshProUGUI _simulationTimePassedText;
+    [SerializeField] TextMeshProUGUI _dateTimeText;
     [Header("Simulation Settings UI")]
     [SerializeField] TextMeshProUGUI _timeScaleText;
     [SerializeField] TextMeshProUGUI _gravityScaleText;
@@ -29,6 +30,9 @@ public class UIManager : MonoBehaviour
         var t = System.TimeSpan.FromSeconds(SimulationSettings.Instance.SimSeconds);
         if (_simulationTimePassedText != null)
             _simulationTimePassedText.text = $"Sim Time: {SimulationSettings.Instance.SimDays:F3} days  ({t:dd\\.hh\\:mm\\:ss})";
+
+        if (_dateTimeText != null)
+            _dateTimeText.text = $"Date Time: {SimulationSettings.Instance.GetCurrentDateTime()}";
 
     }
 }

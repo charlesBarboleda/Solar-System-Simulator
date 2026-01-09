@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Unity.VisualScripting;
 
 public class SimulationSettings : MonoBehaviour
 {
@@ -23,11 +24,19 @@ public class SimulationSettings : MonoBehaviour
     [Min(0)] public double MaxBacklogSimDays = 10.0; // allow up to 10 sim days of "debt"
 
     [Header("Simulation Time State")]
+    [SerializeField] int _startYear;
+    [SerializeField] int _startMonth;
+    [SerializeField] int _startDay;
+    [SerializeField] int _startHour;
+    [SerializeField] int _startMinute;
+    [SerializeField] int _startSecond;
+    [SerializeField] int _startMillisecond;
+    DateTime _dateTime;
+    DateTime _dateTimeStart;
+
     public double SimDays { get; private set; }
     public double SimSeconds => SimDays * PhysicsConstants.REAL_SECONDS_PER_DAY;
-
     double _simDebtDays; // accumulated sim time waiting to be simulated
-
     double RequestedSimDaysThisFixedUpdate =>
         Time.fixedDeltaTime * PhysicsConstants.UNITY_DAYS_PER_REAL_SECOND * TimeScale;
 
@@ -40,6 +49,10 @@ public class SimulationSettings : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        SetStartDateTime(_startYear, _startMonth, _startDay, _startHour, _startMinute, _startSecond, _startMillisecond);
+        _dateTime = _dateTimeStart;
+
         ResetClock();
     }
 
@@ -73,14 +86,44 @@ public class SimulationSettings : MonoBehaviour
 
 #if UNITY_EDITOR
         if (steps == MaxSubstepsPerFixedUpdate && stepsWanted > steps)
-            Debug.LogWarning($"[SimulationSettings] CPU cap hit. Requested={dtRequestedDays:F6}d, Advanced={dtAdvancedDays:F6}d, Debt={_simDebtDays:F6}d");
+            Debug.LogWarning($"[SimulationSettings] CPU cap reached. Requested={dtRequestedDays:F6}d, Advanced={dtAdvancedDays:F6}d, Debt={_simDebtDays:F6}d");
 #endif
     }
 
-    public void AdvanceSimTime(double dtDays)
+    public void AdvanceSimTime(double dtDays) => SimDays += dtDays;
+
+    public void SetCurrentDateTime(DateTime dateTime) => _dateTime = dateTime;
+    public void SetCurrentDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond)
     {
-        SimDays += dtDays;
+        _dateTime = new(
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            millisecond
+        );
     }
+    public void SetCurrentDateTime(DateTimeOffset dateTimeOffset) => _dateTime = dateTimeOffset.DateTime;
+
+    public void SetStartDateTime(DateTime dateTime) => _dateTimeStart = dateTime;
+    public void SetStartDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond)
+    {
+        _dateTimeStart = new(
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            millisecond
+        );
+    }
+    public void SetStartDateTime(DateTimeOffset dateTimeOffset) => _dateTimeStart = dateTimeOffset.DateTime;
+
+    public DateTime GetCurrentDateTime() => _dateTimeStart.AddDays(SimDays);
+
 
     void ResetClock()
     {

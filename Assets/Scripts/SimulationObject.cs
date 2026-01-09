@@ -9,6 +9,7 @@ public class SimulationObject : MonoBehaviour, ISimulationObject
     [Header("Debugging Vectors")]
     [SerializeField] bool _debugPositions = false;
     [SerializeField] double3 _authoritativePosition;
+    [SerializeField] double3 _authoritativeVelocity;
     [SerializeField] Vector3 _localPosition;
 
     public void UpdateTransform()
@@ -20,6 +21,17 @@ public class SimulationObject : MonoBehaviour, ISimulationObject
         }
 
         transform.position = (Vector3)(float3)RenderSpace.ToLocal(Position);
+    }
+
+    public void SetVelocity(double3 velocity)
+    {
+        if (!math.all(math.isfinite(velocity)))
+        {
+            Debug.LogError($"Invalid Velocity in SetVelocity: {velocity}");
+            return;
+        }
+
+        Velocity = velocity;
     }
 
     public void TeleportTo(double3 newPosition)
@@ -38,6 +50,7 @@ public class SimulationObject : MonoBehaviour, ISimulationObject
     {
         if (_debugPositions)
         {
+            _authoritativeVelocity = Velocity;
             _authoritativePosition = Position;
             _localPosition = (Vector3)(float3)RenderSpace.ToLocal(Position);
         }
