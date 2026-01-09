@@ -730,6 +730,37 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &499261565
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 499261566}
+  m_Layer: 0
+  m_Name: Diagnose why 'Keys' have empty/wrong 'Values'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &499261566
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 499261565}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 920705544}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &735309102
 GameObject:
   m_ObjectHideFlags: 0
@@ -1159,6 +1190,38 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 834660783}
   m_CullTransparentMesh: 1
+--- !u!1 &920705543
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 920705544}
+  m_Layer: 0
+  m_Name: 'TODO:'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &920705544
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920705543}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 499261566}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1290014216
 GameObject:
   m_ObjectHideFlags: 0
@@ -1853,7 +1916,7 @@ MonoBehaviour:
     Obliquity to orbit, deg  = 23.4392911  Sidereal orb period  = 1.0000174 y\n 
     Orbital speed, km/s      = 29.79       Sidereal orb period  = 365.25636 d\n 
     Mean daily motion, deg/d = 0.9856474   Hill''s sphere radius = 234.9       \n*******************************************************************************\n\n\n*******************************************************************************\nEphemeris
-    / API_USER Thu Jan  8 15:43:53 2026 Pasadena, USA      / Horizons\n*******************************************************************************\nTarget
+    / API_USER Fri Jan  9 15:12:37 2026 Pasadena, USA      / Horizons\n*******************************************************************************\nTarget
     body name: Earth (399)                     {source: DE441}\nCenter body name:
     Solar System Barycenter (0)     {source: DE441}\nCenter-site name: BODY CENTER\n*******************************************************************************\nStart
     time      : A.D. 2025-Jan-01 00:00:00.0000 TDB\nStop  time      : A.D. 2025-Jan-30
@@ -1972,8 +2035,8 @@ MonoBehaviour:
     https://ssd.jpl.nasa.gov/horizons/app.html#/x\n                  API           
     https://ssd-api.jpl.nasa.gov/doc/horizons.html\n                  command-line  
     telnet ssd.jpl.nasa.gov 6775\n                  e-mail/batch   https://ssd.jpl.nasa.gov/ftp/ssd/horizons_batch.txt\n                 
-    scripts        https://ssd.jpl.nasa.gov/ftp/ssd/SCRIPTS\n    Author      : Jon.D.Giorgini@jpl.nasa.gov\n*******************************************************************************\n","signature":{"version":"1.2","source":"NASA/JPL
-    Horizons API"}}
+    scripts        https://ssd.jpl.nasa.gov/ftp/ssd/SCRIPTS\n    Author      : Jon.D.Giorgini@jpl.nasa.gov\n*******************************************************************************\n","signature":{"source":"NASA/JPL
+    Horizons API","version":"1.2"}}
 
 '
   ParsableData: 00000000010000000200000005000000060000000700000008000000
@@ -3176,3 +3239,4 @@ SceneRoots:
   - {fileID: 1527512990}
   - {fileID: 1334996680}
   - {fileID: 2051880366}
+  - {fileID: 920705544}

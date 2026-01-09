@@ -3,35 +3,11 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 using System.Globalization;
-using Mono.Cecil.Cil;
-
-
-public enum ParsableData
-{
-    NameID,
-    Mass,
-    CenterNameID,
-    Positions,
-    Velocities,
-    Radius,
-    StartTime,
-    StopTime,
-    StepSize,
-
-}
+using System.Text.RegularExpressions;
+using System.Linq;
 
 public static class HorizonsParser
 {
-    static HorizonsResponse _response;
-    static string _bodyName;
-    static string _bodyId;
-    static string _centerBodyName;
-    static string _centerBodyId;
-    static double _masskg;
-    static double _radius;
-    static double3[] _positions;
-    static double3[] _velocities;
-
     public static bool TryParseData(ParsableData[] parsableData, string[] formattedText, out string[] targetDataValue)
     {
         targetDataValue = Array.Empty<string>();
@@ -84,72 +60,170 @@ public static class HorizonsParser
         return targetDataValue.Length > 0;
     }
 
-
-    public static string[] FormatResponse(HorizonsResponse response, out List<EphemerisSample> formattedVectors, bool lowercase = false)
+    static bool TryParseNumericValueFrom(string rawTextValue, out double value)
     {
-        string[] splitResults = response?.result?.Replace(" ", "").Split('\n');
-        List<string> formattedBodyData = new();
+        if (rawTextValue.EndsWith("km/s", StringComparison.OrdinalIgnoreCase) || rawTextValue.EndsWith("km/d", StringComparison.OrdinalIgnoreCase))
+            rawTextValue = rawTextValue[0..^4];
+
+        if (rawTextValue.EndsWith("bar", StringComparison.OrdinalIgnoreCase))
+            rawTextValue = rawTextValue[0..^3];
+
+        if (rawTextValue.EndsWith("kg", StringComparison.OrdinalIgnoreCase) || rawTextValue.EndsWith("km", StringComparison.OrdinalIgnoreCase))
+            rawTextValue = rawTextValue[0..^2];
+
+        if (rawTextValue.EndsWith("d", StringComparison.OrdinalIgnoreCase) || rawTextValue.EndsWith("y", StringComparison.OrdinalIgnoreCase))
+            rawTextValue = rawTextValue[0..^1];
+
+
+        if (double.TryParse(rawTextValue, out value)) return true;
+
+        int specialCharIdx = rawTextValue.IndexOf("+-");
+        if (specialCharIdx > -1)
+        {
+            string rawValue = rawTextValue[..specialCharIdx];
+            if (!double.TryParse(rawValue, out value)) return false;
+        }
+
+        specialCharIdx = rawTextValue.IndexOf('^');
+        if (specialCharIdx > -1)
+        {
+            int multiIdx = rawTextValue.IndexOf('x', StringComparison.OrdinalIgnoreCase);
+            if (multiIdx < 0) return false;
+            if (!double.TryParse(rawTextValue[..multiIdx], out double baseNum)) return false;
+            if (!double.TryParse(rawTextValue[(specialCharIdx + 1)..], out double exponent)) return false;
+
+            value = baseNum * (Math.Pow(10.0, exponent));
+        }
+
+        return true;
+    }
+    public static Dictionary<ParsableData, DataValue> FormatResponse(HorizonsResponse response, out List<EphemerisSample> formattedVectors, out string[] rawSplitString, bool lowercase = false)
+    {
+        rawSplitString = response?.result?.Replace(" ", "").Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        List<string> splitResults = rawSplitString.Select(s => s.Trim()).ToList();
+        Dictionary<ParsableData, DataValue> formattedBodyData = new();
         formattedVectors = new();
 
-        int bodyDataStartIndex = -1;
-        int bodyDataEndIndex = -1;
+        Regex PairRegex = new(
+                    @"(?<key>[^=]+?)=(?<value>.*?)(?=[^=]+?=|$)",
+                    RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        int equalsDataStartIndex = -1;
+        int equalsEndIndex = -1;
         int ephemerisVectorsStartIndex = -1;
         int ephemerisVectorsEndIndex = -1;
+        int colonDataStartIndex = -1;
+        int colonDataEndIndex = -1;
 
-        for (int i = 0; i < splitResults.Length; i++)
+        for (int i = 0; i < splitResults.Count; i++) // Formats double key/value pairs into a separate single key/value pair
         {
-            if (splitResults[i].Contains("GEOPHYSICALPROPERTIES"))
+            string line = splitResults[i];
+            var matches = PairRegex.Matches(splitResults[i]);
+
+            if (matches.Count <= 1) continue;
+
+            splitResults[i] = $"{matches[0].Groups["key"].Value}={matches[0].Groups["value"].Value}";
+
+            for (int k = 1; k < matches.Count; k++) splitResults.Insert(i + k, $"{matches[k].Groups["key"].Value}={matches[k].Groups["value"].Value}");
+
+            i += matches.Count - 1;
+        }
+
+
+        for (int i = 0; i < splitResults.Count; i++)
+        {
+            if (splitResults[i].Contains("GEOPHYSICALPROPERTIES", StringComparison.OrdinalIgnoreCase))
             {
-                bodyDataStartIndex = i;
+                equalsDataStartIndex = i;
             }
-            if (splitResults[i].Contains("HELIOCENTRICORBITCHARACTERISTICS"))
+            if (splitResults[i].Contains("TARGETBODYNAME", StringComparison.OrdinalIgnoreCase))
             {
-                bodyDataEndIndex = i;
+                equalsEndIndex = i;
+                colonDataStartIndex = i;
             }
-            if (splitResults[i].Contains("$$SOE"))
+            if (splitResults[i].Contains("REFERENCEFRAME", StringComparison.OrdinalIgnoreCase))
+            {
+                colonDataEndIndex = i + 1;
+            }
+
+            if (splitResults[i].Contains("$$SOE", StringComparison.OrdinalIgnoreCase))
             {
                 ephemerisVectorsStartIndex = i;
             }
-            if (splitResults[i].Contains("$$EOE"))
+            if (splitResults[i].Contains("$$EOE", StringComparison.OrdinalIgnoreCase))
             {
                 ephemerisVectorsEndIndex = i;
             }
         }
 
-        // Object Data Formatting 
-        for (int i = bodyDataStartIndex; i < bodyDataEndIndex; i++) // Iterate over every string element between "GEOPHYSICALPROPERTIES" and "HELIOCENTRICORBITCHARACTERISTICS"
+        // Object Data Formatting
+        // Format Data with '='
+        for (int i = equalsDataStartIndex; i < equalsEndIndex; i++) // Iterate over every string element between "GEOPHYSICALPROPERTIES" and "HELIOCENTRICORBITCHARACTERISTICS"
         {
             string row = splitResults[i];
-            if (string.IsNullOrEmpty(row) || row.Length < 2)
-            {
-                formattedBodyData?.Add(row ?? string.Empty);
-                continue;
-            }
-
-            int splitIndex = -1;
+            if (string.IsNullOrEmpty(row) || row.Length < 2) continue;
 
             for (int z = 0; z < row.Length - 1; z++) // Iterate over every character in one string element
             {
-                char current = splitResults[i][z];
-                char next = splitResults[i][z + 1];
-
-                if (char.IsDigit(current) && char.IsLetter(next)) // If the current character is a digit AND the next character is a letter:
+                if (row.Contains('='))
                 {
-                    splitIndex = z + 1;
-                    break;
+                    int separatorIdx = row.IndexOf('=');
+
+                    string rawKey = row[..separatorIdx];
+                    string rawValue = row[(separatorIdx + 1)..];
+
+                    foreach (ParsableData key in Enum.GetValues(typeof(ParsableData)))
+                    {
+                        if (rawKey.Contains(ParsableDataToString(key), StringComparison.OrdinalIgnoreCase) && !formattedBodyData.ContainsKey(key))
+                        {
+                            if (!TryParseNumericValueFrom(rawValue, out double numericValue)) numericValue = 0.0;
+
+                            DataValue dataValue = new(
+                                rawTextValue: rawValue,
+                                numericValue: numericValue
+                            );
+
+                            formattedBodyData.Add(key, dataValue);
+                        }
+
+                    }
+
                 }
             }
+        }
 
-            if (splitIndex == -1)
-            {
-                formattedBodyData?.Add(row);
-            }
-            else
-            {
-                formattedBodyData?.Add(row[..splitIndex]);
-                formattedBodyData?.Add(row[splitIndex..]);
-            }
+        // Format Data with ':'
+        for (int i = colonDataStartIndex; i < colonDataEndIndex; i++)
+        {
+            string row = splitResults[i];
+            if (string.IsNullOrEmpty(row) || row.Length < 2) continue;
 
+            for (int z = 0; z < row.Length - 1; z++)
+            {
+                if (row.Contains(":"))
+                {
+                    int separatorIdx = row.IndexOf(':');
+
+                    string rawKey = row[..separatorIdx];
+                    string rawValue = row[..separatorIdx];
+
+                    foreach (ParsableData key in Enum.GetValues(typeof(ParsableData)))
+                    {
+                        if (rawKey.Contains(ParsableDataToString(key), StringComparison.OrdinalIgnoreCase) && !formattedBodyData.ContainsKey(key))
+                        {
+                            if (!TryParseNumericValueFrom(rawValue, out double numericValue)) numericValue = 0.0;
+
+                            DataValue dataValue = new(
+                                rawTextValue: rawValue,
+                                numericValue: numericValue
+                            );
+
+                            formattedBodyData.Add(key, dataValue);
+                        }
+
+                    }
+                }
+            }
         }
 
         // Object Ephemeris Formatting
@@ -166,45 +240,108 @@ public static class HorizonsParser
                 posIndex = i + 1;
                 velIndex = i + 2;
             }
+            else continue;
 
-            if (TryParseVectors(splitResults[dateIndex], splitResults[posIndex], splitResults[velIndex], out EphemerisSample ephemeris))
-                formattedVectors?.Add(ephemeris);
-        }
-
-        for (int i = bodyDataEndIndex; i < splitResults.Length; i++)
-        {
-            formattedBodyData?.Add(splitResults[i]);
+            if (TryParseVectors(splitResults[dateIndex], splitResults[posIndex], splitResults[velIndex], out double3 positions, out double3 velocities, out DateTimeOffset date))
+            {
+                formattedVectors?.Add(new(
+                        bodyName: formattedBodyData[ParsableData.TargetBodyName].RawTextValue,
+                        centerbodyname: formattedBodyData[ParsableData.CenterBodyName].RawTextValue,
+                        date: date,
+                        position: positions,
+                        velocity: velocities
+                    ));
+            }
         }
 
         if (lowercase)
-            for (int i = 0; i < splitResults.Length; i++)
+            for (int i = 0; i < splitResults.Count; i++)
                 splitResults[i] = splitResults[i].ToLower();
 
-        return formattedBodyData?.ToArray();
+        return formattedBodyData;
     }
 
     static string ParsableDataToString(ParsableData parsableData)
     {
         return parsableData switch
         {
-            ParsableData.NameID => "targetbodyname",
-            ParsableData.Mass => "massx10^",
-            ParsableData.CenterNameID => "centerbodyname",
-            ParsableData.Radius => "vol.meanradius(km)",
+            ParsableData.VolMeanRadius_KM => "vol.meanradius(km)",
+            ParsableData.Mass_KG => "massx10^",
+            ParsableData.EquatorialRadius_KM => "equ.radius,km",
+            ParsableData.PolarAxis_KM => "polaraxis,km",
+            ParsableData.AtmosMass_KG => "atmos",
+            ParsableData.Flattening => "flattening",
+            ParsableData.Oceans => "oceans",
+            ParsableData.Density_G_CM3 => "density,g/cm^3",
+            ParsableData.Crust => "crust",
+            ParsableData.J2_IERS2010 => "j2(iers2010)",
+            ParsableData.Mantle => "mantle",
+            ParsableData.G_P_M_S2_Polar => "g_p,m/s^2(polar)",
+
+            ParsableData.Outercore => "outercore",
+            ParsableData.G_E_M_S2_Equatorial => "g_e,m/s^2(equatorial)",
+            ParsableData.Innercore => "innercore",
+            ParsableData.G_O_M_s2 => "g_o,m/s^2",
+            ParsableData.FluidcoreRad => "fluidcorerad",
+            ParsableData.GM_KM3_S2 => "gm,km^3/s^2",
+            ParsableData.InnercoreRad => "innercorerad",
+            ParsableData.GM1Sigma_KM3_S2 => "gm1-sigma,km^3/s^2",
+            ParsableData.EscapeVelocity_KM_S => "escapevelocity",
+            ParsableData.RotRate_Rad_S => "rot.rate(rad/s)",
+
+            ParsableData.MeansideRealDY_HR => "meansiderealdy,hr",
+            ParsableData.Land_KM => "land",
+            ParsableData.Sea_KM => "sea",
+            ParsableData.MeanSolarDay2000_S => "meansolarday2000,s",
+            ParsableData.MeanSolarDay1820_S => "meansolarday1820,s",
+
+            ParsableData.Loveno_K2 => "loveno.,k2",
+            ParsableData.MomentofInertia => "momentofinertia",
+            ParsableData.AtmPressure_BAR => "atm.pressure",
+            ParsableData.Meansurfacetemp_TS_K => "meansurfacetemp(ts),k",
+            ParsableData.Volume_KM3 => "volume,km^3",
+            ParsableData.MeaneffectTemp_TE_K => "meaneffect.temp(te),k",
+            ParsableData.MagneticMoment => "magneticmoment",
+            ParsableData.GeometricAlbedo => "geometricalbedo",
+            ParsableData.VisMag_V_1_0 => "vis.mag,v(1,0)",
+            ParsableData.SolarConstant_W_M2 => "solarconstant(w/m^2)",
+
+            ParsableData.ObliquityToOrbit_DEG => "obliquitytoorbit,deg",
+            ParsableData.SiderealOrbPeriod_DAY => "siderealorbperiod",
+            ParsableData.OrbitalSpeed_KM_S => "orbitalspeed,km/s",
+            ParsableData.MeanDailyMotion_DEG_DAY => "meandailymotion,deg/d",
+            ParsableData.HillsSphereRadius => "hill'ssphereradius",
+
+            ParsableData.TargetBodyName => "targetbodyname",
+            ParsableData.TargetBodyID => "targetbodyname",
+            ParsableData.CenterBodyName => "centerbodyname",
+            ParsableData.CenterBodyID => "centerbodyname",
+            ParsableData.CenterSiteName => "center-sitename",
             ParsableData.StartTime => "starttime",
             ParsableData.StopTime => "stoptime",
             ParsableData.StepSize => "step-size",
-            ParsableData.Positions => "",
-            ParsableData.Velocities => "",
-            _ => "Invalid Parsable Data",
+
+            ParsableData.CenterGeodetic => "centergeodetic",
+            ParsableData.CenterCylindric => "centercylindric",
+            ParsableData.CenterRadii => "centerradii",
+            ParsableData.OutputUnits => "outputunits",
+            ParsableData.CalendarMode => "calendarmode",
+            ParsableData.OutputType => "outputtype",
+            ParsableData.OutputFormat => "outputformat",
+            ParsableData.ReferenceFrame => "referenceframe",
+
+            _ => "invalid parsable data",
         };
     }
 
+
     // Position Vector Format Example: "X=-3.271541395225262E+07Y=1.428771211383301E+08Z=1.914442883169651E+04"
     // Velocity Vector Format Example: "XV=-3.271541395225262E+07YV=1.428771211383301E+08ZV=1.914442883169651E+04"
-    static bool TryParseVectors(string date, string positions, string velocities, out EphemerisSample ephemeris)
+    static bool TryParseVectors(string date, string positions, string velocities, out double3 position, out double3 velocity, out DateTimeOffset dateTime)
     {
-        ephemeris = default;
+        position = default;
+        velocity = default;
+        dateTime = default;
 
         // Find start index of position labels
         int xPosIdx = positions.IndexOf("X=");
@@ -270,19 +407,16 @@ public static class HorizonsParser
         if (!TryBuildDouble3(firstPos, rawPos1, secondPos, rawPos2, thirdPos, rawPos3, out double3 pos)) return false;
         if (!TryBuildDouble3(firstVel, rawVel1, secondVel, rawVel2, thirdVel, rawVel3, out double3 vel)) return false;
 
-        if (!TryParseJD(rawDate: date, out double dateJD) || !TryBuildDateTime(dateDouble: dateJD, dateTime: out DateTimeOffset dateTime)) return false;
+        if (!TryParseJD(rawDate: date, out double dateJD) || !TryBuildDateTime(dateDouble: dateJD, out dateTime)) return false;
 
-        ephemeris = new(
-            date: dateTime,
-            position: pos,
-            velocity: vel
-        );
+        position = pos;
+        velocity = vel;
 
         return true;
     }
 
     // Julian Date string/double expected format: 2460676.500000000
-    static bool TryBuildDateTime(out DateTimeOffset dateTime, double dateDouble)
+    static bool TryBuildDateTime(double dateDouble, out DateTimeOffset dateTime)
     {
         dateTime = default;
         if (!IsValidJulianDayTDB(dateDouble)) return false;
@@ -315,7 +449,6 @@ public static class HorizonsParser
         ReadOnlySpan<char> spanJDDate = new(jdDate.ToCharArray());
         if (!double.TryParse(spanJDDate, NumberStyles.Float, CultureInfo.InvariantCulture, out doubleJD))
         {
-            // Debug.Log($"Converted <string> -> <double> JD Date: {doubleJD}");
             return false;
         }
         Debug.Log($"Converted <string> -> <double> JD Date: {doubleJD}");

@@ -50,7 +50,15 @@ public class SimulationSettings : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        SetStartDateTime(_startYear, _startMonth, _startDay, _startHour, _startMinute, _startSecond, _startMillisecond);
+        SetStartDateTime(
+                _startYear,
+                _startMonth,
+                _startDay,
+                _startHour,
+                _startMinute,
+                _startSecond,
+                _startMillisecond
+                );
         _dateTime = _dateTimeStart;
 
         ResetClock();
@@ -68,7 +76,6 @@ public class SimulationSettings : MonoBehaviour
             return;
         }
 
-        // Accumulate "time we owe" the simulation.
         _simDebtDays += dtRequestedDays;
 
         // Prevent infinite catch-up debt.

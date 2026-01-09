@@ -58,14 +58,18 @@ public class HorizonsAPIManager : MonoBehaviour
         {
             HorizonsResults = www.downloadHandler.text;
             HorizonsResponse response = HorizonsResponse.CreateFromJSON(HorizonsResults);
-            string[] formattedResponse = HorizonsParser.FormatResponse(response: response, lowercase: _lowerCase, formattedVectors: out List<EphemerisSample> formattedVectors);
-            foreach (var line in formattedResponse)
+            Dictionary<ParsableData, DataValue> formattedResponse = HorizonsParser.FormatResponse(response: response, lowercase: _lowerCase, formattedVectors: out List<EphemerisSample> formattedVectors, rawSplitString: out string[] rawText);
+            foreach (var line in rawText)
             {
                 Debug.Log(line);
             }
-            foreach (var date in formattedVectors)
+            foreach (var line in formattedResponse)
             {
-                Debug.Log($"Date: {date.Date}\nPos:{date.Position}\nVel:{date.Velocity}");
+                Debug.Log($"{line.Key}: {(line.Value.NumericValue != 0.0 ? line.Value.NumericValue : line.Value.RawTextValue)}");
+            }
+            foreach (var ephemeris in formattedVectors)
+            {
+                Debug.Log($"Name: {ephemeris.BodyName}\nCenter Body Name: {ephemeris.CenterBodyName}\nDate: {ephemeris.Date}\nPos:{ephemeris.Position}\nVel:{ephemeris.Velocity}");
             }
             // HorizonsParser.TryParseData(ParsableData, formattedResponse, out string[] dataValue);
             // foreach (var value in dataValue)
