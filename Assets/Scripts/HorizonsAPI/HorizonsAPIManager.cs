@@ -58,19 +58,31 @@ public class HorizonsAPIManager : MonoBehaviour
         {
             HorizonsResults = www.downloadHandler.text;
             HorizonsResponse response = HorizonsResponse.CreateFromJSON(HorizonsResults);
-            Dictionary<ParsableData, DataValue> formattedResponse = HorizonsParser.FormatResponse(response: response, lowercase: _lowerCase, formattedVectors: out List<EphemerisSample> formattedVectors, rawSplitString: out string[] rawText);
-            foreach (var line in rawText)
+            List<string> formattedResponse = HorizonsParser.FormatResponse(response);
+            // if (HorizonsParser.TryParseUncertaintyValue("Mass layers:", out var parsedUncertainty))
+            // {
+            //     foreach (var data in parsedUncertainty)
+            //     {
+            //         Debug.Log($"{data.Key}: {data.Value.NumericValue}");
+            //     }
+            // }
+            foreach (var line in formattedResponse)
             {
                 Debug.Log(line);
             }
-            foreach (var line in formattedResponse)
-            {
-                Debug.Log($"{line.Key}: {(line.Value.NumericValue != 0.0 ? line.Value.NumericValue : line.Value.RawTextValue)}");
-            }
-            foreach (var ephemeris in formattedVectors)
-            {
-                Debug.Log($"Name: {ephemeris.BodyName}\nCenter Body Name: {ephemeris.CenterBodyName}\nDate: {ephemeris.Date}\nPos:{ephemeris.Position}\nVel:{ephemeris.Velocity}");
-            }
+            // Dictionary<ParsableData, ParsableDataValue> ParsedData = HorizonsParser.ParseData(rawFormattedLines: formattedResponse, lowercase: _lowerCase, formattedVectors: out List<EphemerisSample> formattedVectors);
+            // foreach (var line in ParsedData)
+            // {
+            //     Debug.Log($"{line.Key}: {(line.Value.NumericValue != 0.0 ? line.Value.NumericValue : line.Value.StringValue)}");
+            // }
+            // foreach (var line in formattedResponse)
+            // {
+            //     Debug.Log($"{line.Key}: {(line.Value.NumericValue != 0.0 ? line.Value.NumericValue : line.Value.RawTextValue)}");
+            // }
+            // foreach (var ephemeris in formattedVectors)
+            // {
+            //     Debug.Log($"Name: {ephemeris.BodyName}\nCenter Body Name: {ephemeris.CenterBodyName}\nDate: {ephemeris.Date}\nPos:{ephemeris.Position}\nVel:{ephemeris.Velocity}");
+            // }
             // HorizonsParser.TryParseData(ParsableData, formattedResponse, out string[] dataValue);
             // foreach (var value in dataValue)
             // {

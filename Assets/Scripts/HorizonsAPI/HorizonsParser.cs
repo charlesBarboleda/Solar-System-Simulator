@@ -5,12 +5,14 @@ using UnityEngine;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Linq;
+using UnityEngine.Rendering;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 public static class HorizonsParser
 {
-    public static bool TryParseData(ParsableData[] parsableData, string[] formattedText, out string[] targetDataValue)
+    public static bool TryParseData(ParsableData[] parsableData, string[] formattedText, out string[] targetParsableDataValue)
     {
-        targetDataValue = Array.Empty<string>();
+        targetParsableDataValue = Array.Empty<string>();
 
         if (parsableData == null || parsableData.Length == 0) return false;
         if (formattedText == null || formattedText.Length == 0) return false;
@@ -56,8 +58,8 @@ public static class HorizonsParser
                 results.Add($"{p}: {value}");
         }
 
-        targetDataValue = results.ToArray();
-        return targetDataValue.Length > 0;
+        targetParsableDataValue = results.ToArray();
+        return targetParsableDataValue.Length > 0;
     }
 
     static bool TryParseNumericValueFrom(string rawTextValue, out double value)
@@ -97,16 +99,98 @@ public static class HorizonsParser
 
         return true;
     }
-    public static Dictionary<ParsableData, DataValue> FormatResponse(HorizonsResponse response, out List<EphemerisSample> formattedVectors, out string[] rawSplitString, bool lowercase = false)
-    {
-        rawSplitString = response?.result?.Replace(" ", "").Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        List<string> splitResults = rawSplitString.Select(s => s.Trim()).ToList();
-        Dictionary<ParsableData, DataValue> formattedBodyData = new();
-        formattedVectors = new();
 
-        Regex PairRegex = new(
-                    @"(?<key>[^=]+?)=(?<value>.*?)(?=[^=]+?=|$)",
-                    RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    public static List<string> FormatResponse(HorizonsResponse response, bool removeUnits = false)
+    {
+        string[] r = response?.result?.Trim().Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        List<string> rawResponse = r.ToList();
+
+        Regex headerThenTail = new(@"^(?<header>[^=]+?:)\s{2,}(?<tail>.+)$", RegexOptions.Compiled);
+        Regex pairRegex = new(@"(?<key>[^=:]+?)\s*(?<sep>=|:)\s*(?<value>.+?)(?=\s{2,}[^=:]+?\s*(?:=|:)|$)", RegexOptions.Compiled);
+
+        List<string> formatted = new(rawResponse.Count * 2);
+
+        foreach (var rawLine in rawResponse)
+        {
+            var line = rawLine.Trim();
+
+            int exceptionIdx = line.IndexOf("Mass Layers", StringComparison.OrdinalIgnoreCase);
+            if (exceptionIdx >= 0) line = line[exceptionIdx..].TrimEnd();
+
+            exceptionIdx = line.IndexOf("Surface Area", StringComparison.OrdinalIgnoreCase);
+            if (exceptionIdx >= 0) line = line[exceptionIdx..].TrimEnd();
+
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            var hm = headerThenTail.Match(line);
+            if (hm.Success)
+            {
+                var header = hm.Groups["header"].Value.Trim();
+                var tail = hm.Groups["tail"].Value.Trim();
+
+                if (tail.Contains('=') || tail.Contains(':'))
+                {
+                    formatted.Add(header);
+                    AddPairsOrFallback(tail, formatted, pairRegex);
+                    continue;
+                }
+            }
+
+            AddPairsOrFallback(line, formatted, pairRegex);
+        }
+
+        if (removeUnits)
+        {
+            foreach (string line in formatted)
+            {
+
+            }
+        }
+
+        return formatted;
+
+    }
+
+    static bool TryRemoveUnits(string rawLine)
+    {
+        List<string> unitsList = new() { "km/s", "kg", "km", "bar", "gauss", "y", "d" };
+
+        return true;
+    }
+
+    static void AddPairsOrFallback(string text, List<string> output, Regex pairRegex)
+    {
+        var matches = pairRegex.Matches(text);
+
+        if (matches.Count == 0)
+        {
+            output.Add(text);
+            return;
+        }
+
+        if (matches.Count == 1)
+        {
+            output.Add(text);
+            return;
+        }
+
+        foreach (Match m in matches)
+        {
+            var key = m.Groups["key"].Value.Trim();
+            var sep = m.Groups["sep"].Value;
+            var value = m.Groups["value"].Value.Trim();
+
+            if (key.Length == 0 || value.Length == 0)
+                continue;
+
+            output.Add($"{key} {sep} {value}");
+        }
+    }
+
+    public static Dictionary<ParsableData, ParsableDataValue> ParseData(List<string> rawFormattedLines, out List<EphemerisSample> formattedVectors, bool lowercase = false)
+    {
+        Dictionary<ParsableData, ParsableDataValue> formattedBodyData = new();
+        formattedVectors = new();
 
         int equalsDataStartIndex = -1;
         int equalsEndIndex = -1;
@@ -115,42 +199,27 @@ public static class HorizonsParser
         int colonDataStartIndex = -1;
         int colonDataEndIndex = -1;
 
-        for (int i = 0; i < splitResults.Count; i++) // Formats double key/value pairs into a separate single key/value pair
+        for (int i = 0; i < rawFormattedLines.Count; i++)
         {
-            string line = splitResults[i];
-            var matches = PairRegex.Matches(splitResults[i]);
-
-            if (matches.Count <= 1) continue;
-
-            splitResults[i] = $"{matches[0].Groups["key"].Value}={matches[0].Groups["value"].Value}";
-
-            for (int k = 1; k < matches.Count; k++) splitResults.Insert(i + k, $"{matches[k].Groups["key"].Value}={matches[k].Groups["value"].Value}");
-
-            i += matches.Count - 1;
-        }
-
-
-        for (int i = 0; i < splitResults.Count; i++)
-        {
-            if (splitResults[i].Contains("GEOPHYSICALPROPERTIES", StringComparison.OrdinalIgnoreCase))
+            if (rawFormattedLines[i].Contains("GEOPHYSICALPROPERTIES", StringComparison.OrdinalIgnoreCase))
             {
                 equalsDataStartIndex = i;
             }
-            if (splitResults[i].Contains("TARGETBODYNAME", StringComparison.OrdinalIgnoreCase))
+            if (rawFormattedLines[i].Contains("TARGETBODYNAME", StringComparison.OrdinalIgnoreCase))
             {
                 equalsEndIndex = i;
                 colonDataStartIndex = i;
             }
-            if (splitResults[i].Contains("REFERENCEFRAME", StringComparison.OrdinalIgnoreCase))
+            if (rawFormattedLines[i].Contains("REFERENCEFRAME", StringComparison.OrdinalIgnoreCase))
             {
                 colonDataEndIndex = i + 1;
             }
 
-            if (splitResults[i].Contains("$$SOE", StringComparison.OrdinalIgnoreCase))
+            if (rawFormattedLines[i].Contains("$$SOE", StringComparison.OrdinalIgnoreCase))
             {
                 ephemerisVectorsStartIndex = i;
             }
-            if (splitResults[i].Contains("$$EOE", StringComparison.OrdinalIgnoreCase))
+            if (rawFormattedLines[i].Contains("$$EOE", StringComparison.OrdinalIgnoreCase))
             {
                 ephemerisVectorsEndIndex = i;
             }
@@ -160,7 +229,7 @@ public static class HorizonsParser
         // Format Data with '='
         for (int i = equalsDataStartIndex; i < equalsEndIndex; i++) // Iterate over every string element between "GEOPHYSICALPROPERTIES" and "HELIOCENTRICORBITCHARACTERISTICS"
         {
-            string row = splitResults[i];
+            string row = rawFormattedLines[i];
             if (string.IsNullOrEmpty(row) || row.Length < 2) continue;
 
             for (int z = 0; z < row.Length - 1; z++) // Iterate over every character in one string element
@@ -178,12 +247,12 @@ public static class HorizonsParser
                         {
                             if (!TryParseNumericValueFrom(rawValue, out double numericValue)) numericValue = 0.0;
 
-                            DataValue dataValue = new(
+                            ParsableDataValue ParsableDataValue = new(
                                 rawTextValue: rawValue,
                                 numericValue: numericValue
                             );
 
-                            formattedBodyData.Add(key, dataValue);
+                            formattedBodyData.Add(key, ParsableDataValue);
                         }
 
                     }
@@ -195,7 +264,7 @@ public static class HorizonsParser
         // Format Data with ':'
         for (int i = colonDataStartIndex; i < colonDataEndIndex; i++)
         {
-            string row = splitResults[i];
+            string row = rawFormattedLines[i];
             if (string.IsNullOrEmpty(row) || row.Length < 2) continue;
 
             for (int z = 0; z < row.Length - 1; z++)
@@ -213,12 +282,12 @@ public static class HorizonsParser
                         {
                             if (!TryParseNumericValueFrom(rawValue, out double numericValue)) numericValue = 0.0;
 
-                            DataValue dataValue = new(
+                            ParsableDataValue ParsableDataValue = new(
                                 rawTextValue: rawValue,
                                 numericValue: numericValue
                             );
 
-                            formattedBodyData.Add(key, dataValue);
+                            formattedBodyData.Add(key, ParsableDataValue);
                         }
 
                     }
@@ -234,7 +303,7 @@ public static class HorizonsParser
             int velIndex = -1;
 
             // Find Index of [Date], [Position], [Velocity]
-            if (splitResults[i].Contains("TDB"))
+            if (rawFormattedLines[i].Contains("TDB"))
             {
                 dateIndex = i;
                 posIndex = i + 1;
@@ -242,7 +311,7 @@ public static class HorizonsParser
             }
             else continue;
 
-            if (TryParseVectors(splitResults[dateIndex], splitResults[posIndex], splitResults[velIndex], out double3 positions, out double3 velocities, out DateTimeOffset date))
+            if (TryParseVectors(rawFormattedLines[dateIndex], rawFormattedLines[posIndex], rawFormattedLines[velIndex], out double3 positions, out double3 velocities, out DateTimeOffset date))
             {
                 formattedVectors?.Add(new(
                         bodyName: formattedBodyData[ParsableData.TargetBodyName].RawTextValue,
@@ -255,11 +324,74 @@ public static class HorizonsParser
         }
 
         if (lowercase)
-            for (int i = 0; i < splitResults.Count; i++)
-                splitResults[i] = splitResults[i].ToLower();
+            for (int i = 0; i < rawFormattedLines.Count; i++)
+                rawFormattedLines[i] = rawFormattedLines[i].ToLower();
 
         return formattedBodyData;
     }
+
+    static bool HasKeyValuePair(string rawLine, out int separatorIdx)
+    {
+        rawLine = rawLine.Replace(" ", "");
+        separatorIdx = rawLine.IndexOf("=") > -1 ? rawLine.IndexOf("=") : rawLine.IndexOf(":");
+        string rawValue = "";
+
+        if (separatorIdx > -1) rawValue = rawLine[(separatorIdx + 1)..].Trim();
+        else
+        {
+            Debug.LogError($"[HorizonsParser] HasKeyValuePair(): Could not locate identifiers ':' or '=' in '{rawLine}'");
+            return false;
+        }
+
+        if (rawLine.Length < 2 || rawValue.Length <= 0) return false;
+
+        return true;
+    }
+
+    static bool TryParseUncertaintyValue(string rawLine, out Dictionary<ParsableData, ParsableDataValue> keyValuePair)
+    {
+        keyValuePair = new();
+        if (!HasKeyValuePair(rawLine, out int separatorIdx))
+        {
+            Debug.LogError($"[HorizonsParser] TryParseUncertainty(): '{rawLine}' has no valid Key/Value pair");
+            return false;
+        }
+        int uncertaintyIdx = rawLine.IndexOf("+-");
+        if (uncertaintyIdx < 0)
+        {
+            Debug.LogError($"[HorizonsParser] TryParseUncertainty(): '{rawLine}' does not contain an uncertainty character '+-'");
+            return false;
+        }
+
+        rawLine = rawLine.Replace(" ", "").Trim();
+        string rawKey = rawLine[..separatorIdx];
+        string rawValue = rawLine[(separatorIdx + 1)..];
+        uncertaintyIdx = rawValue.IndexOf("+-");
+        string removedUncertaintyValue = rawValue[..uncertaintyIdx];
+
+        if (!double.TryParse(removedUncertaintyValue, out double numericValue))
+        {
+            Debug.LogError($"[HorizonsParser] TryParseUncertainty(): Could not parse a double from '{removedUncertaintyValue}'");
+            return false;
+        }
+
+        ParsableData parsedKey = default;
+        foreach (ParsableData key in Enum.GetValues(typeof(ParsableData)))
+        {
+            if (!rawKey.Contains(ParsableDataToString(key), StringComparison.OrdinalIgnoreCase)) continue;
+            parsedKey = key;
+        }
+
+        ParsableDataValue parsedValue = new(
+            rawTextValue: rawValue,
+            numericValue: numericValue
+            );
+
+        keyValuePair.Add(parsedKey, parsedValue);
+
+        return true;
+    }
+
 
     static string ParsableDataToString(ParsableData parsableData)
     {

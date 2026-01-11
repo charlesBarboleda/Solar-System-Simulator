@@ -740,7 +740,7 @@ GameObject:
   m_Component:
   - component: {fileID: 499261566}
   m_Layer: 0
-  m_Name: Diagnose why 'Keys' have empty/wrong 'Values'
+  m_Name: 'Finish TryRemoveUnits(),  '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1916,7 +1916,7 @@ MonoBehaviour:
     Obliquity to orbit, deg  = 23.4392911  Sidereal orb period  = 1.0000174 y\n 
     Orbital speed, km/s      = 29.79       Sidereal orb period  = 365.25636 d\n 
     Mean daily motion, deg/d = 0.9856474   Hill''s sphere radius = 234.9       \n*******************************************************************************\n\n\n*******************************************************************************\nEphemeris
-    / API_USER Fri Jan  9 15:12:37 2026 Pasadena, USA      / Horizons\n*******************************************************************************\nTarget
+    / API_USER Sat Jan 10 19:29:07 2026 Pasadena, USA      / Horizons\n*******************************************************************************\nTarget
     body name: Earth (399)                     {source: DE441}\nCenter body name:
     Solar System Barycenter (0)     {source: DE441}\nCenter-site name: BODY CENTER\n*******************************************************************************\nStart
     time      : A.D. 2025-Jan-01 00:00:00.0000 TDB\nStop  time      : A.D. 2025-Jan-30
