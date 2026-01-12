@@ -43,7 +43,6 @@ public static class HorizonsParser
             }
             else continue;
 
-            // If duplicates exist, decide policy: keep first or overwrite.
             if (!keyValuePair.ContainsKey(key))
                 keyValuePair[key] = value;
         }
@@ -392,56 +391,70 @@ public static class HorizonsParser
         return true;
     }
 
+    static string UnitMeasurementsToString(UnitMeasurements unit)
+    {
+        return unit switch
+        {
+            UnitMeasurements.KM_S => "km/s",
+            UnitMeasurements.GAUSS_RP3 => "gaussRp^3",
+            UnitMeasurements.G_CM3 => "g/cm^3",
+            UnitMeasurements.M_S2 => "m/s^2",
+            UnitMeasurements.KM3_S2 => "km^3/s^2",
+            UnitMeasurements.KM_3 => "km^3",
+            UnitMeasurements.DEG_D => "deg/d",
+            _ => "Invalid unit measurement"
+        };
+    }
 
     static string ParsableDataToString(ParsableData parsableData)
     {
         return parsableData switch
         {
-            ParsableData.VolMeanRadius_KM => "vol.meanradius(km)",
-            ParsableData.Mass_KG => "massx10^",
-            ParsableData.EquatorialRadius_KM => "equ.radius,km",
-            ParsableData.PolarAxis_KM => "polaraxis,km",
-            ParsableData.AtmosMass_KG => "atmos",
+            ParsableData.VolMeanRadius => "vol.meanradius",
+            ParsableData.Mass => "massx10^",
+            ParsableData.EquatorialRadius => "equ.radius",
+            ParsableData.PolarAxis => "polaraxis",
+            ParsableData.AtmosMass => "atmos",
             ParsableData.Flattening => "flattening",
             ParsableData.Oceans => "oceans",
-            ParsableData.Density_G_CM3 => "density,g/cm^3",
+            ParsableData.Density => "density",
             ParsableData.Crust => "crust",
             ParsableData.J2_IERS2010 => "j2(iers2010)",
             ParsableData.Mantle => "mantle",
-            ParsableData.G_P_M_S2_Polar => "g_p,m/s^2(polar)",
+            ParsableData.Surface_G_Polar => "g_p",
 
             ParsableData.Outercore => "outercore",
-            ParsableData.G_E_M_S2_Equatorial => "g_e,m/s^2(equatorial)",
+            ParsableData.Surface_G_Equatorial => "g_e",
             ParsableData.Innercore => "innercore",
-            ParsableData.G_O_M_s2 => "g_o,m/s^2",
+            ParsableData.Standard_G => "g_o",
             ParsableData.FluidcoreRad => "fluidcorerad",
-            ParsableData.GM_KM3_S2 => "gm,km^3/s^2",
+            ParsableData.Geocentric_G => "gm",
             ParsableData.InnercoreRad => "innercorerad",
-            ParsableData.GM1Sigma_KM3_S2 => "gm1-sigma,km^3/s^2",
-            ParsableData.EscapeVelocity_KM_S => "escapevelocity",
-            ParsableData.RotRate_Rad_S => "rot.rate(rad/s)",
+            ParsableData.Geocentric_G_1Sig => "gm1-sigma",
+            ParsableData.EscapeVelocity => "escapevelocity",
+            ParsableData.RotationRate => "rot.rate",
 
-            ParsableData.MeansideRealDY_HR => "meansiderealdy,hr",
-            ParsableData.Land_KM => "land",
-            ParsableData.Sea_KM => "sea",
-            ParsableData.MeanSolarDay2000_S => "meansolarday2000,s",
-            ParsableData.MeanSolarDay1820_S => "meansolarday1820,s",
+            ParsableData.MeanSiderealDay => "meansiderealdy",
+            ParsableData.Land => "land",
+            ParsableData.Sea => "sea",
+            ParsableData.MeanSolarDay2000 => "meansolarday2000",
+            ParsableData.MeanSolarDay1820 => "meansolarday1820",
 
-            ParsableData.Loveno_K2 => "loveno.,k2",
+            ParsableData.LoveNo => "loveno.",
             ParsableData.MomentofInertia => "momentofinertia",
-            ParsableData.AtmPressure_BAR => "atm.pressure",
-            ParsableData.Meansurfacetemp_TS_K => "meansurfacetemp(ts),k",
-            ParsableData.Volume_KM3 => "volume,km^3",
-            ParsableData.MeaneffectTemp_TE_K => "meaneffect.temp(te),k",
+            ParsableData.AtmosPressure => "atm.pressure",
+            ParsableData.MeanSurfaceTemp_TS => "meansurfacetemp(ts)",
+            ParsableData.Volume => "volume",
+            ParsableData.MeanEffectTemp_TE => "meaneffect.temp(te)",
             ParsableData.MagneticMoment => "magneticmoment",
             ParsableData.GeometricAlbedo => "geometricalbedo",
-            ParsableData.VisMag_V_1_0 => "vis.mag,v(1,0)",
-            ParsableData.SolarConstant_W_M2 => "solarconstant(w/m^2)",
+            ParsableData.VisMag => "vis.mag.",
+            ParsableData.SolarConstant => "solarconstant",
 
-            ParsableData.ObliquityToOrbit_DEG => "obliquitytoorbit,deg",
-            ParsableData.SiderealOrbPeriod_DAY => "siderealorbperiod",
-            ParsableData.OrbitalSpeed_KM_S => "orbitalspeed,km/s",
-            ParsableData.MeanDailyMotion_DEG_DAY => "meandailymotion,deg/d",
+            ParsableData.ObliquityToOrbit => "obliquitytoorbit",
+            ParsableData.SiderealOrbPeriod => "siderealorbperiod",
+            ParsableData.OrbitalSpeed => "orbitalspeed",
+            ParsableData.MeanDailyMotion => "meandailymotion",
             ParsableData.HillsSphereRadius => "hill'ssphereradius",
 
             ParsableData.TargetBodyName => "targetbodyname",

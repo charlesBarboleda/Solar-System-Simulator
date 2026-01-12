@@ -2,7 +2,7 @@ public enum UnitMeasurements
 {
     None,
     KM,
-    KMperSEC,
+    KM_S,
     KG,
     BAR,
     GAUSS_RP3,
