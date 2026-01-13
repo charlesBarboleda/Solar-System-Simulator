@@ -1,11 +1,8 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework.Interfaces;
 using UnityEngine;
 using UnityEngine.Networking;
-
+using System.Globalization;
 
 public class HorizonsAPIManager : MonoBehaviour
 {
@@ -32,19 +29,6 @@ public class HorizonsAPIManager : MonoBehaviour
     public ParsableData[] ParsableData;
     [SerializeField] bool _lowerCase = false;
 
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     IEnumerator GetResult(string URL)
     {
         UnityWebRequest www = UnityWebRequest.Get(URL);
@@ -59,36 +43,16 @@ public class HorizonsAPIManager : MonoBehaviour
             HorizonsResults = www.downloadHandler.text;
             HorizonsResponse response = HorizonsResponse.CreateFromJSON(HorizonsResults);
             List<string> formattedResponse = HorizonsParser.FormatResponse(response);
-            // if (HorizonsParser.TryParseUncertaintyValue("Mass layers:", out var parsedUncertainty))
-            // {
-            //     foreach (var data in parsedUncertainty)
-            //     {
-            //         Debug.Log($"{data.Key}: {data.Value.NumericValue}");
-            //     }
-            // }
             foreach (var line in formattedResponse)
             {
                 Debug.Log(line);
             }
-            // Dictionary<ParsableData, ParsableDataValue> ParsedData = HorizonsParser.ParseData(rawFormattedLines: formattedResponse, lowercase: _lowerCase, formattedVectors: out List<EphemerisSample> formattedVectors);
-            // foreach (var line in ParsedData)
-            // {
-            //     Debug.Log($"{line.Key}: {(line.Value.NumericValue != 0.0 ? line.Value.NumericValue : line.Value.StringValue)}");
-            // }
-            // foreach (var line in formattedResponse)
-            // {
-            //     Debug.Log($"{line.Key}: {(line.Value.NumericValue != 0.0 ? line.Value.NumericValue : line.Value.RawTextValue)}");
-            // }
-            // foreach (var ephemeris in formattedVectors)
-            // {
-            //     Debug.Log($"Name: {ephemeris.BodyName}\nCenter Body Name: {ephemeris.CenterBodyName}\nDate: {ephemeris.Date}\nPos:{ephemeris.Position}\nVel:{ephemeris.Velocity}");
-            // }
-            // HorizonsParser.TryParseData(ParsableData, formattedResponse, out string[] dataValue);
-            // foreach (var value in dataValue)
-            // {
-            //     Debug.Log(value);
-            // }
-
+            var bodyDatas = HorizonsParser.ParseBodyData(formattedResponse);
+            string empty = "";
+            foreach (var data in bodyDatas)
+            {
+                Debug.Log($"{data.Key}: {data.Value.NumericValue} {(data.Value.NumericValueUnit == UnitMeasurements.None ? empty : HorizonsParser.UnitMeasurementsToString(data.Value.NumericValueUnit))}");
+            }
         }
     }
 

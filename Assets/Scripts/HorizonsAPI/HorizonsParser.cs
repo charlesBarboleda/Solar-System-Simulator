@@ -5,101 +5,11 @@ using UnityEngine;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Linq;
-using UnityEngine.Rendering;
-using System.Runtime.InteropServices.WindowsRuntime;
+using NUnit.Framework;
 
 public static class HorizonsParser
 {
-    public static bool TryParseData(ParsableData[] parsableData, string[] formattedText, out string[] targetParsableDataValue)
-    {
-        targetParsableDataValue = Array.Empty<string>();
-
-        if (parsableData == null || parsableData.Length == 0) return false;
-        if (formattedText == null || formattedText.Length == 0) return false;
-
-        var keyValuePair = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var line in formattedText)
-        {
-            int colon = line.IndexOf(':');
-            int equals = line.IndexOf('=');
-            string key = string.Empty;
-            string value = string.Empty;
-
-            if (colon >= 0 || equals >= 0)
-            {
-                if (colon >= 0)
-                {
-                    key = line[..colon];
-                    value = line[(colon + 1)..];
-                }
-                else if (equals >= 0)
-                {
-                    key = line[..equals];
-                    value = line[(equals + 1)..];
-
-                }
-
-            }
-            else continue;
-
-            if (!keyValuePair.ContainsKey(key))
-                keyValuePair[key] = value;
-        }
-
-        var results = new List<string>(parsableData.Length);
-
-        foreach (var p in parsableData)
-        {
-            string key = ParsableDataToString(p);
-
-            if (!keyValuePair.TryGetValue(key, out var value))
-                results.Add($"{p}: {value}");
-        }
-
-        targetParsableDataValue = results.ToArray();
-        return targetParsableDataValue.Length > 0;
-    }
-
-    static bool TryParseNumericValueFrom(string rawTextValue, out double value)
-    {
-        if (rawTextValue.EndsWith("km/s", StringComparison.OrdinalIgnoreCase) || rawTextValue.EndsWith("km/d", StringComparison.OrdinalIgnoreCase))
-            rawTextValue = rawTextValue[0..^4];
-
-        if (rawTextValue.EndsWith("bar", StringComparison.OrdinalIgnoreCase))
-            rawTextValue = rawTextValue[0..^3];
-
-        if (rawTextValue.EndsWith("kg", StringComparison.OrdinalIgnoreCase) || rawTextValue.EndsWith("km", StringComparison.OrdinalIgnoreCase))
-            rawTextValue = rawTextValue[0..^2];
-
-        if (rawTextValue.EndsWith("d", StringComparison.OrdinalIgnoreCase) || rawTextValue.EndsWith("y", StringComparison.OrdinalIgnoreCase))
-            rawTextValue = rawTextValue[0..^1];
-
-
-        if (double.TryParse(rawTextValue, out value)) return true;
-
-        int specialCharIdx = rawTextValue.IndexOf("+-");
-        if (specialCharIdx > -1)
-        {
-            string rawValue = rawTextValue[..specialCharIdx];
-            if (!double.TryParse(rawValue, out value)) return false;
-        }
-
-        specialCharIdx = rawTextValue.IndexOf('^');
-        if (specialCharIdx > -1)
-        {
-            int multiIdx = rawTextValue.IndexOf('x', StringComparison.OrdinalIgnoreCase);
-            if (multiIdx < 0) return false;
-            if (!double.TryParse(rawTextValue[..multiIdx], out double baseNum)) return false;
-            if (!double.TryParse(rawTextValue[(specialCharIdx + 1)..], out double exponent)) return false;
-
-            value = baseNum * (Math.Pow(10.0, exponent));
-        }
-
-        return true;
-    }
-
-    public static List<string> FormatResponse(HorizonsResponse response, bool removeUnits = false)
+    public static List<string> FormatResponse(HorizonsResponse response)
     {
         string[] r = response?.result?.Trim().Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
         List<string> rawResponse = r.ToList();
@@ -138,23 +48,8 @@ public static class HorizonsParser
             AddPairsOrFallback(line, formatted, pairRegex);
         }
 
-        if (removeUnits)
-        {
-            foreach (string line in formatted)
-            {
-
-            }
-        }
-
         return formatted;
 
-    }
-
-    static bool TryRemoveUnits(string rawLine)
-    {
-        List<string> unitsList = new() { "km/s", "kg", "km", "bar", "gauss", "y", "d" };
-
-        return true;
     }
 
     static void AddPairsOrFallback(string text, List<string> output, Regex pairRegex)
@@ -186,212 +81,352 @@ public static class HorizonsParser
         }
     }
 
-    public static Dictionary<ParsableData, ParsableDataValue> ParseData(List<string> rawFormattedLines, out List<EphemerisSample> formattedVectors, bool lowercase = false)
+    public static Dictionary<ParsableData, ParsableDataValue> ParseBodyData(IReadOnlyList<string> lines)
     {
-        Dictionary<ParsableData, ParsableDataValue> formattedBodyData = new();
-        formattedVectors = new();
+        var result = new Dictionary<ParsableData, ParsableDataValue>();
 
-        int equalsDataStartIndex = -1;
-        int equalsEndIndex = -1;
-        int ephemerisVectorsStartIndex = -1;
-        int ephemerisVectorsEndIndex = -1;
-        int colonDataStartIndex = -1;
-        int colonDataEndIndex = -1;
+        var unitLookup = BuildUnitLookup();
 
-        for (int i = 0; i < rawFormattedLines.Count; i++)
+        int bodyDataStartIdx = -1;
+        int bodyDataEndIdx = -1;
+
+        for (int i = 0; i < lines.Count; i++)
         {
-            if (rawFormattedLines[i].Contains("GEOPHYSICALPROPERTIES", StringComparison.OrdinalIgnoreCase))
-            {
-                equalsDataStartIndex = i;
-            }
-            if (rawFormattedLines[i].Contains("TARGETBODYNAME", StringComparison.OrdinalIgnoreCase))
-            {
-                equalsEndIndex = i;
-                colonDataStartIndex = i;
-            }
-            if (rawFormattedLines[i].Contains("REFERENCEFRAME", StringComparison.OrdinalIgnoreCase))
-            {
-                colonDataEndIndex = i + 1;
-            }
+            string formattedLine = lines[i].Replace(" ", "");
+            if (formattedLine.Contains("GeoPhysicalProperties", StringComparison.OrdinalIgnoreCase)) bodyDataStartIdx = i + 1;
+            if (formattedLine.Contains("Hill'sSphereRadius", StringComparison.OrdinalIgnoreCase)) bodyDataEndIdx = i + 1;
+        }
 
-            if (rawFormattedLines[i].Contains("$$SOE", StringComparison.OrdinalIgnoreCase))
+        for (int i = bodyDataStartIdx; i < bodyDataEndIdx; i++)
+        {
+            string line = lines[i];
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            line = line.Trim();
+
+            if (!TrySplitKeyValue(line, out string keyPartRaw, out string valuePartRaw))
+                continue;
+
+            if (!TryMatchParsableData(keyPartRaw, out ParsableData parsableData))
+                continue;
+
+            int exponentFromKey = ExtractExponent10(keyPartRaw);
+
+            UnitMeasurements unitFromKey = ExtractUnitFromKey(keyPartRaw, unitLookup);
+
+            if (TryParseNumericValue(valuePartRaw, exponentFromKey, unitFromKey, unitLookup, out double numeric, out UnitMeasurements finalUnit))
             {
-                ephemerisVectorsStartIndex = i;
+                string rawNumeric = numeric.ToString("G17", CultureInfo.InvariantCulture);
+                result[parsableData] = new ParsableDataValue(rawNumeric, numeric, finalUnit);
             }
-            if (rawFormattedLines[i].Contains("$$EOE", StringComparison.OrdinalIgnoreCase))
+            else
             {
-                ephemerisVectorsEndIndex = i;
+                string rawString = valuePartRaw.Trim();
+                result[parsableData] = new ParsableDataValue(rawString, rawString);
             }
         }
 
-        // Object Data Formatting
-        // Format Data with '='
-        for (int i = equalsDataStartIndex; i < equalsEndIndex; i++) // Iterate over every string element between "GEOPHYSICALPROPERTIES" and "HELIOCENTRICORBITCHARACTERISTICS"
+        return result;
+
+        // -------------------- local helpers --------------------
+
+        static Dictionary<string, UnitMeasurements> BuildUnitLookup()
         {
-            string row = rawFormattedLines[i];
-            if (string.IsNullOrEmpty(row) || row.Length < 2) continue;
-
-            for (int z = 0; z < row.Length - 1; z++) // Iterate over every character in one string element
+            var map = new Dictionary<string, UnitMeasurements>(StringComparer.OrdinalIgnoreCase);
+            foreach (UnitMeasurements u in Enum.GetValues(typeof(UnitMeasurements)))
             {
-                if (row.Contains('='))
+                string sig = UnitMeasurementsToString(u);
+                sig = NormalizeSig(sig);
+
+                if (!map.ContainsKey(sig))
+                    map.Add(sig, u);
+
+                if (u == UnitMeasurements.KM_3 && !map.ContainsKey("km3")) map.Add("km3", u);
+                if (u == UnitMeasurements.KM3_S2 && !map.ContainsKey("km3/s2")) map.Add("km3/s2", u);
+                if (u == UnitMeasurements.M_S2 && !map.ContainsKey("m/s2")) map.Add("m/s2", u);
+            }
+            return map;
+        }
+
+        static bool TrySplitKeyValue(string line, out string keyPart, out string valuePart)
+        {
+            int eq = line.IndexOf('=');
+            int col = line.IndexOf(':');
+
+            int sep =
+                (eq >= 0 && col >= 0) ? Math.Min(eq, col) :
+                (eq >= 0) ? eq :
+                (col >= 0) ? col :
+                -1;
+
+            if (sep < 0)
+            {
+                keyPart = null;
+                valuePart = null;
+                return false;
+            }
+
+            keyPart = line.Substring(0, sep).Trim();
+            valuePart = line.Substring(sep + 1).Trim();
+            return !(keyPart.Length == 0);
+        }
+
+        static bool TryMatchParsableData(string keyPartRaw, out ParsableData parsableData)
+        {
+            string keyNorm = NormalizeSig(keyPartRaw);
+
+            ParsableData? match = null;
+
+            foreach (ParsableData pd in Enum.GetValues(typeof(ParsableData)))
+            {
+                string sig = NormalizeSig(ParsableDataToString(pd));
+                if (sig == "invalidparsabledata")
+                    continue;
+
+                if (keyNorm.Contains(sig, StringComparison.Ordinal))
                 {
-                    int separatorIdx = row.IndexOf('=');
-
-                    string rawKey = row[..separatorIdx];
-                    string rawValue = row[(separatorIdx + 1)..];
-
-                    foreach (ParsableData key in Enum.GetValues(typeof(ParsableData)))
-                    {
-                        if (rawKey.Contains(ParsableDataToString(key), StringComparison.OrdinalIgnoreCase) && !formattedBodyData.ContainsKey(key))
-                        {
-                            if (!TryParseNumericValueFrom(rawValue, out double numericValue)) numericValue = 0.0;
-
-                            ParsableDataValue ParsableDataValue = new(
-                                rawTextValue: rawValue,
-                                numericValue: numericValue
-                            );
-
-                            formattedBodyData.Add(key, ParsableDataValue);
-                        }
-
-                    }
-
+                    match = pd;
+                    break;
                 }
             }
+
+            if (match == null)
+            {
+                parsableData = default;
+                return false;
+            }
+
+            if (match == ParsableData.TargetBodyName || match == ParsableData.TargetBodyID)
+            {
+                parsableData = HasParenDigits(keyPartRaw) ? ParsableData.TargetBodyID : ParsableData.TargetBodyName;
+                return true;
+            }
+
+            if (match == ParsableData.CenterBodyName || match == ParsableData.CenterBodyID)
+            {
+                parsableData = HasParenDigits(keyPartRaw) ? ParsableData.CenterBodyID : ParsableData.CenterBodyName;
+                return true;
+            }
+
+            parsableData = match.Value;
+            return true;
+
+            static bool HasParenDigits(string s)
+            {
+                int l = s.IndexOf('(');
+                int r = s.IndexOf(')', l + 1);
+                if (l < 0 || r < 0 || r <= l + 1)
+                    return false;
+
+                for (int i = l + 1; i < r; i++)
+                {
+                    if (!char.IsDigit(s[i]))
+                        return false;
+                }
+                return true;
+            }
         }
 
-        // Format Data with ':'
-        for (int i = colonDataStartIndex; i < colonDataEndIndex; i++)
+        static int ExtractExponent10(string s)
         {
-            string row = rawFormattedLines[i];
-            if (string.IsNullOrEmpty(row) || row.Length < 2) continue;
+            string norm = NormalizeSig(s);
+            int idx = norm.IndexOf("10^", StringComparison.Ordinal);
+            if (idx < 0)
+                return 0;
 
-            for (int z = 0; z < row.Length - 1; z++)
+            int i = idx + 3;
+            if (i >= norm.Length)
+                return 0;
+
+            int sign = 1;
+            if (norm[i] == '+') { sign = 1; i++; }
+            else if (norm[i] == '-') { sign = -1; i++; }
+
+            int start = i;
+            while (i < norm.Length && char.IsDigit(norm[i])) i++;
+
+            if (i == start)
+                return 0;
+
+            if (!int.TryParse(norm.Substring(start, i - start), NumberStyles.Integer, CultureInfo.InvariantCulture, out int exp))
+                return 0;
+
+            return sign * exp;
+        }
+
+        static UnitMeasurements ExtractUnitFromKey(string keyPartRaw, Dictionary<string, UnitMeasurements> unitLookupMap)
+        {
+
+            string key = keyPartRaw;
+
+            int l = key.IndexOf('(');
+            int r = key.IndexOf(')', l + 1);
+            if (l >= 0 && r > l)
             {
-                if (row.Contains(":"))
+                string inside = key.Substring(l + 1, r - l - 1).Trim();
+                string insideNorm = NormalizeSig(inside);
+
+                if (unitLookupMap.TryGetValue(insideNorm, out UnitMeasurements u))
+                    return u;
+            }
+
+            int comma = key.IndexOf(',');
+            if (comma >= 0 && comma < key.Length - 1)
+            {
+                string afterComma = key.Substring(comma + 1).Trim();
+
+                int dl = afterComma.IndexOf('(');
+                if (dl >= 0)
+                    afterComma = afterComma.Substring(0, dl).Trim();
+
+                string afterCommaNorm = NormalizeSig(afterComma);
+
+                if (unitLookupMap.TryGetValue(afterCommaNorm, out UnitMeasurements u))
+                    return u;
+            }
+
+            return UnitMeasurements.None;
+        }
+
+        static bool TryParseNumericValue(
+            string valuePartRaw,
+            int exponentFromKey,
+            UnitMeasurements unitFromKey,
+            Dictionary<string, UnitMeasurements> unitLookupMap,
+            out double numeric,
+            out UnitMeasurements finalUnit)
+        {
+            numeric = default;
+            finalUnit = unitFromKey;
+
+            string v = valuePartRaw.Trim();
+
+            int pm = v.IndexOf("+-", StringComparison.Ordinal);
+            if (pm >= 0)
+                v = v.Substring(0, pm).Trim();
+
+            int exponentFromValue = ExtractExponent10(v);
+
+            if (finalUnit == UnitMeasurements.None)
+            {
+                if (TryExtractSuffixUnit(ref v, unitLookupMap, out UnitMeasurements suffixUnit))
+                    finalUnit = suffixUnit;
+            }
+            else
+            {
+                _ = TryExtractSuffixUnit(ref v, unitLookupMap, out _);
+            }
+
+            if (!TryExtractLeadingNumberToken(v, out string numberToken))
+                return false;
+
+            if (!double.TryParse(numberToken, NumberStyles.Float, CultureInfo.InvariantCulture, out double baseValue))
+                return false;
+
+            int totalExp = exponentFromKey + exponentFromValue;
+            if (totalExp != 0)
+                baseValue *= Math.Pow(10d, totalExp);
+
+            numeric = baseValue;
+            return true;
+
+            static bool TryExtractSuffixUnit(ref string s, Dictionary<string, UnitMeasurements> unitLookup, out UnitMeasurements unit)
+            {
+                unit = UnitMeasurements.None;
+
+                string trimmed = s.Trim();
+                int lastSpace = trimmed.LastIndexOf(' ');
+                if (lastSpace < 0 || lastSpace == trimmed.Length - 1)
+                    return false;
+
+                string lastToken = trimmed.Substring(lastSpace + 1).Trim().TrimEnd(',', ';');
+
+                string lastTokenNorm = NormalizeSig(lastToken);
+
+                if (!unitLookup.TryGetValue(lastTokenNorm, out unit))
+                    return false;
+
+                s = trimmed.Substring(0, lastSpace).Trim();
+                return true;
+            }
+
+            static bool TryExtractLeadingNumberToken(string s, out string token)
+            {
+                token = null;
+
+                int n = s.Length;
+                int start = -1;
+
+                for (int i = 0; i < n; i++)
                 {
-                    int separatorIdx = row.IndexOf(':');
-
-                    string rawKey = row[..separatorIdx];
-                    string rawValue = row[..separatorIdx];
-
-                    foreach (ParsableData key in Enum.GetValues(typeof(ParsableData)))
+                    char c = s[i];
+                    if (char.IsDigit(c) || c == '+' || c == '-' || c == '.')
                     {
-                        if (rawKey.Contains(ParsableDataToString(key), StringComparison.OrdinalIgnoreCase) && !formattedBodyData.ContainsKey(key))
-                        {
-                            if (!TryParseNumericValueFrom(rawValue, out double numericValue)) numericValue = 0.0;
-
-                            ParsableDataValue ParsableDataValue = new(
-                                rawTextValue: rawValue,
-                                numericValue: numericValue
-                            );
-
-                            formattedBodyData.Add(key, ParsableDataValue);
-                        }
-
+                        start = i;
+                        break;
                     }
                 }
+
+                if (start < 0)
+                    return false;
+
+                bool seenE = false;
+                bool allowSignAfterE = false;
+
+                int end = start;
+                for (; end < n; end++)
+                {
+                    char c = s[end];
+
+                    if (char.IsDigit(c) || c == '.')
+                    {
+                        allowSignAfterE = false;
+                        continue;
+                    }
+
+                    if ((c == 'E' || c == 'e') && !seenE)
+                    {
+                        seenE = true;
+                        allowSignAfterE = true;
+                        continue;
+                    }
+
+                    if ((c == '+' || c == '-') && allowSignAfterE)
+                    {
+                        allowSignAfterE = false;
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if (end <= start)
+                    return false;
+
+                token = s.Substring(start, end - start);
+                return true;
             }
         }
 
-        // Object Ephemeris Formatting
-        for (int i = ephemerisVectorsStartIndex + 1; i < ephemerisVectorsEndIndex; i += 3) // Iterate over each ephemeris date, which contains position and velocity vectors
+        static string NormalizeSig(string s)
         {
-            int dateIndex = -1;
-            int posIndex = -1;
-            int velIndex = -1;
+            s = s.ToLowerInvariant();
+            Span<char> tmp = s.Length <= 256 ? stackalloc char[s.Length] : new char[s.Length];
+            int w = 0;
 
-            // Find Index of [Date], [Position], [Velocity]
-            if (rawFormattedLines[i].Contains("TDB"))
+            for (int i = 0; i < s.Length; i++)
             {
-                dateIndex = i;
-                posIndex = i + 1;
-                velIndex = i + 2;
+                char c = s[i];
+                if (!char.IsWhiteSpace(c))
+                    tmp[w++] = c;
             }
-            else continue;
 
-            if (TryParseVectors(rawFormattedLines[dateIndex], rawFormattedLines[posIndex], rawFormattedLines[velIndex], out double3 positions, out double3 velocities, out DateTimeOffset date))
-            {
-                formattedVectors?.Add(new(
-                        bodyName: formattedBodyData[ParsableData.TargetBodyName].RawTextValue,
-                        centerbodyname: formattedBodyData[ParsableData.CenterBodyName].RawTextValue,
-                        date: date,
-                        position: positions,
-                        velocity: velocities
-                    ));
-            }
+            return new string(tmp.Slice(0, w));
         }
-
-        if (lowercase)
-            for (int i = 0; i < rawFormattedLines.Count; i++)
-                rawFormattedLines[i] = rawFormattedLines[i].ToLower();
-
-        return formattedBodyData;
     }
 
-    static bool HasKeyValuePair(string rawLine, out int separatorIdx)
-    {
-        rawLine = rawLine.Replace(" ", "");
-        separatorIdx = rawLine.IndexOf("=") > -1 ? rawLine.IndexOf("=") : rawLine.IndexOf(":");
-        string rawValue = "";
-
-        if (separatorIdx > -1) rawValue = rawLine[(separatorIdx + 1)..].Trim();
-        else
-        {
-            Debug.LogError($"[HorizonsParser] HasKeyValuePair(): Could not locate identifiers ':' or '=' in '{rawLine}'");
-            return false;
-        }
-
-        if (rawLine.Length < 2 || rawValue.Length <= 0) return false;
-
-        return true;
-    }
-
-    static bool TryParseUncertaintyValue(string rawLine, out Dictionary<ParsableData, ParsableDataValue> keyValuePair)
-    {
-        keyValuePair = new();
-        if (!HasKeyValuePair(rawLine, out int separatorIdx))
-        {
-            Debug.LogError($"[HorizonsParser] TryParseUncertainty(): '{rawLine}' has no valid Key/Value pair");
-            return false;
-        }
-        int uncertaintyIdx = rawLine.IndexOf("+-");
-        if (uncertaintyIdx < 0)
-        {
-            Debug.LogError($"[HorizonsParser] TryParseUncertainty(): '{rawLine}' does not contain an uncertainty character '+-'");
-            return false;
-        }
-
-        rawLine = rawLine.Replace(" ", "").Trim();
-        string rawKey = rawLine[..separatorIdx];
-        string rawValue = rawLine[(separatorIdx + 1)..];
-        uncertaintyIdx = rawValue.IndexOf("+-");
-        string removedUncertaintyValue = rawValue[..uncertaintyIdx];
-
-        if (!double.TryParse(removedUncertaintyValue, out double numericValue))
-        {
-            Debug.LogError($"[HorizonsParser] TryParseUncertainty(): Could not parse a double from '{removedUncertaintyValue}'");
-            return false;
-        }
-
-        ParsableData parsedKey = default;
-        foreach (ParsableData key in Enum.GetValues(typeof(ParsableData)))
-        {
-            if (!rawKey.Contains(ParsableDataToString(key), StringComparison.OrdinalIgnoreCase)) continue;
-            parsedKey = key;
-        }
-
-        ParsableDataValue parsedValue = new(
-            rawTextValue: rawValue,
-            numericValue: numericValue
-            );
-
-        keyValuePair.Add(parsedKey, parsedValue);
-
-        return true;
-    }
-
-    static string UnitMeasurementsToString(UnitMeasurements unit)
+    public static string UnitMeasurementsToString(UnitMeasurements unit)
     {
         return unit switch
         {
@@ -402,7 +437,8 @@ public static class HorizonsParser
             UnitMeasurements.KM3_S2 => "km^3/s^2",
             UnitMeasurements.KM_3 => "km^3",
             UnitMeasurements.DEG_D => "deg/d",
-            _ => "Invalid unit measurement"
+            UnitMeasurements.W_M2 => "w/m^2",
+            _ => unit.ToString()
         };
     }
 

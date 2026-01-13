@@ -19,6 +19,13 @@ public enum UnitMeasurements
     DEG_D,
     D,
     Y,
-
-
 }
+
+public enum UnitMeasurementsFormat
+{
+    None,
+    Prefix, // Unit is prefixed with ','
+    Suffix, // Unit is at the end of the 'value'
+    Bracket // Unit is inside a circle bracket (unit)
+}
+
