@@ -5,7 +5,7 @@ using UnityEngine;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Linq;
-using NUnit.Framework;
+using TMPro;
 
 public static class HorizonsParser
 {
@@ -699,5 +699,96 @@ public static class HorizonsParser
         return true;
     }
 
+    static bool TryParseCatalog(List<string> rawFormattedResponse, out List<BodyCatalog> catalog)
+    {
+        catalog = new();
 
+        int startIdx = -1;
+        int endIdx = -1;
+
+        for (int i = 0; i < rawFormattedResponse.Count; i++)
+        {
+            string removeWhiteSpace = rawFormattedResponse[i].Replace(" ", "").Trim();
+            if (removeWhiteSpace.Contains("ID#", StringComparison.OrdinalIgnoreCase)) startIdx = i + 2;
+            if (removeWhiteSpace.Contains("numberofmatches", StringComparison.OrdinalIgnoreCase)) endIdx = i;
+        }
+        if (startIdx < 0 || endIdx < 0)
+        {
+            Debug.LogError($"Could not find start/end indices of catalog from '{rawFormattedResponse}'");
+            return false;
+        }
+
+        for (int i = startIdx; i < endIdx; i++)
+        {
+            foreach (char c in rawFormattedResponse[i])
+            {
+
+            }
+        }
+
+        return true;
+    }
+
+    public static bool TryParseCatalog(string rawLine, out BodyCatalog catalog)
+    {
+        catalog = new();
+
+        if (string.IsNullOrEmpty(rawLine) || rawLine.Length < 2)
+        {
+            Debug.LogError($"[HorizonsParser] TryParseCatalog(): 'rawLine' is not a valid string");
+            return false;
+        }
+
+        string naifID = "";
+        string name = "";
+        string aliases = "";
+        string designation = "";
+
+        bool isNegativeID = rawLine[0] == '-';
+        naifID += isNegativeID ? '-' : "";
+
+        int nameStartIdx = -1;
+
+        // Find ID 
+        for (int i = 0; i < rawLine.Length; i++)
+        {
+            char currentChar = rawLine[i];
+
+            if (char.IsDigit(currentChar))
+            {
+                naifID += currentChar;
+            }
+            if (char.IsWhiteSpace(currentChar))
+            {
+                nameStartIdx = i + 2;
+                break;
+            }
+
+        }
+
+        if (!int.TryParse(naifID, out catalog.NAIFID))
+        {
+            Debug.LogError($"[HorizonsParser] TryParseCatalog(): Could not parse an ID(int) from '{catalog.NAIFID}'");
+            return false;
+        }
+
+        // Find Name (if they exist)
+        for (int i = nameStartIdx; i < rawLine.Length; i++)
+        {
+            char currentChar = rawLine[i];
+            char nextChar = rawLine[i + 1];
+
+            if (!char.IsLetterOrDigit(currentChar))
+            {
+                Debug.LogWarning($"[HorizonsParser] TryParseCatalog(): Could not find a 'Name' from '{rawLine}'");
+                break;
+            }
+
+            if (char.IsWhiteSpace(currentChar) && char.IsWhiteSpace(nextChar)) break;
+
+            name += currentChar;
+        }
+
+        return true;
+    }
 }

@@ -8,7 +8,12 @@ public class HorizonsAPIManager : MonoBehaviour
 {
     [Header("Search Settings")]
     public HorizonFormat FormatType;
-    public string BodyID;
+    public BodySearchType BodySearchType;
+    public string TestCommandID;
+    public string BodyName;
+    public int BodyID;
+    public BodySearchType CenterSearchType;
+    public string CenterName;
     public string CenterID;
     public bool ObjectData;
     public bool MakeEphemeris;
@@ -27,9 +32,8 @@ public class HorizonsAPIManager : MonoBehaviour
 
     [Header("Data Parsing")]
     public ParsableData[] ParsableData;
-    [SerializeField] bool _lowerCase = false;
 
-    IEnumerator GetResult(string URL)
+    IEnumerator GetHorizonsResponse(string URL)
     {
         UnityWebRequest www = UnityWebRequest.Get(URL);
         yield return www.SendWebRequest();
@@ -47,12 +51,19 @@ public class HorizonsAPIManager : MonoBehaviour
             {
                 Debug.Log(line);
             }
-            var bodyDatas = HorizonsParser.ParseBodyData(formattedResponse);
-            string empty = "";
-            foreach (var data in bodyDatas)
+            if (HorizonsParser.TryParseCatalog("-9901492  Luna-25 STAGE (spacecraft)", out BodyCatalog catalog) &&
+                HorizonsParser.TryParseCatalog("920000617  Patroclus (primary body)", out BodyCatalog catalog2) &&
+                HorizonsParser.TryParseCatalog("0  Solar System Barycenter                         SSB", out BodyCatalog catalog3))
             {
-                Debug.Log($"{data.Key}: {data.Value.NumericValue} {(data.Value.NumericValueUnit == UnitMeasurements.None ? empty : HorizonsParser.UnitMeasurementsToString(data.Value.NumericValueUnit))}");
+                Debug.Log($"Catalog Name: {catalog.Name}");
+                Debug.Log($"Catalog 2 Name: {catalog2.Name}");
+                Debug.Log($"Catalog 3 Name: {catalog3.Name}");
             }
+            // var bodyDatas = HorizonsParser.ParseBodyData(formattedResponse);
+            // foreach (var data in bodyDatas)
+            // {
+            //     Debug.Log($"{data.Key}: {data.Value.NumericValue} {(data.Value.NumericValueUnit == UnitMeasurements.None ? string.Empty : HorizonsParser.UnitMeasurementsToString(data.Value.NumericValueUnit).ToLowerInvariant())}");
+            // }
         }
     }
 
@@ -60,7 +71,11 @@ public class HorizonsAPIManager : MonoBehaviour
     void HorizonTest()
     {
         HorizonsSearchSettings _settings = new(
-           command: BodyID,
+           commandID: BodyID,
+           testCommandID: TestCommandID,
+           bodyName: BodyName,
+           bodyID: BodyID,
+           bodySearchType: BodySearchType,
            coordinateCenter: CenterID,
            startTime: StartTime,
            stopTime: StopTime,
@@ -78,7 +93,7 @@ public class HorizonsAPIManager : MonoBehaviour
 
         string url = _settings.BuildQuery(_settings);
         Debug.Log($"API Request URL: {url}");
-        StartCoroutine(GetResult(url));
+        StartCoroutine(GetHorizonsResponse(url));
 
     }
 }

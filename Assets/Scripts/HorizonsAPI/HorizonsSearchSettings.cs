@@ -1,5 +1,271 @@
-using Unity.AppUI.UI;
 using UnityEngine;
+
+public struct HorizonsSearchSettings
+{
+    public const string HORIZONS_BASE_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?";
+    public readonly string Result;
+    public readonly ResponseType ResponseType
+    {
+        get
+        {
+            if (!_objData && _makeEphemeris) return ResponseType.Ephemeris;
+            if (_objData && !_makeEphemeris) return ResponseType.ObjectData;
+            if (_objData && _makeEphemeris) return ResponseType.Both;
+            return ResponseType.Database;
+        }
+    }
+
+    readonly HorizonFormat _horizonFormatType;
+    public readonly string HorizonFormatType
+    {
+        get
+        {
+            return "format=" + $"{_horizonFormatType}";
+        }
+    }
+
+    public BodySearchType BodySearchType;
+    public string BodyName;
+    public int BodyID;
+    readonly int _commandID;
+    readonly int _commandNameToID
+    {
+        get
+        {
+            return 2;
+        }
+    }
+
+    public string TestCommandID;
+    public readonly string Command
+    {
+        get
+        {
+            return BodySearchType switch
+            {
+                BodySearchType.NAIFID => "COMMAND=" + $"'{_commandID}'",
+                BodySearchType.Name => "COMMAND=" + $"'{TestCommandID}'",
+                _ => "COMMAND=" + $"'{_commandID}'"
+            };
+        }
+    }
+
+    readonly bool _objData;
+    public readonly string ObjData
+    {
+        get
+        {
+            return "OBJ_DATA=" + $"'{(_objData ? "YES" : "NO")}'";
+        }
+    }
+    readonly bool _makeEphemeris;
+    public readonly string MakeEphemeris
+    {
+        get
+        {
+            return "MAKE_EPHEM=" + $"'{(_makeEphemeris ? "YES" : "NO")}'";
+        }
+    }
+
+    [Header("Ephemeris specific settings")]
+    readonly EphemerisType _ephemerisType;
+    public readonly string EphemerisType
+    {
+        get
+        {
+            return "EPHEM_TYPE=" + $"'{_ephemerisType}'";
+        }
+    }
+
+    readonly string _coordinateCenter; // ID of the center body
+    public readonly string CoordinateCenter
+    {
+        get
+        {
+            return "CENTER=" + $"'{_coordinateCenter}'";
+        }
+    }
+
+    readonly string _startTime; // HorizonFormat: YYYY-MM-DD HH:MM:SS
+    public readonly string StartTime
+    {
+        get
+        {
+            return "START_TIME=" + $"'{_startTime}'";
+        }
+    }
+
+    readonly string _stopTime;  // HorizonFormat: YYYY-MM-DD HH:MM:SS
+    public readonly string StopTime
+    {
+        get
+        {
+            return "STOP_TIME=" + $"'{_stopTime}'";
+        }
+    }
+
+    readonly StepSizeUnit _stepSizeUnit;
+    readonly int _stepSizeValue;
+    public readonly string StepSize
+    {
+        get
+        {
+            return _stepSizeUnit switch
+            {
+                StepSizeUnit.days => "STEP_SIZE=" + $"'{_stepSizeValue + "d"}'",
+                StepSizeUnit.hours => "STEP_SIZE=" + $"'{_stepSizeValue + "h"}'",
+                StepSizeUnit.minutes => "STEP_SIZE=" + $"'{_stepSizeValue + "m"}'",
+                StepSizeUnit.years => "STEP_SIZE=" + $"'{_stepSizeValue + "y"}'",
+                StepSizeUnit.months => "STEP_SIZE=" + $"'{_stepSizeValue + "mo"}'",
+                _ => "STEP_SIZE='60min'",
+            };
+        }
+    }
+
+    readonly ReferencePlane _referencePlane;
+    public readonly string ReferencePlane
+    {
+        get
+        {
+            return "REF_PLANE=" + $"'{_referencePlane}'";
+        }
+    }
+
+    readonly OutputUnits _outputUnits;
+    public readonly string OutputUnit
+    {
+        get
+        {
+            return _outputUnits switch
+            {
+                OutputUnits.KM_S => "OUT_UNITS='KM-S'",
+                OutputUnits.AU_D => "OUT_UNITS='AU-D'",
+                OutputUnits.KM_D => "OUT_UNITS='KM-D'",
+                _ => "OUT_UNITS='KM-S'",
+
+            };
+        }
+    }
+
+    readonly int _vecTable;
+    public readonly string VecTable
+    {
+        get
+        {
+            return "VEC_TABLE=" + $"'{_vecTable}'";
+        }
+    }
+
+    readonly ReferenceSystem _refSystem;
+    public readonly string ReferenceSystem
+    {
+        get
+        {
+            return "REF_SYSTEM=" + $"'{_refSystem}'";
+        }
+    }
+
+
+    public readonly string EmailAddress;
+
+    public HorizonsSearchSettings(
+        string testCommandID,
+        int commandID,
+        string bodyName,
+        int bodyID,
+        string coordinateCenter,
+        string startTime,
+        string stopTime,
+        int stepSizeValue,
+        BodySearchType bodySearchType,
+        HorizonFormat horizonFormatType = HorizonFormat.json,
+        bool objData = true,
+        bool makeEphemeris = true,
+        StepSizeUnit stepSizeUnit = StepSizeUnit.days,
+        EphemerisType ephemerisType = global::EphemerisType.VECTORS,
+        ReferencePlane refPlane = global::ReferencePlane.ECLIPTIC,
+        ReferenceSystem referenceSystem = global::ReferenceSystem.ICRF,
+        OutputUnits outputUnits = OutputUnits.KM_S,
+        int vecTable = 2,
+        string email = null,
+        string result = null
+    )
+    {
+        TestCommandID = testCommandID;
+        _commandID = commandID;
+        BodySearchType = bodySearchType;
+        BodyName = bodyName;
+        BodyID = bodyID;
+        _coordinateCenter = coordinateCenter;
+        _startTime = startTime;
+        _stopTime = stopTime;
+        _stepSizeUnit = stepSizeUnit;
+        _stepSizeValue = stepSizeValue;
+        _horizonFormatType = horizonFormatType;
+        _objData = objData;
+        _makeEphemeris = makeEphemeris;
+        _ephemerisType = ephemerisType;
+        _referencePlane = refPlane;
+        _refSystem = referenceSystem;
+        _outputUnits = outputUnits;
+        _vecTable = vecTable;
+        EmailAddress = email;
+        Result = result;
+    }
+
+    public readonly string BuildQuery(HorizonsSearchSettings _settings)
+    {
+        ResponseType type = _settings.ResponseType;
+        string url = HORIZONS_BASE_URL;
+
+        switch (type)
+        {
+            case ResponseType.Ephemeris:
+                url += _settings.HorizonFormatType + "&";
+                url += _settings.Command + "&";
+                url += _settings.ObjData + "&";
+                url += _settings.MakeEphemeris + "&";
+                url += _settings.EphemerisType + "&";
+                url += _settings.CoordinateCenter + "&";
+                url += _settings.ReferencePlane + "&";
+                url += _settings.StartTime + "&";
+                url += _settings.StopTime + "&";
+                url += _settings.StepSize + "&";
+                url += _settings.ReferenceSystem + "&";
+                url += _settings.OutputUnit + "&";
+                url += _settings.VecTable;
+                return url;
+            case ResponseType.ObjectData:
+                url += _settings.HorizonFormatType + "&";
+                url += _settings.Command + "&";
+                url += _settings.ObjData;
+                return url;
+            case ResponseType.Both:
+                url += _settings.HorizonFormatType + "&";
+                url += _settings.Command + "&";
+                url += _settings.ObjData + "&";
+                url += _settings.MakeEphemeris + "&";
+                url += _settings.EphemerisType + "&";
+                url += _settings.CoordinateCenter + "&";
+                url += _settings.ReferencePlane + "&";
+                url += _settings.StartTime + "&";
+                url += _settings.StopTime + "&";
+                url += _settings.StepSize + "&";
+                url += _settings.ReferenceSystem + "&";
+                url += _settings.OutputUnit + "&";
+                url += _settings.VecTable;
+                return url;
+            case ResponseType.Database:
+                url += _settings.HorizonFormatType + "&";
+                url += _settings.Command;
+                return url;
+        }
+
+        return url;
+    }
+
+}
+
 
 public enum HorizonFormat
 {
@@ -46,200 +312,20 @@ public enum ReferenceSystem
     B1950
 }
 
-public struct HorizonsSearchSettings
+public enum ResponseType
 {
-    public const string HORIZONS_BASE_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?";
-    public string Result;
-    HorizonFormat _horizonFormatType;
-    public readonly string HorizonFormatType
-    {
-        get
-        {
-            return "format=" + $"{_horizonFormatType}";
-        }
-    }
-
-    string _command;
-    public string Command
-    {
-        get
-        {
-            return "COMMAND=" + $"'{_command}'";
-        }
-    }
-
-    bool _objData;
-    public readonly string ObjData
-    {
-        get
-        {
-            return "OBJ_DATA=" + $"'{(_objData ? "YES" : "NO")}'";
-        }
-    }
-    bool _makeEphemeris;
-    public readonly string MakeEphemeris
-    {
-        get
-        {
-            return "MAKE_EPHEM=" + $"'{(_makeEphemeris ? "YES" : "NO")}'";
-        }
-    }
-
-    [Header("Ephemeris specific settings")]
-    EphemerisType _ephemerisType;
-    public readonly string EphemerisType
-    {
-        get
-        {
-            return "EPHEM_TYPE=" + $"'{_ephemerisType}'";
-        }
-    }
-
-    string _coordinateCenter; // ID of the center body
-    public readonly string CoordinateCenter
-    {
-        get
-        {
-            return "CENTER=" + $"'{_coordinateCenter}'";
-        }
-    }
-    string _startTime; // HorizonFormat: YYYY-MM-DD HH:MM:SS
-    public readonly string StartTime
-    {
-        get
-        {
-            return "START_TIME=" + $"'{_startTime}'";
-        }
-    }
-    string _stopTime;  // HorizonFormat: YYYY-MM-DD HH:MM:SS
-    public string StopTime
-    {
-        get
-        {
-            return "STOP_TIME=" + $"'{_stopTime}'";
-        }
-    }
-    StepSizeUnit _stepSizeUnit;
-    int _stepSizeValue;
-    public readonly string StepSize
-    {
-        get
-        {
-            return _stepSizeUnit switch
-            {
-                StepSizeUnit.days => "STEP_SIZE=" + $"'{_stepSizeValue + "d"}'",
-                StepSizeUnit.hours => "STEP_SIZE=" + $"'{_stepSizeValue + "h"}'",
-                StepSizeUnit.minutes => "STEP_SIZE=" + $"'{_stepSizeValue + "m"}'",
-                StepSizeUnit.years => "STEP_SIZE=" + $"'{_stepSizeValue + "y"}'",
-                StepSizeUnit.months => "STEP_SIZE=" + $"'{_stepSizeValue + "mo"}'",
-                _ => "STEP_SIZE='60min'",
-            };
-        }
-    }
-    ReferencePlane _referencePlane;
-    public readonly string ReferencePlane
-    {
-        get
-        {
-            return "REF_PLANE=" + $"'{_referencePlane}'";
-        }
-    }
-
-    OutputUnits _outputUnits;
-    public readonly string OutputUnit
-    {
-        get
-        {
-            return _outputUnits switch
-            {
-                OutputUnits.KM_S => "OUT_UNITS='KM-S'",
-                OutputUnits.AU_D => "OUT_UNITS='AU-D'",
-                OutputUnits.KM_D => "OUT_UNITS='KM-D'",
-                _ => "OUT_UNITS='KM-S'",
-
-            };
-        }
-    }
-
-    int _vecTable;
-    public readonly string VecTable
-    {
-        get
-        {
-            return "VEC_TABLE=" + $"'{_vecTable}'";
-        }
-    }
-
-    ReferenceSystem _refSystem;
-    public readonly string ReferenceSystem
-    {
-        get
-        {
-            return "REF_SYSTEM=" + $"'{_refSystem}'";
-        }
-    }
-
-
-    public string EmailAddress;
-
-    public HorizonsSearchSettings(
-        string command,
-        string coordinateCenter,
-        string startTime,
-        string stopTime,
-        int stepSizeValue,
-        HorizonFormat horizonFormatType = HorizonFormat.json,
-        bool objData = true,
-        bool makeEphemeris = true,
-        StepSizeUnit stepSizeUnit = StepSizeUnit.days,
-        EphemerisType ephemerisType = global::EphemerisType.VECTORS,
-        ReferencePlane refPlane = global::ReferencePlane.ECLIPTIC,
-        ReferenceSystem referenceSystem = global::ReferenceSystem.ICRF,
-        OutputUnits outputUnits = OutputUnits.KM_S,
-        int vecTable = 2,
-        string email = null,
-        string result = null
-    )
-    {
-        _command = command;
-        _coordinateCenter = coordinateCenter;
-        _startTime = startTime;
-        _stopTime = stopTime;
-        _stepSizeUnit = stepSizeUnit;
-        _stepSizeValue = stepSizeValue;
-        _horizonFormatType = horizonFormatType;
-        _objData = objData;
-        _makeEphemeris = makeEphemeris;
-        _ephemerisType = ephemerisType;
-        _referencePlane = refPlane;
-        _refSystem = referenceSystem;
-        _outputUnits = outputUnits;
-        _vecTable = vecTable;
-        EmailAddress = email;
-        Result = result;
-    }
-
-    public readonly string BuildQuery(HorizonsSearchSettings _settings)
-    {
-        string result = HORIZONS_BASE_URL;
-        result += _settings.HorizonFormatType + "&";
-        result += _settings.Command + "&";
-        result += _settings.ObjData + "&";
-        result += _settings.MakeEphemeris + "&";
-        result += _settings.EphemerisType + "&";
-        result += _settings.CoordinateCenter + "&";
-        result += _settings.ReferencePlane + "&";
-        result += _settings.StartTime + "&";
-        result += _settings.StopTime + "&";
-        result += _settings.StepSize + "&";
-        result += _settings.ReferenceSystem + "&";
-        result += _settings.OutputUnit + "&";
-        result += _settings.VecTable;
-
-        return result;
-    }
-
+    Ephemeris,
+    ObjectData,
+    Both,
+    Database
 }
+
+public enum BodySearchType
+{
+    NAIFID,
+    Name
+}
+
 
 
 
