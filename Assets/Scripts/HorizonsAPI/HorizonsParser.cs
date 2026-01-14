@@ -699,7 +699,7 @@ public static class HorizonsParser
         return true;
     }
 
-    static bool TryParseCatalog(List<string> rawFormattedResponse, out List<BodyCatalog> catalog)
+    public static bool TryParseCatalog(List<string> rawFormattedResponse, out List<BodyCatalog> catalog)
     {
         catalog = new();
 
@@ -709,8 +709,10 @@ public static class HorizonsParser
         for (int i = 0; i < rawFormattedResponse.Count; i++)
         {
             string removeWhiteSpace = rawFormattedResponse[i].Replace(" ", "").Trim();
-            if (removeWhiteSpace.Contains("ID#", StringComparison.OrdinalIgnoreCase)) startIdx = i + 2;
+            if (removeWhiteSpace.Contains("ID#NameDesignationIAU/aliases/other", StringComparison.OrdinalIgnoreCase)) startIdx = i + 2;
+
             if (removeWhiteSpace.Contains("numberofmatches", StringComparison.OrdinalIgnoreCase)) endIdx = i;
+
         }
         if (startIdx < 0 || endIdx < 0)
         {
@@ -720,75 +722,194 @@ public static class HorizonsParser
 
         for (int i = startIdx; i < endIdx; i++)
         {
-            foreach (char c in rawFormattedResponse[i])
-            {
-
-            }
+            if (!TryParseCatalog(rawFormattedResponse[i], out BodyCatalog singleCatalog)) continue;
+            else catalog.Add(singleCatalog);
         }
 
         return true;
     }
 
-    public static bool TryParseCatalog(string rawLine, out BodyCatalog catalog)
+    static bool TryParseCatalog(string rawLine, out BodyCatalog catalog)
     {
         catalog = new();
 
-        if (string.IsNullOrEmpty(rawLine) || rawLine.Length < 2)
+        if (string.IsNullOrEmpty(rawLine) || rawLine.Length < 1)
         {
             Debug.LogError($"[HorizonsParser] TryParseCatalog(): 'rawLine' is not a valid string");
             return false;
         }
 
         string naifID = "";
-        string name = "";
-        string aliases = "";
-        string designation = "";
+        string name = string.Empty;
+        string aliases = string.Empty;      // IAU/Aliases/Other
+        string designation = string.Empty;
 
         bool isNegativeID = rawLine[0] == '-';
-        naifID += isNegativeID ? '-' : "";
+        if (isNegativeID) naifID += "-";
 
         int nameStartIdx = -1;
 
-        // Find ID 
-        for (int i = 0; i < rawLine.Length; i++)
+        // Parse ID (always exists)
+        for (int i = isNegativeID ? 1 : 0; i < rawLine.Length; i++)
         {
-            char currentChar = rawLine[i];
+            char c = rawLine[i];
 
-            if (char.IsDigit(currentChar))
+            if (char.IsDigit(c))
             {
-                naifID += currentChar;
+                naifID += c;
+                continue;
             }
-            if (char.IsWhiteSpace(currentChar))
+
+            if (char.IsWhiteSpace(c))
             {
                 nameStartIdx = i + 2;
                 break;
             }
-
         }
 
-        if (!int.TryParse(naifID, out catalog.NAIFID))
+        // ID-only line case: "20011351"
+        if (nameStartIdx < 0 || nameStartIdx >= rawLine.Length)
         {
-            Debug.LogError($"[HorizonsParser] TryParseCatalog(): Could not parse an ID(int) from '{catalog.NAIFID}'");
+            if (!int.TryParse(naifID, out catalog.NAIFID))
+            {
+                Debug.LogError($"[HorizonsParser] TryParseCatalog(): Could not parse NAIFID from '{naifID}'");
+                return false;
+            }
+
+            catalog.Name = "NO NAME";
+            catalog.Designation = "NO DESIGNATION";
+            catalog.Aliases = "NO IAU/ALIASES/OTHER";
+            return true;
+        }
+
+        // Local helpers
+        static int SkipSpaces(string s, int idx)
+        {
+            while (idx < s.Length && char.IsWhiteSpace(s[idx]))
+                idx++;
+            return idx;
+        }
+
+        static bool IsColumnGap(string s, int idx)
+        {
+            return idx < s.Length - 1 &&
+                   char.IsWhiteSpace(s[idx]) &&
+                   char.IsWhiteSpace(s[idx + 1]);
+        }
+
+        static string ReadUntilColumnGap(string s, ref int idx)
+        {
+            int start = idx;
+
+            while (idx < s.Length)
+            {
+                if (IsColumnGap(s, idx))
+                    break;
+
+                idx++;
+            }
+
+            int end = idx;
+            while (end > start && char.IsWhiteSpace(s[end - 1]))
+                end--;
+
+            return end > start ? s[start..end] : string.Empty;
+        }
+
+        static bool LooksLikeDesignation(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return false;
+
+            token = token.Trim();
+
+            // 1999J1, 2003J12 (4 digits + letter)
+            if (token.Length >= 5 &&
+                char.IsDigit(token[0]) && char.IsDigit(token[1]) &&
+                char.IsDigit(token[2]) && char.IsDigit(token[3]) &&
+                char.IsLetter(token[4]))
+                return true;
+
+            // 1966-084B (4 digits + '-')
+            if (token.Length >= 6 &&
+                char.IsDigit(token[0]) && char.IsDigit(token[1]) &&
+                char.IsDigit(token[2]) && char.IsDigit(token[3]) &&
+                token[4] == '-')
+                return true;
+
+            // Handles comet-like designation: C/1995 O1, P/...
+            if (token.Length >= 2 &&
+                token[1] == '/' &&
+                (token[0] == 'C' || token[0] == 'P' || token[0] == 'D' || token[0] == 'X' || token[0] == 'A'))
+                return true;
+
             return false;
         }
 
-        // Find Name (if they exist)
-        for (int i = nameStartIdx; i < rawLine.Length; i++)
+        int idxName = nameStartIdx;
+
+        bool hasName = idxName < rawLine.Length && !char.IsWhiteSpace(rawLine[idxName]);
+
+        int afterNameIdx = idxName;
+
+        if (hasName)
         {
-            char currentChar = rawLine[i];
-            char nextChar = rawLine[i + 1];
-
-            if (!char.IsLetterOrDigit(currentChar))
-            {
-                Debug.LogWarning($"[HorizonsParser] TryParseCatalog(): Could not find a 'Name' from '{rawLine}'");
-                break;
-            }
-
-            if (char.IsWhiteSpace(currentChar) && char.IsWhiteSpace(nextChar)) break;
-
-            name += currentChar;
+            name = ReadUntilColumnGap(rawLine, ref afterNameIdx);
         }
+        else
+        {
+            name = "NO NAME";
+        }
+
+        int idx = hasName ? afterNameIdx : idxName;
+
+        idx = SkipSpaces(rawLine, idx);
+        if (idx >= rawLine.Length)
+            goto Finish;
+
+        string field1 = ReadUntilColumnGap(rawLine, ref idx);
+
+        idx = SkipSpaces(rawLine, idx);
+        string field2 = (idx < rawLine.Length) ? rawLine[idx..].Trim() : string.Empty;
+
+        // Designation/Aliases assignment
+        if (!string.IsNullOrEmpty(field1))
+        {
+            if (hasName)
+            {
+                if (LooksLikeDesignation(field1)) designation = field1;
+                else aliases = field1;
+                if (!string.IsNullOrEmpty(field2)) aliases = string.IsNullOrEmpty(aliases) ? field2 : $"{aliases} {field2}";
+            }
+            else
+            {
+
+                if (LooksLikeDesignation(field1))
+                {
+                    designation = field1;
+                    aliases = field2;
+                }
+                else
+                {
+                    aliases = field1;
+                    if (!string.IsNullOrEmpty(field2))
+                        aliases = $"{aliases} {field2}";
+                }
+            }
+        }
+
+    Finish:
+        if (!int.TryParse(naifID, out catalog.NAIFID))
+        {
+            Debug.LogError($"[HorizonsParser] TryParseCatalog(): Could not parse NAIFID from '{naifID}'");
+            return false;
+        }
+
+        catalog.Name = string.IsNullOrEmpty(name) ? "NO NAME" : name;
+        catalog.Aliases = string.IsNullOrEmpty(aliases) ? "NO IAU/ALIASES/OTHER" : aliases;
+        catalog.Designation = string.IsNullOrEmpty(designation) ? "NO DESIGNATION" : designation;
 
         return true;
     }
+
 }

@@ -51,13 +51,14 @@ public class HorizonsAPIManager : MonoBehaviour
             {
                 Debug.Log(line);
             }
-            if (HorizonsParser.TryParseCatalog("-9901492  Luna-25 STAGE (spacecraft)", out BodyCatalog catalog) &&
-                HorizonsParser.TryParseCatalog("920000617  Patroclus (primary body)", out BodyCatalog catalog2) &&
-                HorizonsParser.TryParseCatalog("0  Solar System Barycenter                         SSB", out BodyCatalog catalog3))
+
+            if (HorizonsParser.TryParseCatalog(formattedResponse, out var catalogParsed))
             {
-                Debug.Log($"Catalog Name: {catalog.Name}");
-                Debug.Log($"Catalog 2 Name: {catalog2.Name}");
-                Debug.Log($"Catalog 3 Name: {catalog3.Name}");
+                Debug.Log($"Parsed catalog count: {catalogParsed.Count}");
+                foreach (var catalog in catalogParsed)
+                {
+                    Debug.Log($"{catalog.NAIFID} || {catalog.Name} || {catalog.Designation} || {catalog.Aliases}");
+                }
             }
             // var bodyDatas = HorizonsParser.ParseBodyData(formattedResponse);
             // foreach (var data in bodyDatas)
