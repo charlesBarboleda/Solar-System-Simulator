@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Globalization;
+using Unity.VisualScripting;
 
 public class HorizonsAPIManager : MonoBehaviour
 {
@@ -32,6 +33,14 @@ public class HorizonsAPIManager : MonoBehaviour
 
     [Header("Data Parsing")]
     public ParsableData[] ParsableData;
+
+    [Header("Cached NAIF Database")]
+    [SerializeField] NAIFCatalogDatabase database;
+
+    void OnEnable()
+    {
+
+    }
 
     IEnumerator GetHorizonsResponse(string URL)
     {
