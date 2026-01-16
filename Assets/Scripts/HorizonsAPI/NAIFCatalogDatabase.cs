@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
 using UnityEngine;
 
 [Serializable]
@@ -128,6 +130,66 @@ public class NAIFCatalogDatabase : ScriptableObject
             return true;
         }
         return false;
+    }
+
+    public bool TryUpdateCatalog(List<BodyCatalog> newCatalog, out List<BodyCatalog> updatedCatalog, out List<string> changes)
+    {
+        updatedCatalog = new(Entries);
+        changes = new();
+
+        if (newCatalog == null || newCatalog.Count <= 0) return false;
+
+        // Create and build a dictionary of the new catalog and the old catalog (faster comparison)
+        Dictionary<int, BodyCatalog> _old = new(Entries.Count);
+        Dictionary<int, BodyCatalog> _new = new(newCatalog.Count);
+        for (int i = 0; i < Entries.Count; i++)
+            if (!_old.TryAdd(Entries[i].NAIFID, Entries[i])) continue;
+        for (int i = 0; i < newCatalog.Count; i++)
+            if (!_new.TryAdd(newCatalog[i].NAIFID, newCatalog[i])) continue;
+
+        foreach (var oldEntry in _old)
+            if (!_new.ContainsKey(oldEntry.Key)) changes.Add($"Removed NAIFID: {oldEntry.Key}");
+
+        foreach (var newEntry in _new)
+        {
+            // if the old catalog does not contain this NAIFID, it means its a new catalog entry entirely
+            if (!_old.TryGetValue(newEntry.Key, out BodyCatalog old))
+                changes.Add($"New NAIFID Added: {newEntry.Key}");
+            else // if the old catalog does contain the naifid, check the other variables 
+            {
+                string newName = newEntry.Value.Name?.Trim();
+                string oldName = old.Name?.Trim();
+                string newDesignation = newEntry.Value.Designation?.Trim();
+                string oldDesignation = old.Designation?.Trim();
+                string newAlias = newEntry.Value.Aliases?.Trim();
+                string oldAlias = old.Aliases?.Trim();
+
+                if (!string.Equals(newName, oldName, StringComparison.OrdinalIgnoreCase))
+                    changes.Add($"Updated {old.NAIFID} 'Name': '{old.Name}' to '{newName}'");
+
+                if (!string.Equals(newDesignation, oldDesignation, StringComparison.OrdinalIgnoreCase))
+                    changes.Add($"Updated {old.NAIFID} 'Designation': '{old.Designation}' to '{newDesignation}'");
+
+                if (!string.Equals(newAlias, oldAlias, StringComparison.OrdinalIgnoreCase))
+                    changes.Add($"Updated {old.NAIFID} 'IAU/Alias/Other': '{old.Aliases}' to '{newAlias}'");
+            }
+        }
+
+        bool changed = changes.Count > 0;
+
+        if (changed) updatedCatalog = new List<BodyCatalog>(newCatalog);
+        return changed;
+    }
+
+    public void ReplaceCatalog(List<BodyCatalog> newCatalog)
+    {
+        if (newCatalog == null || newCatalog.Count <= 0)
+        {
+            Debug.LogError($"Could not replace catalog from {Entries} to {newCatalog}");
+            return;
+        }
+
+        entries = new List<BodyCatalog>(newCatalog);
     }
 
     public bool TryGetCatalogById(int id, out BodyCatalog catalog)

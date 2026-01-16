@@ -1827,7 +1827,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1987531684}
   m_Layer: 0
-  m_Name: Finish TryParseCatalog() in HorizonsParser
+  m_Name: Finish IsDifferent() in NAIFCatalogDatabase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1885,7 +1885,7 @@ MonoBehaviour:
   CenterSearchType: 0
   CenterName: 
   CenterID: 
-  ObjectData: 1
+  ObjectData: 0
   MakeEphemeris: 0
   EphemerisType: 1
   StartTime: 2025-01-01
@@ -1896,7 +1896,7 @@ MonoBehaviour:
   ReferenceSystem: 0
   OutputUnits: 0
   VectorTable: 2
-  HorizonsResults: '{"result":"*******************************************************************************\n
+  HorizonsResults: '{"signature":{"source":"NASA/JPL Horizons API","version":"1.2"},"result":"*******************************************************************************\n
     Multiple major-bodies match string \"*\"\n\n  ID#      Name                              
     Designation  IAU/aliases/other   \n  -------  ----------------------------------
     -----------  ------------------- \n        0  Solar System Barycenter                        
@@ -2675,8 +2675,7 @@ MonoBehaviour:
     \n153092511  2001 QW322 1                                                        
     \n920003548                                                                      
     \n-54054450  Surveyor-2 Centaur RB              1966-084B    2020 SO             
-    \n \n   Number of matches =  776. Use ID# to make unique selection.\n*******************************************************************************\n","signature":{"version":"1.2","source":"NASA/JPL
-    Horizons API"}}
+    \n \n   Number of matches =  776. Use ID# to make unique selection.\n*******************************************************************************\n"}
 
 '
   ParsableData: 00000000010000000200000005000000060000000700000008000000
