@@ -61,16 +61,13 @@ public class HorizonsAPIManager : MonoBehaviour
         {
             Debug.LogWarning($"No NAIFCatalogDatabase found; Creating and populating with Major Bodies...");
             _database = ScriptableObject.CreateInstance<NAIFCatalogDatabase>();
-            if (!_database.HasLocalJSONDatabase(out string json))
+            if (!JSONCatalog.TryLoadLocalCatalogDatabase(out List<BodyCatalog> catalogDatabase))
                 StartCoroutine(UpdateHorizonsDatabase(_majorBodiesCatalogURL));
-            else
-            {
-                if (_database.TryLoadCatalogDBFromJSON(json))
-                    Debug.Log($"Loaded new catalog database from '{json}'");
-            }
+            else if (!_database.TryReplaceCatalog(catalogDatabase, persistToDisk: false))
+                Debug.LogWarning($"Catalog was not replaced");
 
         }
-        else if (AutoUpdateDatabase) StartCoroutine(UpdateHorizonsDatabase(_majorBodiesCatalogURL));
+        if (AutoUpdateDatabase) StartCoroutine(UpdateHorizonsDatabase(_majorBodiesCatalogURL));
     }
 
     IEnumerator GetHorizonsResponse(string URL)
@@ -123,16 +120,19 @@ public class HorizonsAPIManager : MonoBehaviour
                     _didDatabaseUpdate = true;
                     _databaseChanges = changes;
                 }
-                else
-                {
-                    _databaseChanges ??= new List<string>();
-                    _databaseChanges.Clear();
-                    _didDatabaseUpdate = false;
-                }
+                else ResetDatabaseChangesState();
+
 
             }
             else Debug.LogError($"Could not parse catalog from 'formattedResponse'");
         }
+    }
+
+    public void ResetDatabaseChangesState()
+    {
+        _databaseChanges ??= new List<string>();
+        _databaseChanges.Clear();
+        _didDatabaseUpdate = false;
     }
 
     [ContextMenu("Run Horizon API search test")]

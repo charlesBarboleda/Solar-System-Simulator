@@ -1,13 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using System.IO;
-
-[Serializable]
-public class BodyCatalogListWrapper
-{
-    public List<BodyCatalog> Database;
-}
 
 [Serializable]
 public struct BodyCatalog
@@ -184,7 +177,7 @@ public class NAIFCatalogDatabase : ScriptableObject
         return changed;
     }
 
-    public bool TryReplaceCatalog(List<BodyCatalog> newCatalog)
+    public bool TryReplaceCatalog(List<BodyCatalog> newCatalog, bool persistToDisk = false)
     {
         if (newCatalog == null || newCatalog.Count <= 0)
         {
@@ -192,10 +185,11 @@ public class NAIFCatalogDatabase : ScriptableObject
             return false;
         }
 
-        if (!TryStoreCatalogDBAsJSON(newCatalog)) return false;
 
         _catalogDatabase = new List<BodyCatalog>(newCatalog);
         BuildIndexes();
+
+        if (persistToDisk && !JSONCatalog.TryStoreCatalogDBAsJSON(newCatalog)) return false;
 
         return true;
     }
@@ -274,55 +268,6 @@ public class NAIFCatalogDatabase : ScriptableObject
         _lastQuery = query;
     }
 
-    public bool TryStoreCatalogDBAsJSON(List<BodyCatalog> _database)
-    {
-        if (_database == null || _database.Count <= 0)
-        {
-            Debug.LogError($"Could not store {_database} as JSON");
-            return false;
-        }
-
-        var jsonWrapper = new BodyCatalogListWrapper { Database = _database };
-        string json = JsonUtility.ToJson(jsonWrapper, prettyPrint: true);
-        string folder = Path.Combine(Application.persistentDataPath, "HorizonsNAIFDatabaseCache");
-        string filePath = Path.Combine(folder, $"naif_major_bodies_latest.json");
-        Directory.CreateDirectory(folder);
-        string tempPath = filePath + ".tmp";
-        File.WriteAllText(tempPath, json);
-        File.Copy(tempPath, filePath, overwrite: true);
-        File.Delete(tempPath);
-        Debug.Log($"Saved catalog JSON to: {filePath}");
-        return true;
-    }
-
-    static string GetCacheJSONFolder() => Path.Combine(Application.persistentDataPath, "HorizonsNAIFDatabaseCache");
-
-    static string GetCacheJSONFilePath() => Path.Combine(GetCacheJSONFolder(), "naif_major_bodies_latest.json");
-
-    public bool HasLocalJSONDatabase(out string json)
-    {
-        json = null;
-        string path = GetCacheJSONFilePath();
-
-        if (!File.Exists(path))
-            return false;
-
-        json = File.ReadAllText(path);
-        return !string.IsNullOrWhiteSpace(json);
-    }
-
-    public bool TryLoadCatalogDBFromJSON(string json)
-    {
-        if (string.IsNullOrEmpty(json))
-        {
-            Debug.LogError($"Could not load a NAIF catalog database from '{json}'");
-            return false;
-        }
-
-        var loaded = JsonUtility.FromJson<BodyCatalogListWrapper>(json);
-        if (!TryReplaceCatalog(loaded.Database)) return false;
-        return true;
-    }
 
     // Runtime Add 
     public bool TryAddCatalogRuntime(BodyCatalog catalogToAdd)
@@ -336,6 +281,7 @@ public class NAIFCatalogDatabase : ScriptableObject
         }
 
         _catalogDatabase.Add(catalogToAdd);
+        if (!JSONCatalog.TryStoreCatalogDBAsJSON(_catalogDatabase)) return false;
         BuildIndexes();
         return true;
     }
