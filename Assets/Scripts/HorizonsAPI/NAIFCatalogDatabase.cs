@@ -14,7 +14,8 @@ public struct BodyCatalog
 [CreateAssetMenu(menuName = "Horizons/NAIF Bodies Catalog")]
 public class NAIFCatalogDatabase : ScriptableObject
 {
-    [SerializeField] List<BodyCatalog> _catalogDatabase = new();
+    // Run-time Database
+    [SerializeField] List<BodyCatalog> _runtimeCatalogDatabase = new();
 
     // Fast lookup map
     [NonSerialized] Dictionary<int, int> _idToIndex;
@@ -31,7 +32,7 @@ public class NAIFCatalogDatabase : ScriptableObject
     [NonSerialized] string _lastQuery = string.Empty;
     [NonSerialized] readonly List<int> _lastCandidateIdxs = new(); // indexes into _database list
 
-    public IReadOnlyList<BodyCatalog> Database => _catalogDatabase;
+    public IReadOnlyList<BodyCatalog> Database => _runtimeCatalogDatabase;
 
 
 
@@ -46,17 +47,17 @@ public class NAIFCatalogDatabase : ScriptableObject
 
     void BuildIndexes()
     {
-        _idToIndex = new Dictionary<int, int>(_catalogDatabase.Count);
+        _idToIndex = new Dictionary<int, int>(_runtimeCatalogDatabase.Count);
 
-        _nameToIds = new Dictionary<string, List<int>>(_catalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
-        _designationToIds = new Dictionary<string, List<int>>(_catalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
-        _aliasTokenToIds = new Dictionary<string, List<int>>(_catalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
+        _nameToIds = new Dictionary<string, List<int>>(_runtimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
+        _designationToIds = new Dictionary<string, List<int>>(_runtimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
+        _aliasTokenToIds = new Dictionary<string, List<int>>(_runtimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
 
-        _searchText = new List<string>(_catalogDatabase.Count);
+        _searchText = new List<string>(_runtimeCatalogDatabase.Count);
 
-        for (int i = 0; i < _catalogDatabase.Count; i++)
+        for (int i = 0; i < _runtimeCatalogDatabase.Count; i++)
         {
-            var c = _catalogDatabase[i];
+            var c = _runtimeCatalogDatabase[i];
 
             _idToIndex[c.NAIFID] = i;
 
@@ -116,7 +117,7 @@ public class NAIFCatalogDatabase : ScriptableObject
 
     bool EnsureBuilt()
     {
-        if (_idToIndex == null || _searchText == null || _searchText.Count != _catalogDatabase.Count)
+        if (_idToIndex == null || _searchText == null || _searchText.Count != _runtimeCatalogDatabase.Count)
         {
             BuildIndexes();
             return true;
@@ -124,72 +125,31 @@ public class NAIFCatalogDatabase : ScriptableObject
         return false;
     }
 
-    public bool TryUpdateCatalog(List<BodyCatalog> newCatalog, out List<string> changes)
+    public bool TrySetRuntimeCatalog(List<BodyCatalog> catalog)
     {
-        changes = new();
-
-        if (newCatalog == null || newCatalog.Count <= 0) return false;
-
-        // Create and build a dictionary of the new catalog and the old catalog (faster comparison)
-        Dictionary<int, BodyCatalog> _old = new(_catalogDatabase.Count);
-        Dictionary<int, BodyCatalog> _new = new(newCatalog.Count);
-        for (int i = 0; i < _catalogDatabase.Count; i++)
-            if (!_old.TryAdd(_catalogDatabase[i].NAIFID, _catalogDatabase[i])) continue;
-        for (int i = 0; i < newCatalog.Count; i++)
-            if (!_new.TryAdd(newCatalog[i].NAIFID, newCatalog[i])) continue;
-
-        foreach (var oldEntry in _old)
-            if (!_new.ContainsKey(oldEntry.Key)) changes.Add($"Removed NAIFID: {oldEntry.Key}");
-
-        foreach (var newEntry in _new)
+        if (catalog == null || catalog.Count < 1)
         {
-            // if the old catalog does not contain this NAIFID, it means its a new catalog entry entirely
-            if (!_old.TryGetValue(newEntry.Key, out BodyCatalog old))
-                changes.Add($"New NAIFID Added: {newEntry.Key}");
-            else // if the old catalog does contain the naifid, check the other variables 
-            {
-                string newName = newEntry.Value.Name?.Trim();
-                string oldName = old.Name?.Trim();
-                string newDesignation = newEntry.Value.Designation?.Trim();
-                string oldDesignation = old.Designation?.Trim();
-                string newAlias = newEntry.Value.Aliases?.Trim();
-                string oldAlias = old.Aliases?.Trim();
-
-                if (!string.Equals(newName, oldName, StringComparison.OrdinalIgnoreCase))
-                    changes.Add($"Updated '{old.NAIFID}' Name: '{old.Name}' to '{newName}'");
-
-                if (!string.Equals(newDesignation, oldDesignation, StringComparison.OrdinalIgnoreCase))
-                    changes.Add($"Updated '{old.NAIFID}' Designation: '{old.Designation}' to '{newDesignation}'");
-
-                if (!string.Equals(newAlias, oldAlias, StringComparison.OrdinalIgnoreCase))
-                    changes.Add($"Updated '{old.NAIFID}' IAU/Alias/Other: '{old.Aliases}' to '{newAlias}'");
-            }
-        }
-
-        bool changed = changes.Count > 0;
-
-        if (changed)
-        {
-            List<BodyCatalog> updatedCatalog = new(newCatalog);
-            if (!TryReplaceCatalog(updatedCatalog)) return false;
-        }
-
-        return changed;
-    }
-
-    public bool TryReplaceCatalog(List<BodyCatalog> newCatalog, bool persistToDisk = false)
-    {
-        if (newCatalog == null || newCatalog.Count <= 0)
-        {
-            Debug.LogError($"Could not replace catalog from {_catalogDatabase} to {newCatalog}");
+            Debug.LogError("Could not set runtime catalog: list was null or empty.");
             return false;
         }
 
+        _runtimeCatalogDatabase = new List<BodyCatalog>(catalog);
+        BuildIndexes();
+        return true;
+    }
 
-        _catalogDatabase = new List<BodyCatalog>(newCatalog);
+    public bool TryReplaceCatalogRuntime(List<BodyCatalog> newCatalog, bool persistToDisk = false)
+    {
+        if (newCatalog == null || newCatalog.Count <= 0)
+        {
+            Debug.LogError($"Could not replace catalog from {_runtimeCatalogDatabase} to {newCatalog}");
+            return false;
+        }
+
+        _runtimeCatalogDatabase = new List<BodyCatalog>(newCatalog);
         BuildIndexes();
 
-        if (persistToDisk && !JSONCatalog.TryStoreCatalogDBAsJSON(newCatalog)) return false;
+        if (persistToDisk && !JSONCatalog.TryStoreCatalogDBAsJSON(newCatalog, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName)) return false;
 
         return true;
     }
@@ -202,7 +162,7 @@ public class NAIFCatalogDatabase : ScriptableObject
         if (!_idToIndex.TryGetValue(id, out int idx))
             return false;
 
-        catalog = _catalogDatabase[idx];
+        catalog = _runtimeCatalogDatabase[idx];
         return true;
     }
 
@@ -227,9 +187,9 @@ public class NAIFCatalogDatabase : ScriptableObject
         if (!canFilterPrevious)
         {
             _lastCandidateIdxs.Clear();
-            _lastCandidateIdxs.Capacity = Math.Max(_lastCandidateIdxs.Capacity, _catalogDatabase.Count);
+            _lastCandidateIdxs.Capacity = Math.Max(_lastCandidateIdxs.Capacity, _runtimeCatalogDatabase.Count);
 
-            for (int i = 0; i < _catalogDatabase.Count; i++)
+            for (int i = 0; i < _runtimeCatalogDatabase.Count; i++)
                 _lastCandidateIdxs.Add(i);
         }
 
@@ -237,7 +197,7 @@ public class NAIFCatalogDatabase : ScriptableObject
         if (int.TryParse(query, out int exactId) && _idToIndex.TryGetValue(exactId, out int idxExact))
         {
             exactIdIdx = idxExact;
-            results.Add(_catalogDatabase[exactIdIdx]);
+            results.Add(_runtimeCatalogDatabase[exactIdIdx]);
         }
 
         int write = 0;
@@ -257,7 +217,7 @@ public class NAIFCatalogDatabase : ScriptableObject
                 _lastCandidateIdxs[write++] = entryIdx;
 
                 if (results.Count < limit)
-                    results.Add(_catalogDatabase[entryIdx]);
+                    results.Add(_runtimeCatalogDatabase[entryIdx]);
             }
         }
 
@@ -268,21 +228,47 @@ public class NAIFCatalogDatabase : ScriptableObject
         _lastQuery = query;
     }
 
-
-    // Runtime Add 
-    public bool TryAddCatalogRuntime(BodyCatalog catalogToAdd)
+    // User runtime catalog additions
+    public bool TryAddUserCatalog(int NAIFID, string name, string designation, string aliases, List<BodyCatalog> userCatalogDB)
     {
-        EnsureBuilt();
-
-        if (_idToIndex.ContainsKey(catalogToAdd.NAIFID))
+        if (userCatalogDB == null)
         {
-            Debug.LogWarning($"[NAIFCatalog_Database] NAIFID already exists: {catalogToAdd.NAIFID}");
+            Debug.LogError($"[NAIFCatalogDatabase] Could not add a new catalog entry");
+            return false;
+        }
+        if (NAIFID == -1)
+        {
+            Debug.LogError($"[NAIFCatalogDatabase] NAIFID '-1' is not a valid/allowed ID");
             return false;
         }
 
-        _catalogDatabase.Add(catalogToAdd);
-        if (!JSONCatalog.TryStoreCatalogDBAsJSON(_catalogDatabase)) return false;
+        EnsureBuilt();
+
+        if (_idToIndex.ContainsKey(NAIFID))
+        {
+            Debug.LogWarning($"[NAIFCatalogDatabase] NAIFID already exists: {NAIFID}");
+            return false;
+        }
+        else
+        {
+            BodyCatalog catalogToAdd = new()
+            {
+                NAIFID = NAIFID,
+                Name = name,
+                Designation = designation,
+                Aliases = aliases
+            };
+
+            userCatalogDB.Add(catalogToAdd);
+        }
+
+        if (!JSONCatalog.TryStoreCatalogDBAsJSON(userCatalogDB, JSONCatalog.UserCatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName)) return false;
+        else
+        {
+
+        }
         BuildIndexes();
+
         return true;
     }
 

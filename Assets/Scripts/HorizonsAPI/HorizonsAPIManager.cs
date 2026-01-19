@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-using System.IO;
 using System;
 
 public class HorizonsAPIManager : MonoBehaviour
@@ -36,38 +35,60 @@ public class HorizonsAPIManager : MonoBehaviour
 
     [Header("Cached NAIF Database")]
     [SerializeField] NAIFCatalogDatabase _database;
+    [SerializeField] List<BodyCatalog> _userCatalogDB = new();
+    [SerializeField] List<BodyCatalog> _horizonCatalogDB = new();
+    [SerializeField] List<BodyCatalog> _runtimeCatalogDB = new();
     public bool AutoUpdateDatabase;
-    bool _didDatabaseUpdate;
-    public bool DidDatabaseUpdate
-    {
-        get
-        {
-            return _didDatabaseUpdate;
-        }
-    }
-    List<string> _databaseChanges;
-    public bool DatabaseChanges
-    {
-        get
-        {
-            return _database;
-        }
-    }
+    bool _didRuntimeDatabaseChange;
+    public bool DidDatabaseUpdate => _didRuntimeDatabaseChange;
+    List<string> _runtimeDatabaseChanges;
+    public IReadOnlyList<string> RuntimeDatabaseChanges => _runtimeDatabaseChanges;
+
     readonly string _majorBodiesCatalogURL = "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='MB'";
 
     void Awake()
     {
         if (_database == null)
         {
-            Debug.LogWarning($"No NAIFCatalogDatabase found; Creating and populating with Major Bodies...");
-            _database = ScriptableObject.CreateInstance<NAIFCatalogDatabase>();
-            if (!JSONCatalog.TryLoadLocalCatalogDatabase(out List<BodyCatalog> catalogDatabase))
-                StartCoroutine(UpdateHorizonsDatabase(_majorBodiesCatalogURL));
-            else if (!_database.TryReplaceCatalog(catalogDatabase, persistToDisk: false))
-                Debug.LogWarning($"Catalog was not replaced");
-
+            Debug.LogError("[HorizonsAPIManager] NAIFCatalogDatabase asset reference is missing in the Inspector.");
+            enabled = false;
+            return;
         }
-        if (AutoUpdateDatabase) StartCoroutine(UpdateHorizonsDatabase(_majorBodiesCatalogURL));
+
+        ResetRuntimeDatabaseChangesState();
+
+        InitializeRuntimeDatabase();
+    }
+
+    void InitializeRuntimeDatabase()
+    {
+        if (!JSONCatalog.TryLoadLocalCatalogDatabase(out _horizonCatalogDB, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
+        {
+            _horizonCatalogDB = new();
+            StartCoroutine(UpdateHorizonsDatabase());
+        }
+        else if (AutoUpdateDatabase) StartCoroutine(UpdateHorizonsDatabase());
+
+        if (!JSONCatalog.TryLoadLocalCatalogDatabase(out _userCatalogDB, JSONCatalog.UserCatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
+            _userCatalogDB = new();
+
+        if (!TryMergeCatalogDB(out _runtimeCatalogDB, out List<string> mergeChanges))
+        {
+            Debug.LogWarning("Could not merge Horizon and User catalog databases.");
+        }
+        else
+        {
+            if (_database.TrySetRuntimeCatalog(_runtimeCatalogDB))
+            {
+                // Store merge notes for UI/debugging (does NOT count as a Horizons update)
+                _runtimeDatabaseChanges = new(mergeChanges);
+                _didRuntimeDatabaseChange = false;
+            }
+            else
+            {
+                Debug.LogWarning("Failed to set runtime catalog database.");
+            }
+        }
     }
 
     IEnumerator GetHorizonsResponse(string URL)
@@ -79,6 +100,7 @@ public class HorizonsAPIManager : MonoBehaviour
         {
             Debug.LogError($"Error: {www.error}");
             Debug.LogError($"Response Code: {www.responseCode}");
+            yield break;
         }
         else
         {
@@ -92,21 +114,23 @@ public class HorizonsAPIManager : MonoBehaviour
         }
     }
 
-    IEnumerator UpdateHorizonsDatabase(string URL)
+    IEnumerator UpdateHorizonsDatabase()
     {
         if (_database == null)
         {
-            Debug.LogError($"No NAIFCatalogDatabase found");
+            Debug.LogError($"No NAIFCatalogDatabase asset found");
             yield break;
         }
 
-        using UnityWebRequest www = UnityWebRequest.Get(URL);
+        using UnityWebRequest www = UnityWebRequest.Get(_majorBodiesCatalogURL);
         yield return www.SendWebRequest();
 
         if (www.result != UnityWebRequest.Result.Success)
         {
             Debug.LogError($"Error: {www.error}");
             Debug.LogError($"Response Code: {www.responseCode}");
+            ResetRuntimeDatabaseChangesState();
+            yield break;
         }
         else
         {
@@ -115,24 +139,130 @@ public class HorizonsAPIManager : MonoBehaviour
             List<string> formattedResponse = HorizonsParser.FormatResponse(response);
             if (HorizonsParser.TryParseCatalog(formattedResponse, out List<BodyCatalog> catalogParsed))
             {
-                if (_database.TryUpdateCatalog(catalogParsed, out var changes))
+                if (!IsSameCatalogDatabase(catalogParsed, _horizonCatalogDB))
                 {
-                    _didDatabaseUpdate = true;
-                    _databaseChanges = changes;
+                    if (!JSONCatalog.TryStoreCatalogDBAsJSON(catalogParsed, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
+                    {
+                        ResetRuntimeDatabaseChangesState();
+                        yield break;
+                    }
+                    else
+                    {
+                        _horizonCatalogDB = new List<BodyCatalog>(catalogParsed);
+
+                        if (!TryMergeCatalogDB(out _runtimeCatalogDB, out List<string> mergeChanges))
+                        {
+                            ResetRuntimeDatabaseChangesState();
+                            Debug.LogWarning("Merge failed after Horizons update.");
+                            yield break;
+                        }
+
+                        if (!_database.TrySetRuntimeCatalog(_runtimeCatalogDB))
+                        {
+                            ResetRuntimeDatabaseChangesState();
+                            Debug.LogWarning("Failed to set runtime catalog after Horizons update.");
+                            yield break;
+                        }
+
+                        _didRuntimeDatabaseChange = true;
+                        _runtimeDatabaseChanges = new List<string>(mergeChanges);
+                    }
                 }
-                else ResetDatabaseChangesState();
-
-
+                else
+                {
+                    ResetRuntimeDatabaseChangesState();
+                }
             }
-            else Debug.LogError($"Could not parse catalog from 'formattedResponse'");
+            else
+            {
+                ResetRuntimeDatabaseChangesState();
+                Debug.LogError($"Could not parse catalog from 'formattedResponse'");
+            }
         }
     }
 
-    public void ResetDatabaseChangesState()
+    bool TryMergeCatalogDB(out List<BodyCatalog> mergedCatalogs, out List<string> mergeChanges)
     {
-        _databaseChanges ??= new List<string>();
-        _databaseChanges.Clear();
-        _didDatabaseUpdate = false;
+        mergedCatalogs = (_horizonCatalogDB != null && _horizonCatalogDB.Count > 0) ? new(_horizonCatalogDB) : new();
+        mergeChanges = new();
+
+        if (_horizonCatalogDB == null)
+        {
+            Debug.LogError($"Invalid BodyCatalog lists. Could not merge catalogs.");
+            return false;
+        }
+        _userCatalogDB ??= new();
+        HashSet<int> userSeen = new();
+        HashSet<int> horizonIds = new(_horizonCatalogDB.Count);
+        for (int i = 0; i < _horizonCatalogDB.Count; i++)
+            horizonIds.Add(_horizonCatalogDB[i].NAIFID);
+
+        for (int i = 0; i < _userCatalogDB.Count; i++)
+        {
+            BodyCatalog userEntry = _userCatalogDB[i];
+            int NAIFID = userEntry.NAIFID;
+
+            if (NAIFID == -1)
+            {
+                mergeChanges.Add("Ignored user-defined NAIFID: -1 (reserved invalid ID)");
+                continue;
+            }
+
+            if (horizonIds.Contains(NAIFID))
+            {
+                mergeChanges.Add($"Ignored user-defined NAIFID: {NAIFID} (already exists in Horizons)");
+                continue;
+            }
+
+            if (!userSeen.Add(NAIFID))
+            {
+                mergeChanges.Add($"Duplicate user NAIFID ignored: {NAIFID}");
+                continue;
+            }
+
+            mergedCatalogs.Add(userEntry);
+            mergeChanges.Add($"Added user-defined NAIFID: {NAIFID}");
+        }
+
+        return true;
+    }
+
+    bool IsSameCatalogDatabase(List<BodyCatalog> catalog1, List<BodyCatalog> catalog2)
+    {
+        if (catalog1 == null || catalog2 == null) return false;
+        if (catalog1.Count != catalog2.Count) return false;
+
+        Dictionary<int, BodyCatalog> _cata2 = new(catalog2.Count);
+        Dictionary<int, BodyCatalog> _cata1 = new(catalog1.Count);
+        for (int i = 0; i < catalog2.Count; i++)
+            if (!_cata2.TryAdd(catalog2[i].NAIFID, catalog2[i])) return false;
+        for (int i = 0; i < catalog1.Count; i++)
+            if (!_cata1.TryAdd(catalog1[i].NAIFID, catalog1[i])) return false;
+
+        foreach (var catalog in _cata1)
+        {
+            if (!_cata2.ContainsKey(catalog.Key)) return false;
+            else
+            {
+                BodyCatalog catalogX = catalog.Value;
+                _cata2.TryGetValue(catalog.Key, out BodyCatalog catalogY);
+
+                bool isNameSimilar = string.Equals(catalogX.Name?.Trim(), catalogY.Name?.Trim(), StringComparison.OrdinalIgnoreCase);
+                bool isDesignationSimilar = string.Equals(catalogX.Designation?.Trim(), catalogY.Designation?.Trim(), StringComparison.OrdinalIgnoreCase);
+                bool isAliasSimilar = string.Equals(catalogX.Aliases?.Trim(), catalogY.Aliases?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                if (!isNameSimilar || !isDesignationSimilar || !isAliasSimilar) return false;
+            }
+        }
+
+        return true;
+    }
+
+    void ResetRuntimeDatabaseChangesState()
+    {
+        _runtimeDatabaseChanges ??= new List<string>();
+        _runtimeDatabaseChanges.Clear();
+        _didRuntimeDatabaseChange = false;
     }
 
     [ContextMenu("Run Horizon API search test")]

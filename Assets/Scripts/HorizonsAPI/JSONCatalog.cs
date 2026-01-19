@@ -16,7 +16,7 @@ public static class JSONCatalog
     public static readonly string UserCatalogDatabaseFileName = "user_naif_catalog_database.json";
     public static readonly string CatalogDatabaseFolderName = "HorizonsNAIFDatabaseCache";
 
-    public static bool TryStoreCatalogDBAsJSON(List<BodyCatalog> catalogDatabase)
+    public static bool TryStoreCatalogDBAsJSON(List<BodyCatalog> catalogDatabase, string fileName, string folderName)
     {
         if (catalogDatabase == null || catalogDatabase.Count <= 0)
         {
@@ -26,8 +26,8 @@ public static class JSONCatalog
 
         var jsonWrapper = new BodyCatalogListJSONWrapper { Database = catalogDatabase };
         string json = JsonUtility.ToJson(jsonWrapper, prettyPrint: true);
-        string folder = GetCachedFolderFor(CatalogDatabaseFolderName);
-        string filePath = GetCachedFilePathFor(CatalogDatabaseFileName, CatalogDatabaseFolderName);
+        string folder = GetCachedFolderFor(folderName);
+        string filePath = GetCachedFilePathFor(fileName, folderName);
         Directory.CreateDirectory(folder);
         string tempPath = filePath + ".tmp";
 
@@ -52,10 +52,10 @@ public static class JSONCatalog
     static string GetCachedFolderFor(string folderName) => Path.Combine(Application.persistentDataPath, folderName);
     static string GetCachedFilePathFor(string fileName, string folderName) => Path.Combine(GetCachedFolderFor(folderName), fileName);
 
-    public static bool HasLocalJSONDatabase(out string json)
+    public static bool HasLocalJSONDatabase(out string json, string fileName, string folderName)
     {
         json = null;
-        string path = GetCachedFilePathFor(CatalogDatabaseFileName, CatalogDatabaseFolderName);
+        string path = GetCachedFilePathFor(fileName, folderName);
 
         if (!File.Exists(path))
         {
@@ -76,7 +76,7 @@ public static class JSONCatalog
         return !string.IsNullOrWhiteSpace(json);
     }
 
-    public static bool TryLoadCatalogDBFromJSON(string json, out List<BodyCatalog> database)
+    static bool TryLoadCatalogDBFromJSON(string json, out List<BodyCatalog> database)
     {
         database = null;
         if (string.IsNullOrEmpty(json))
@@ -96,10 +96,10 @@ public static class JSONCatalog
         return true;
     }
 
-    public static bool TryLoadLocalCatalogDatabase(out List<BodyCatalog> database)
+    public static bool TryLoadLocalCatalogDatabase(out List<BodyCatalog> database, string fileName, string folderName)
     {
         database = null;
-        if (!HasLocalJSONDatabase(out string json)) return false;
+        if (!HasLocalJSONDatabase(out string json, fileName, folderName)) return false;
 
         return TryLoadCatalogDBFromJSON(json, out database);
     }
