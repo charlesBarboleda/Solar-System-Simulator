@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-
 public static class JSONCatalog
 {
     [Serializable]
@@ -52,7 +51,7 @@ public static class JSONCatalog
     static string GetCachedFolderFor(string folderName) => Path.Combine(Application.persistentDataPath, folderName);
     static string GetCachedFilePathFor(string fileName, string folderName) => Path.Combine(GetCachedFolderFor(folderName), fileName);
 
-    public static bool HasLocalJSONDatabase(out string json, string fileName, string folderName)
+    static bool HasLocalJSONDatabase(out string json, string fileName, string folderName)
     {
         json = null;
         string path = GetCachedFilePathFor(fileName, folderName);
