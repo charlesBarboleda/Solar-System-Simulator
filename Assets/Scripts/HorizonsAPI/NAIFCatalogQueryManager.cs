@@ -11,37 +11,28 @@ public struct BodyCatalog
     public string Aliases;
 }
 
-[CreateAssetMenu(menuName = "Horizons/NAIF Bodies Catalog")]
-public class NAIFCatalogQueryManager : ScriptableObject
+
+public class NAIFCatalogQueryManager
 {
-    // Run-time Database
-    [SerializeField] List<BodyCatalog> _runtimeCatalogDatabase = new();
+    // Run-time Query Database
+    List<BodyCatalog> _runtimeCatalogDatabase = new();
 
     // Fast lookup map
-    [NonSerialized] Dictionary<int, int> _idToIndex;
+    Dictionary<int, int> _idToIndex;
 
     // Exact lookup maps
-    [NonSerialized] Dictionary<string, List<int>> _nameToIds;
-    [NonSerialized] Dictionary<string, List<int>> _designationToIds;
-    [NonSerialized] Dictionary<string, List<int>> _aliasTokenToIds;
+    Dictionary<string, List<int>> _nameToIds;
+    Dictionary<string, List<int>> _designationToIds;
+    Dictionary<string, List<int>> _aliasTokenToIds;
 
     // SearchText[i] corresponds to _database[i]
-    [NonSerialized] List<string> _searchText;
+    List<string> _searchText;
 
     // Incremental search caching
-    [NonSerialized] string _lastQuery = string.Empty;
-    [NonSerialized] readonly List<int> _lastCandidateIdxs = new(); // indexes into _database list
+    string _lastQuery = string.Empty;
+    readonly List<int> _lastCandidateIdxs = new(); // indexes into _database list
 
-    public IReadOnlyList<BodyCatalog> Database => _runtimeCatalogDatabase;
-
-#if UNITY_EDITOR
-    void OnValidate()
-    {
-        // Editor-time only. Keeps indexes valid while editing.
-        if (!Application.isPlaying)
-            BuildIndexes();
-    }
-#endif
+    public IReadOnlyList<BodyCatalog> QueryCatalogDB => _runtimeCatalogDatabase;
 
     void BuildIndexes()
     {

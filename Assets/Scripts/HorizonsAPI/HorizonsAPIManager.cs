@@ -35,7 +35,6 @@ public class HorizonsAPIManager : MonoBehaviour
 
     [Header("Cached NAIF Database")]
     [SerializeField] NAIFCatalogManager _catalogManager;
-    [SerializeField] NAIFCatalogQueryManager _catalogQueryManager;
 
     IEnumerator GetHorizonsResponse(string URL)
     {

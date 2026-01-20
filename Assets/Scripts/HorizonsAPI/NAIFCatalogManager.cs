@@ -6,7 +6,7 @@ using System;
 
 public class NAIFCatalogManager : MonoBehaviour
 {
-    [SerializeField] NAIFCatalogQueryManager _queryManager;
+    NAIFCatalogQueryManager _queryManager = new();
     [SerializeField] List<BodyCatalog> _userCatalogDB = new();
     [SerializeField] List<BodyCatalog> _horizonCatalogDB = new();
     [SerializeField] List<BodyCatalog> _runtimeCatalogDB = new();
@@ -29,9 +29,8 @@ public class NAIFCatalogManager : MonoBehaviour
     {
         if (_queryManager == null)
         {
-            Debug.LogError($"Did not assign a NAIFCatalogQueryManager; Disabling 'NAIFCatalogManager'");
-            enabled = false;
-            return;
+            Debug.LogError($"Could not find a 'NAIFCatalogQueryManager', initializing a new one");
+            _queryManager = new();
         }
 
         if (!TryInitializeCatalogDB())
@@ -254,11 +253,11 @@ public class NAIFCatalogManager : MonoBehaviour
     {
         ResetRuntimeDatabaseChangesState();
 
-        if (!JSONCatalog.TryLoadLocalCatalogDatabase(out _userCatalogDB, JSONCatalog.UserCatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
+        if (!JSONCatalog.TryLoadLocalCatalogDB(out _userCatalogDB, JSONCatalog.UserCatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
         {
             _userCatalogDB = new();
         }
-        if (!JSONCatalog.TryLoadLocalCatalogDatabase(out _horizonCatalogDB, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
+        if (!JSONCatalog.TryLoadLocalCatalogDB(out _horizonCatalogDB, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
         {
             _horizonCatalogDB = new();
             StartCoroutine(UpdateHorizonsDatabase());

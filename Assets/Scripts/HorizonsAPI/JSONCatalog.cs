@@ -15,6 +15,14 @@ public static class JSONCatalog
     public static readonly string UserCatalogDatabaseFileName = "user_naif_catalog_database.json";
     public static readonly string CatalogDatabaseFolderName = "HorizonsNAIFDatabaseCache";
 
+    public static bool TryLoadLocalCatalogDB(out List<BodyCatalog> database, string fileName, string folderName)
+    {
+        database = null;
+        if (!HasLocalJSONDatabase(out string json, fileName, folderName)) return false;
+
+        return TryLoadCatalogDBFromJSON(json, out database);
+    }
+
     public static bool TryStoreCatalogDBAsJSON(List<BodyCatalog> catalogDatabase, string fileName, string folderName)
     {
         if (catalogDatabase == null || catalogDatabase.Count <= 0)
@@ -95,11 +103,4 @@ public static class JSONCatalog
         return true;
     }
 
-    public static bool TryLoadLocalCatalogDatabase(out List<BodyCatalog> database, string fileName, string folderName)
-    {
-        database = null;
-        if (!HasLocalJSONDatabase(out string json, fileName, folderName)) return false;
-
-        return TryLoadCatalogDBFromJSON(json, out database);
-    }
 }
