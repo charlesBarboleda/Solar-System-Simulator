@@ -709,9 +709,7 @@ public static class HorizonsParser
         {
             string removeWhiteSpace = rawFormattedResponse[i].Replace(" ", "").Trim();
             if (removeWhiteSpace.Contains("ID#NameDesignationIAU/aliases/other", StringComparison.OrdinalIgnoreCase)) startIdx = i + 2;
-
             if (removeWhiteSpace.Contains("numberofmatches", StringComparison.OrdinalIgnoreCase)) endIdx = i;
-
         }
         if (startIdx < 0 || endIdx < 0)
         {
@@ -775,9 +773,9 @@ public static class HorizonsParser
                 return false;
             }
 
-            catalog.Name = "NO NAME";
-            catalog.Designation = "NO DESIGNATION";
-            catalog.Aliases = "NO IAU/ALIASES/OTHER";
+            catalog.Name = string.Empty;
+            catalog.Designation = string.Empty;
+            catalog.Aliases = string.Empty;
             return true;
         }
 
@@ -857,7 +855,7 @@ public static class HorizonsParser
         }
         else
         {
-            name = "NO NAME";
+            name = "";
         }
 
         int idx = hasName ? afterNameIdx : idxName;
@@ -904,9 +902,9 @@ public static class HorizonsParser
             return false;
         }
 
-        catalog.Name = string.IsNullOrEmpty(name) ? "NO NAME" : name;
-        catalog.Aliases = string.IsNullOrEmpty(aliases) ? "NO IAU/ALIASES/OTHER" : aliases;
-        catalog.Designation = string.IsNullOrEmpty(designation) ? "NO DESIGNATION" : designation;
+        catalog.Name = string.IsNullOrEmpty(name) ? string.Empty : name;
+        catalog.Aliases = string.IsNullOrEmpty(aliases) ? string.Empty : aliases;
+        catalog.Designation = string.IsNullOrEmpty(designation) ? string.Empty : designation;
 
         return true;
     }

@@ -1,31 +1,34 @@
+.db-cell {
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 14px;
 
-#DatabaseList {
-    flex-grow: 1;
-    margin-top: 8px;
-}
-
-.db-row {
-    flex-direction: row;
-    padding-left: 12px;
-    padding-right: 12px;
-    height: 30px;
-    align-items: center;
-}
-
-
-.db-row.odd {
-    background-color: rgba(255, 255, 255, 0.04);
-}
-
-
-.db-row:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-
-.db-col {
-    unity-text-align: middle-left;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    padding-right: 12px;
+}
+
+/* Header row area */
+#DatabaseTable .unity-multi-column-view__header-container,
+#DatabaseTable .unity-multi-column-header,
+#DatabaseTable .unity-multi-column-header__column-container {
+    background-color: rgba(0, 0, 0, 1);
+}
+
+#DatabaseTable .unity-multi-column-header__column {
+    background-color: rgba(0, 0, 0, 1);
+    background-image: none;
+}
+
+
+/* Header label text */
+.unity-multi-column-list-view__column-header-label {
+    color: rgba(255, 255, 255, 1);
+    unity-font-style: bold;
+}
+
+/* Row hover */
+.unity-multi-column-list-view__row:hover {
+    background-color: rgba(255, 255, 255, 0.07);
 }

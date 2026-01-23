@@ -8,7 +8,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
 {
     // UXML element names
     const string SearchFieldName = "SearchField";
-    const string DatabaseListName = "DatabaseList";
+    const string DatabaseTableName = "DatabaseTable";
 
     [Header("References")]
     [SerializeField] NAIFCatalogManager _NAIFCatalogDBManager;
@@ -16,24 +16,14 @@ public class NAIFDatabaseUIController : MonoBehaviour
     // UI Toolkit refs
     UIDocument _uiDocument;
     TextField _searchField;
-    ListView _databaseListView;
+    MultiColumnListView _databaseTable;
 
     // Data
     readonly List<BodyCatalog> _filteredCatalogDB = new();
-    List<BodyCatalog> _runtimeCatalogDB;
+    List<BodyCatalog> _runtimeCatalogDB = new();
 
     // For unregistering cleanly
     EventCallback<ChangeEvent<string>> _onSearchChangedCallback;
-
-    // Row refs stored per recycled row (avoids repeated Q() lookups in bindItem)
-    sealed class RowRefs
-    {
-        public Label id;
-        public Label name;
-        public Label designation;
-        public Label aliases;
-        public int naifId;
-    }
 
     void Awake()
     {
@@ -54,21 +44,24 @@ public class NAIFDatabaseUIController : MonoBehaviour
         VisualElement root = _uiDocument.rootVisualElement;
 
         _searchField = root.Q<TextField>(SearchFieldName);
-        _databaseListView = root.Q<ListView>(DatabaseListName);
+        _databaseTable = root.Q<MultiColumnListView>(DatabaseTableName);
 
-        if (_searchField == null || _databaseListView == null)
+        if (_searchField == null || _databaseTable == null)
         {
             Debug.LogError(
                 $"NAIFDatabaseUIController: UI elements not found.\n" +
                 $"- TextField name expected: '{SearchFieldName}'\n" +
-                $"- ListView name expected: '{DatabaseListName}'\n" +
+                $"- MultiColumnListView name expected: '{DatabaseTableName}'\n" +
                 $"Check your UXML element names in UI Builder."
             );
             enabled = false;
             return;
         }
 
-        ConfigureListView();
+        // Optional: remove built-in label spacing
+        _searchField.label = string.Empty;
+
+        ConfigureDatabaseTable();
 
         _onSearchChangedCallback = evt => ApplyFilter(evt.newValue);
         _searchField.RegisterValueChangedCallback(_onSearchChangedCallback);
@@ -85,105 +78,208 @@ public class NAIFDatabaseUIController : MonoBehaviour
             _searchField.UnregisterValueChangedCallback(_onSearchChangedCallback);
     }
 
-    void ConfigureListView()
+    void ConfigureDatabaseTable()
     {
-        _databaseListView.itemsSource = _filteredCatalogDB;
+        // Source
+        _databaseTable.itemsSource = _filteredCatalogDB;
 
-        _databaseListView.fixedItemHeight = 28f; // adjust to taste
+        // Appearance / behavior
+        _databaseTable.selectionType = SelectionType.None;
+        _databaseTable.fixedItemHeight = 28f;
 
-        _databaseListView.selectionType = SelectionType.None;
+        // Built-in zebra striping
+        _databaseTable.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 
-        _databaseListView.makeItem = MakeRow;
-        _databaseListView.bindItem = BindRow;
+        BuildColumns();
+
+        // Sorting setup
+        _databaseTable.sortingMode = ColumnSortingMode.Custom;
+        _databaseTable.columnSortingChanged += OnColumnSortingChanged;
+        // Default sort: NAIFID descending (initial state)
+        _databaseTable.sortColumnDescriptions.Clear();
+        _databaseTable.sortColumnDescriptions.Add(
+            new SortColumnDescription("NAIFID", SortDirection.Descending)
+        );
+
+        _databaseTable.Rebuild();
     }
 
-    VisualElement MakeRow()
+    void OnColumnSortingChanged()
     {
-        // This creates ONE row visual. ListView will recycle these as you scroll.
-        var row = new VisualElement();
-        row.style.flexDirection = FlexDirection.Row;
-        row.style.paddingLeft = 6;
-        row.style.paddingRight = 6;
-        row.style.unityTextAlign = TextAnchor.MiddleLeft;
+        ApplyCurrentSort();
+        _databaseTable.RefreshItems();
+    }
 
-        // Create columns
-        var id = new Label { name = "col_id" };
-        var name = new Label { name = "col_name" };
-        var designation = new Label { name = "col_designation" };
-        var aliases = new Label { name = "col_aliases" };
+    void ApplyCurrentSort()
+    {
+        // No data yet
+        if (_filteredCatalogDB == null || _filteredCatalogDB.Count <= 1)
+            return;
 
-        // Column "weights"
-        id.style.flexGrow = 1;
-        name.style.flexGrow = 2;
-        designation.style.flexGrow = 2;
-        aliases.style.flexGrow = 3;
+        // If user hasn't selected a sort column, keep your default ordering
+        if (_databaseTable.sortColumnDescriptions == null || _databaseTable.sortColumnDescriptions.Count == 0)
+            return;
 
-        // Prevent text from looking cramped
-        id.style.paddingRight = 8;
-        name.style.paddingRight = 8;
-        designation.style.paddingRight = 8;
+        // MultiColumnListView supports multi-sort (Shift+Click).
+        // We'll apply sort descriptions in order.
+        _filteredCatalogDB.Sort(CompareBySortDescriptions);
+    }
 
-        row.Add(id);
-        row.Add(name);
-        row.Add(designation);
-        row.Add(aliases);
-        row.AddToClassList("db-row");
-
-        id.AddToClassList("db-col");
-        name.AddToClassList("db-col");
-        designation.AddToClassList("db-col");
-        aliases.AddToClassList("db-col");
-
-        // Cache refs so bindItem doesn't have to Q() each time
-        row.userData = new RowRefs
+    int CompareBySortDescriptions(BodyCatalog a, BodyCatalog b)
+    {
+        foreach (var desc in _databaseTable.sortColumnDescriptions)
         {
-            id = id,
-            name = name,
-            designation = designation,
-            aliases = aliases
+            int result = CompareByColumn(desc.columnName, a, b);
+
+            if (result != 0)
+            {
+                // Flip result if descending
+                if (desc.direction == SortDirection.Descending)
+                    result = -result;
+
+                return result;
+            }
+        }
+
+        return 0;
+    }
+
+    int CompareByColumn(string columnName, BodyCatalog a, BodyCatalog b)
+    {
+        return columnName switch
+        {
+            "NAIFID" => a.NAIFID.CompareTo(b.NAIFID),
+            "Name" => CompareStrings(a.Name, b.Name),
+            "Designation" => CompareStrings(a.Designation, b.Designation),
+            "Aliases" => CompareStrings(a.Aliases, b.Aliases),
+            _ => 0,
         };
-
-        row.AddManipulator(new ContextualMenuManipulator(evt =>
-        {
-            if (row.userData is not RowRefs refs) return;
-
-            evt.menu.AppendAction(
-                "Request Horizon",
-                _ => Debug.Log("Request Horizon (not implemented yet)"),
-                DropdownMenuAction.Status.Disabled);
-
-            evt.menu.AppendAction(
-                "Check Ephemeris Database",
-                _ => Debug.Log("Check Ephemeris Database (not implemented yet)"),
-                DropdownMenuAction.Status.Disabled);
-
-            evt.menu.AppendAction(
-                "Copy NAIFID",
-                _ => GUIUtility.systemCopyBuffer = refs.naifId.ToString(),
-                DropdownMenuAction.Status.Normal);
-        }));
-
-        return row;
     }
 
-    void BindRow(VisualElement row, int index)
+    static int CompareStrings(string left, string right)
     {
-        // Called whenever a recycled row should represent a different entry
-        if (index < 0 || index >= _filteredCatalogDB.Count)
-            return;
+        left ??= string.Empty;
+        right ??= string.Empty;
 
-        if (row.userData is not RowRefs refs)
-            return;
+        // Case-insensitive alphabetical sort
+        return string.Compare(left, right, StringComparison.OrdinalIgnoreCase);
+    }
 
-        BodyCatalog entry = _filteredCatalogDB[index];
+    void BuildColumns()
+    {
+        _databaseTable.columns.Clear();
+        _databaseTable.showAlternatingRowBackgrounds = AlternatingRowBackground.None;
 
-        row.EnableInClassList("odd", (index & 1) == 1);
+        // Helper functions so column setup stays clean.
+        Label MakeCellLabel(int paddingLeft, TextAnchor align)
+        {
+            var label = new Label();
+            label.AddToClassList("db-cell");
+            label.style.paddingLeft = paddingLeft;
+            label.style.unityTextAlign = align;
 
-        refs.id.text = entry.NAIFID.ToString();
-        refs.name.text = string.IsNullOrWhiteSpace(entry.Name) ? "-" : entry.Name;
-        refs.designation.text = string.IsNullOrWhiteSpace(entry.Designation) ? "-" : entry.Designation;
-        refs.aliases.text = string.IsNullOrWhiteSpace(entry.Aliases) ? "-" : entry.Aliases;
-        refs.naifId = entry.NAIFID;
+            label.AddManipulator(new ContextualMenuManipulator(evt =>
+            {
+                if (label.userData is not int naifId) return;
+
+                evt.menu.AppendAction("Request Horizon", _ => { }, DropdownMenuAction.Status.Disabled);
+                evt.menu.AppendAction("Check Ephemeris Database", _ => { }, DropdownMenuAction.Status.Disabled);
+                evt.menu.AppendAction("Copy NAIFID", _ => GUIUtility.systemCopyBuffer = naifId.ToString(),
+                    DropdownMenuAction.Status.Normal);
+            }));
+
+            return label;
+        }
+
+        void BindCell(VisualElement e, int rowIndex, Func<BodyCatalog, string> getText)
+        {
+            if (rowIndex < 0 || rowIndex >= _filteredCatalogDB.Count)
+                return;
+
+            var entry = _filteredCatalogDB[rowIndex];
+
+            var label = (Label)e;
+            label.text = getText(entry);
+            label.userData = entry.NAIFID; // used by right-click menu
+        }
+
+        // Column: NAIF ID
+        _databaseTable.columns.Add(new Column
+        {
+            name = "NAIFID",
+            title = "NAIF ID",
+            width = 90,
+            minWidth = 70,
+            resizable = true,
+            stretchable = false,
+            sortable = true,
+
+            makeHeader = () =>
+            {
+                var header = new Label("NAIF ID");
+                header.style.color = Color.white;
+                header.style.unityTextAlign = TextAnchor.MiddleCenter;
+                header.style.paddingLeft = 5;
+                header.style.paddingTop = 6;
+
+                return header;
+            },
+            makeCell = () =>
+            {
+                var label = MakeCellLabel(8, TextAnchor.MiddleCenter);
+                label.style.unityTextAlign = TextAnchor.MiddleCenter;
+                return label;
+            },
+            bindCell = (e, i) => BindCell(e, i, entry => entry.NAIFID.ToString())
+        });
+
+        // Column: Name
+        _databaseTable.columns.Add(new Column
+        {
+            name = "Name",
+            title = "Name",
+            width = 320,
+            minWidth = 160,
+            resizable = true,
+            stretchable = true,
+            sortable = true,
+
+            makeCell = () => MakeCellLabel(8, TextAnchor.MiddleLeft),
+            bindCell = (e, i) => BindCell(e, i, entry =>
+                string.IsNullOrWhiteSpace(entry.Name) ? "-" : entry.Name)
+        });
+
+        // Column: Designation
+        _databaseTable.columns.Add(new Column
+        {
+            name = "Designation",
+            title = "Designation",
+            width = 240,
+            minWidth = 140,
+            resizable = true,
+            stretchable = true,
+            sortable = true,
+
+            makeCell = () => MakeCellLabel(8, TextAnchor.MiddleLeft),
+            bindCell = (e, i) => BindCell(e, i, entry =>
+                string.IsNullOrWhiteSpace(entry.Designation) ? "-" : entry.Designation)
+        });
+
+        // Column: Aliases
+        _databaseTable.columns.Add(new Column
+        {
+            name = "Aliases",
+            title = "Aliases",
+            width = 320,
+            minWidth = 160,
+            resizable = true,
+            stretchable = true,
+            sortable = true,
+
+            makeCell = () => MakeCellLabel(8, TextAnchor.MiddleLeft),
+            bindCell = (e, i) => BindCell(e, i, entry =>
+                string.IsNullOrWhiteSpace(entry.Aliases) ? "-" : entry.Aliases)
+        });
     }
 
     /// <summary>
@@ -197,37 +293,41 @@ public class NAIFDatabaseUIController : MonoBehaviour
         _filteredCatalogDB.Clear();
         _filteredCatalogDB.AddRange(_runtimeCatalogDB);
 
-        _databaseListView.RefreshItems();
+        _databaseTable.RefreshItems();
     }
 
     void ApplyFilter(string query)
     {
         query = query?.Trim();
-
         _filteredCatalogDB.Clear();
+
+        if (_runtimeCatalogDB == null || _runtimeCatalogDB.Count == 0)
+        {
+            _databaseTable.RefreshItems();
+            return;
+        }
 
         // Empty query = show all
         if (string.IsNullOrEmpty(query))
         {
             _filteredCatalogDB.AddRange(_runtimeCatalogDB);
-            _databaseListView.RefreshItems();
+            _databaseTable.RefreshItems();
             return;
         }
 
         // Token-based AND search:
         // "earth 399" requires BOTH tokens to match somewhere in the entry.
         string[] tokens = query.ToLowerInvariant()
-                               .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var entry in _runtimeCatalogDB)
         {
-            // Build one searchable string for this entry
-            // (fast + simple for your dataset size)
             string haystack =
                 $"{entry.NAIFID} {entry.Name} {entry.Designation} {entry.Aliases}"
                 .ToLowerInvariant();
 
             bool matchesAll = true;
+
             for (int t = 0; t < tokens.Length; t++)
             {
                 if (!haystack.Contains(tokens[t]))
@@ -241,6 +341,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
                 _filteredCatalogDB.Add(entry);
         }
 
-        _databaseListView.RefreshItems();
+        ApplyCurrentSort();
+        _databaseTable.RefreshItems();
     }
 }
