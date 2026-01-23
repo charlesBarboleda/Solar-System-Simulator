@@ -6,10 +6,15 @@ using System;
 
 public class NAIFCatalogManager : MonoBehaviour
 {
-    NAIFCatalogQueryManager _queryManager = new();
+    public NAIFCatalogQueryManager QueryManager = new();
+    [SerializeField] NAIFDatabaseUIController _uiDatabaseController;
     [SerializeField] List<BodyCatalog> _userCatalogDB = new();
-    [SerializeField] List<BodyCatalog> _horizonCatalogDB = new();
+    [SerializeField] List<BodyCatalog> _horizonsCatalogDB = new();
     [SerializeField] List<BodyCatalog> _runtimeCatalogDB = new();
+    public List<BodyCatalog> UserCatalogDB => _userCatalogDB;
+    public List<BodyCatalog> HorizonsCatalogDB => _horizonsCatalogDB;
+    public List<BodyCatalog> RuntimeCatalogDB => _runtimeCatalogDB;
+
 
     [Header("Response")]
     public string RawHorizonCatalogResponse => _rawHorizonCatalogResponse;
@@ -22,15 +27,21 @@ public class NAIFCatalogManager : MonoBehaviour
     List<string> _runtimeDatabaseChanges = new();
     public IReadOnlyList<string> RuntimeDatabaseChanges => _runtimeDatabaseChanges;
 
-
     readonly string _majorBodiesCatalogURL = "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='MB'";
 
     void Awake()
     {
-        if (_queryManager == null)
+        if (QueryManager == null)
         {
             Debug.LogError($"Could not find a 'NAIFCatalogQueryManager', initializing a new one");
-            _queryManager = new();
+            QueryManager = new();
+        }
+
+        if (_uiDatabaseController == null)
+        {
+            Debug.LogError($"UIDatabaseController is null. NAIFCatalogManager did not initialize");
+            enabled = false;
+            return;
         }
 
         if (!TryInitializeCatalogDB())
@@ -48,7 +59,7 @@ public class NAIFCatalogManager : MonoBehaviour
         if (_isUpdatingHorizonsDatabase) yield break;
         _isUpdatingHorizonsDatabase = true;
 
-        if (_queryManager == null)
+        if (QueryManager == null)
         {
             Debug.LogError($"No NAIFCatalogDatabase asset found");
             _isUpdatingHorizonsDatabase = false;
@@ -75,7 +86,7 @@ public class NAIFCatalogManager : MonoBehaviour
             List<string> formattedResponse = HorizonsParser.FormatResponse(response);
             if (HorizonsParser.TryParseCatalog(formattedResponse, out List<BodyCatalog> catalogParsed))
             {
-                if (!IsSameCatalogDatabase(catalogParsed, _horizonCatalogDB))
+                if (!IsSameCatalogDatabase(catalogParsed, _horizonsCatalogDB))
                 {
                     if (!JSONCatalog.TryStoreCatalogDBAsJSON(catalogParsed, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
                     {
@@ -85,16 +96,16 @@ public class NAIFCatalogManager : MonoBehaviour
                     }
                     else
                     {
-                        _horizonCatalogDB = new List<BodyCatalog>(catalogParsed);
+                        _horizonsCatalogDB = new List<BodyCatalog>(catalogParsed);
 
-                        if (!TryMergeCatalogDB(_horizonCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out List<string> mergeChanges))
+                        if (!TryMergeCatalogDB(_horizonsCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out List<string> mergeChanges))
                         {
                             ResetRuntimeDatabaseChangesState();
                             Debug.LogWarning("Merge failed after Horizons update.");
                             _isUpdatingHorizonsDatabase = false;
                             yield break;
                         }
-                        else if (!_queryManager.TrySetQueryCatalog(_runtimeCatalogDB))
+                        else if (!QueryManager.TrySetQueryCatalog(_runtimeCatalogDB))
                         {
                             ResetRuntimeDatabaseChangesState();
                             Debug.LogWarning("Failed to set runtime catalog after Horizons update.");
@@ -102,6 +113,7 @@ public class NAIFCatalogManager : MonoBehaviour
                             yield break;
                         }
 
+                        _uiDatabaseController.UpdateUICatalogDB();
                         _didRuntimeDatabaseChange = true;
                         _runtimeDatabaseChanges = new List<string>(mergeChanges);
                     }
@@ -241,9 +253,13 @@ public class NAIFCatalogManager : MonoBehaviour
         }
         else
         {
-            if (!TryMergeCatalogDB(_horizonCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out _runtimeDatabaseChanges)) return false;
-            else if (!_queryManager.TrySetQueryCatalog(_runtimeCatalogDB)) return false;
-            else _didRuntimeDatabaseChange = true;
+            if (!TryMergeCatalogDB(_horizonsCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out _runtimeDatabaseChanges)) return false;
+            else if (!QueryManager.TrySetQueryCatalog(_runtimeCatalogDB)) return false;
+            else
+            {
+                _uiDatabaseController.UpdateUICatalogDB();
+                _didRuntimeDatabaseChange = true;
+            }
         }
 
         return true;
@@ -257,21 +273,21 @@ public class NAIFCatalogManager : MonoBehaviour
         {
             _userCatalogDB = new();
         }
-        if (!JSONCatalog.TryLoadLocalCatalogDB(out _horizonCatalogDB, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
+        if (!JSONCatalog.TryLoadLocalCatalogDB(out _horizonsCatalogDB, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
         {
-            _horizonCatalogDB = new();
+            _horizonsCatalogDB = new();
             StartCoroutine(UpdateHorizonsDatabase());
         }
         else if (AutoUpdateDatabase) StartCoroutine(UpdateHorizonsDatabase());
 
-        if (!TryMergeCatalogDB(_horizonCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out List<string> mergeChanges))
+        if (!TryMergeCatalogDB(_horizonsCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out List<string> mergeChanges))
         {
             Debug.LogError("Could not merge Horizon and User catalog databases.");
             return false;
         }
         else
         {
-            if (_queryManager.TrySetQueryCatalog(_runtimeCatalogDB))
+            if (QueryManager.TrySetQueryCatalog(_runtimeCatalogDB))
             {
                 _runtimeDatabaseChanges = new(mergeChanges);
                 _didRuntimeDatabaseChange = false;

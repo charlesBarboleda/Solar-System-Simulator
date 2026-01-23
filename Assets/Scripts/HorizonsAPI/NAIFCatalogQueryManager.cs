@@ -15,7 +15,7 @@ public struct BodyCatalog
 public class NAIFCatalogQueryManager
 {
     // Run-time Query Database
-    List<BodyCatalog> _runtimeCatalogDatabase = new();
+    public List<BodyCatalog> RuntimeCatalogDatabase = new();
 
     // Fast lookup map
     Dictionary<int, int> _idToIndex;
@@ -32,21 +32,21 @@ public class NAIFCatalogQueryManager
     string _lastQuery = string.Empty;
     readonly List<int> _lastCandidateIdxs = new(); // indexes into _database list
 
-    public IReadOnlyList<BodyCatalog> QueryCatalogDB => _runtimeCatalogDatabase;
+    public IReadOnlyList<BodyCatalog> QueryCatalogDB => RuntimeCatalogDatabase;
 
     void BuildIndexes()
     {
-        _idToIndex = new Dictionary<int, int>(_runtimeCatalogDatabase.Count);
+        _idToIndex = new Dictionary<int, int>(RuntimeCatalogDatabase.Count);
 
-        _nameToIds = new Dictionary<string, List<int>>(_runtimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
-        _designationToIds = new Dictionary<string, List<int>>(_runtimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
-        _aliasTokenToIds = new Dictionary<string, List<int>>(_runtimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
+        _nameToIds = new Dictionary<string, List<int>>(RuntimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
+        _designationToIds = new Dictionary<string, List<int>>(RuntimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
+        _aliasTokenToIds = new Dictionary<string, List<int>>(RuntimeCatalogDatabase.Count, StringComparer.OrdinalIgnoreCase);
 
-        _searchText = new List<string>(_runtimeCatalogDatabase.Count);
+        _searchText = new List<string>(RuntimeCatalogDatabase.Count);
 
-        for (int i = 0; i < _runtimeCatalogDatabase.Count; i++)
+        for (int i = 0; i < RuntimeCatalogDatabase.Count; i++)
         {
-            var c = _runtimeCatalogDatabase[i];
+            var c = RuntimeCatalogDatabase[i];
 
             _idToIndex[c.NAIFID] = i;
 
@@ -106,7 +106,7 @@ public class NAIFCatalogQueryManager
 
     public bool EnsureBuilt()
     {
-        if (_idToIndex == null || _searchText == null || _searchText.Count != _runtimeCatalogDatabase.Count)
+        if (_idToIndex == null || _searchText == null || _searchText.Count != RuntimeCatalogDatabase.Count)
         {
             BuildIndexes();
             return true;
@@ -122,7 +122,7 @@ public class NAIFCatalogQueryManager
             return false;
         }
 
-        _runtimeCatalogDatabase = new List<BodyCatalog>(catalog);
+        RuntimeCatalogDatabase = new List<BodyCatalog>(catalog);
         BuildIndexes();
         return true;
     }
@@ -135,7 +135,7 @@ public class NAIFCatalogQueryManager
         if (!_idToIndex.TryGetValue(id, out int idx))
             return false;
 
-        catalog = _runtimeCatalogDatabase[idx];
+        catalog = RuntimeCatalogDatabase[idx];
         return true;
     }
 
@@ -160,9 +160,9 @@ public class NAIFCatalogQueryManager
         if (!canFilterPrevious)
         {
             _lastCandidateIdxs.Clear();
-            _lastCandidateIdxs.Capacity = Math.Max(_lastCandidateIdxs.Capacity, _runtimeCatalogDatabase.Count);
+            _lastCandidateIdxs.Capacity = Math.Max(_lastCandidateIdxs.Capacity, RuntimeCatalogDatabase.Count);
 
-            for (int i = 0; i < _runtimeCatalogDatabase.Count; i++)
+            for (int i = 0; i < RuntimeCatalogDatabase.Count; i++)
                 _lastCandidateIdxs.Add(i);
         }
 
@@ -170,7 +170,7 @@ public class NAIFCatalogQueryManager
         if (int.TryParse(query, out int exactId) && _idToIndex.TryGetValue(exactId, out int idxExact))
         {
             exactIdIdx = idxExact;
-            results.Add(_runtimeCatalogDatabase[exactIdIdx]);
+            results.Add(RuntimeCatalogDatabase[exactIdIdx]);
         }
 
         int write = 0;
@@ -190,7 +190,7 @@ public class NAIFCatalogQueryManager
                 _lastCandidateIdxs[write++] = entryIdx;
 
                 if (results.Count < limit)
-                    results.Add(_runtimeCatalogDatabase[entryIdx]);
+                    results.Add(RuntimeCatalogDatabase[entryIdx]);
             }
         }
 

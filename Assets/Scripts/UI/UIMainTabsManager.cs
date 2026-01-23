@@ -10,7 +10,8 @@ public class UIMainTabsManager : MonoBehaviour
 
     public void OnClickHorizonsTab()
     {
-        _horizonsContent.SetActive(true);
+        if (!_horizonsContent.activeInHierarchy) _horizonsContent.SetActive(true);
+        else _horizonsContent.SetActive(false);
 
         _3DContent.SetActive(false);
         _2DContent.SetActive(false);
@@ -19,7 +20,8 @@ public class UIMainTabsManager : MonoBehaviour
 
     public void OnClick3DTab()
     {
-        _3DContent.SetActive(true);
+        if (!_3DContent.activeInHierarchy) _3DContent.SetActive(true);
+        else _3DContent.SetActive(false);
 
         _horizonsContent.SetActive(false);
         _2DContent.SetActive(false);
@@ -28,7 +30,8 @@ public class UIMainTabsManager : MonoBehaviour
 
     public void OnClick2DTab()
     {
-        _2DContent.SetActive(true);
+        if (!_2DContent.activeInHierarchy) _2DContent.SetActive(true);
+        else _2DContent.SetActive(false);
 
         _horizonsContent.SetActive(false);
         _3DContent.SetActive(false);
@@ -37,7 +40,8 @@ public class UIMainTabsManager : MonoBehaviour
 
     public void OnClickSettingsTab()
     {
-        _settingsContent.SetActive(true);
+        if (!_settingsContent.activeInHierarchy) _settingsContent.SetActive(true);
+        else _settingsContent.SetActive(false);
 
         _horizonsContent.SetActive(false);
         _3DContent.SetActive(false);
