@@ -102,6 +102,18 @@ public class NAIFDatabaseUIController : MonoBehaviour
         );
 
         _databaseTable.Rebuild();
+
+        // Fix header column flex "inline" issues
+        _databaseTable.schedule.Execute(() =>
+        {
+            _databaseTable
+                .Query<VisualElement>(className: "unity-multi-column-header__column__content-container")
+                .ForEach(container =>
+                {
+                    container.style.flexGrow = 0;
+                    container.style.flexShrink = 0;
+                });
+        }).StartingIn(0);
     }
 
     void OnColumnSortingChanged()
@@ -219,7 +231,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
                 var header = new Label("NAIF ID");
                 header.style.color = Color.white;
                 header.style.unityTextAlign = TextAnchor.MiddleCenter;
-                header.style.paddingLeft = 5;
+                header.style.paddingLeft = 3;
                 header.style.paddingTop = 6;
 
                 return header;

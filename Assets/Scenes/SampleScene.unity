@@ -1563,7 +1563,7 @@ GameObject:
   m_Component:
   - component: {fileID: 802666535}
   m_Layer: 0
-  m_Name: Fix NAIFID Catalog DB formatting and spacing
+  m_Name: Fix NAIFID Catalog DB sort indicator positioning
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

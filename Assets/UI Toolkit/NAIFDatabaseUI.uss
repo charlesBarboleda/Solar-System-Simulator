@@ -1,3 +1,23 @@
+/* Panel should NOT shrink to its content */
+#Panel {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+/* Search bar stays its natural height */
+#SearchBar {
+    flex-shrink: 0;
+}
+
+/* Force the table to take the rest of the panel space consistently */
+#DatabaseTable {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0px;   
+    min-height: 0px;  
+}
+
 .db-cell {
     color: rgba(255, 255, 255, 0.92);
     font-size: 14px;
@@ -9,26 +29,26 @@
     padding-right: 12px;
 }
 
-/* Header row area */
-#DatabaseTable .unity-multi-column-view__header-container,
-#DatabaseTable .unity-multi-column-header,
-#DatabaseTable .unity-multi-column-header__column-container {
-    background-color: rgba(0, 0, 0, 1);
+#DatabaseTable .unity-multi-column-header__column,
+#DatabaseTable .unity-multi-column-header__column--sortable
+{
+    flex-direction: row-reverse;        
+    align-items: center;          
+    justify-content: flex-end;    
+    background-color: black;   
 }
 
-#DatabaseTable .unity-multi-column-header__column {
-    background-color: rgba(0, 0, 0, 1);
-    background-image: none;
+#DatabaseTable .unity-multi-column-header__column__sort-indicator
+{
+    margin-top: 3px;
+}
+
+#DatabaseTable .unity-multi-column-header__column__sort-indicator__arrow
+{
+   -unity-background-image-tint-color: white;
+    width: 18px;
+    height: 18px;
+
 }
 
 
-/* Header label text */
-.unity-multi-column-list-view__column-header-label {
-    color: rgba(255, 255, 255, 1);
-    unity-font-style: bold;
-}
-
-/* Row hover */
-.unity-multi-column-list-view__row:hover {
-    background-color: rgba(255, 255, 255, 0.07);
-}
