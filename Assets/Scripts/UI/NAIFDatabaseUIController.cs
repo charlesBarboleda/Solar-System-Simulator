@@ -9,6 +9,8 @@ public class NAIFDatabaseUIController : MonoBehaviour
     // UXML element names
     const string SearchFieldName = "SearchField";
     const string DatabaseTableName = "DatabaseTable";
+    const string AddEntryButtonName = "AddButton";
+    const string RemoveEntryButtonName = "RemoveButton";
 
     [Header("References")]
     [SerializeField] NAIFCatalogManager _NAIFCatalogDBManager;
@@ -58,6 +60,12 @@ public class NAIFDatabaseUIController : MonoBehaviour
             return;
         }
 
+        var _addEntryButton = root.Q<Button>(AddEntryButtonName);
+        var _removeEntryButton = root.Q<Button>(RemoveEntryButtonName);
+
+        _addEntryButton.clicked += OnAddClicked;
+        _removeEntryButton.clicked += OnRemoveClicked;
+
         // Optional: remove built-in label spacing
         _searchField.label = string.Empty;
 
@@ -76,6 +84,15 @@ public class NAIFDatabaseUIController : MonoBehaviour
     {
         if (_searchField != null && _onSearchChangedCallback != null)
             _searchField.UnregisterValueChangedCallback(_onSearchChangedCallback);
+    }
+
+    void OnAddClicked()
+    {
+    }
+
+    void OnRemoveClicked()
+    {
+
     }
 
     void ConfigureDatabaseTable()
