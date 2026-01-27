@@ -32,6 +32,12 @@
     background-color: black;
 }
 
+#DatabaseTable .unity-scroll-view
+{
+    flex-shrink: 0;
+    height: 725px;
+}
+
 #DatabaseTable .unity-multi-column-header__column__sort-indicator {
     margin-top: 3px;
 }
@@ -68,5 +74,3 @@
     color: black;
     font-weight: bold;
 }
-
-#AddPanel 

@@ -1,3 +1,5 @@
+using System;
+using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,7 +17,7 @@ public class UIMessage : MonoBehaviour
     // Singleton
     public static UIMessage Instance;
 
-    // References to UI elements
+    // Message Panel UI element references
     [SerializeField] GameObject _messagePanel;
     [SerializeField] TextMeshProUGUI _messageText;
     [SerializeField] TextMeshProUGUI _messageTitleText;
@@ -29,10 +31,18 @@ public class UIMessage : MonoBehaviour
     [SerializeField] Sprite _infoIcon;
     readonly float _infoIconScale = 1.3f;
 
+    // Confirmation Panel UI element references
+    [SerializeField] GameObject _confirmationPanel;
+    [SerializeField] TextMeshProUGUI _confirmationTitleText;
+    [SerializeField] TextMeshProUGUI _confirmMessageText;
+    Action _onYesAction;
+    Action _onNoAction;
+    bool _awaitingConfirmation;
+
 
     // Limits
-    const int MaxMessageLength = 200;
-    const int MaxMessageTitleLength = 13;
+    const int MaxMessageLength = 300;
+    const int MaxMessageTitleLength = 16;
 
     void Awake()
     {
@@ -42,13 +52,15 @@ public class UIMessage : MonoBehaviour
             return;
         }
 
-        _messagePanel.SetActive(false);
-
         if (Instance != null && Instance != this)
         {
             Destroy(this.gameObject);
             return;
         }
+        Instance = this;
+
+        _messagePanel.SetActive(false);
+        _confirmationPanel.SetActive(false);
     }
 
     bool IsValidMessage(string message, string title)
@@ -76,6 +88,44 @@ public class UIMessage : MonoBehaviour
         }
 
         return true;
+    }
+
+    public void SelectedYesConfirmation()
+    {
+        var cb = _onYesAction;
+        CloseConfirmationPanel();
+        cb?.Invoke();
+    }
+
+    public void SelectedNoConfirmation()
+    {
+        var cb = _onNoAction;
+        CloseConfirmationPanel();
+        cb?.Invoke();
+    }
+
+    void CloseConfirmationPanel()
+    {
+        _awaitingConfirmation = false;
+        _onYesAction = null;
+        _onNoAction = null;
+        _confirmationPanel.SetActive(false);
+    }
+
+    public void NewUIConfirmation(string message, string title = "Confirm Action", Action onYes = null, Action onNo = null)
+    {
+        if (!IsValidMessage(message, title)) return;
+
+        if (_awaitingConfirmation) return;
+        _awaitingConfirmation = true;
+
+        _onYesAction = onYes;
+        _onNoAction = onNo;
+        _confirmationTitleText.text = title;
+        _confirmMessageText.text = message;
+
+        _confirmationPanel.SetActive(true);
+        _confirmationPanel.transform.SetAsLastSibling();
     }
 
     public void NewUIMessage(MessageType type, string message, string title)
