@@ -12,6 +12,15 @@ public class NAIFDatabaseUIController : MonoBehaviour
     const string AddEntryButtonName = "AddButton";
     const string RemoveEntryButtonName = "RemoveButton";
     const string DisplayPanelName = "Panel";
+    const string CloseAddPanelButtonName = "CloseAddPanel";
+
+    // Add Entry Panel
+    const string TryAddButtonName = "TryAddButton";
+    const string AddPanelName = "AddPanel";
+    const string AddNAIFIDInputName = "NAIFIDInput";
+    const string AddNameInputName = "NameInput";
+    const string AddDesignationInputName = "DesignationInput";
+    const string AddAliasesInputName = "AliasesInput";
 
     [Header("References")]
     [SerializeField] NAIFCatalogManager _NAIFCatalogDBManager;
@@ -21,6 +30,11 @@ public class NAIFDatabaseUIController : MonoBehaviour
     TextField _searchField;
     MultiColumnListView _databaseTable;
     VisualElement _displayPanel;
+    VisualElement _addEntryPanel;
+    TextField _addNAIFIDInput;
+    TextField _addNameInput;
+    TextField _addDesignationInput;
+    TextField _addAliasesInput;
 
 
     // Data
@@ -50,6 +64,14 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
         _searchField = root.Q<TextField>(SearchFieldName);
         _databaseTable = root.Q<MultiColumnListView>(DatabaseTableName);
+
+        _addEntryPanel = root.Q<VisualElement>(AddPanelName);
+        _addEntryPanel.style.display = DisplayStyle.None;
+        _addNAIFIDInput = root.Q<TextField>(AddNAIFIDInputName);
+        _addNameInput = root.Q<TextField>(AddNameInputName);
+        _addDesignationInput = root.Q<TextField>(AddDesignationInputName);
+        _addAliasesInput = root.Q<TextField>(AddAliasesInputName);
+
         _displayPanel = root.Q<VisualElement>(DisplayPanelName);
         _displayPanel.style.display = DisplayStyle.None;
 
@@ -65,10 +87,14 @@ public class NAIFDatabaseUIController : MonoBehaviour
             return;
         }
 
+        var _closeAddPanelButton = root.Q<Button>(CloseAddPanelButtonName);
+        var _tryAddEntryButton = root.Q<Button>(TryAddButtonName);
         var _addEntryButton = root.Q<Button>(AddEntryButtonName);
         var _removeEntryButton = root.Q<Button>(RemoveEntryButtonName);
 
+        _closeAddPanelButton.clicked += CloseAddEntryPanel;
         _addEntryButton.clicked += OnAddClicked;
+        _tryAddEntryButton.clicked += TryAddEntry;
         _removeEntryButton.clicked += OnRemoveClicked;
 
         // Optional: remove built-in label spacing
@@ -93,11 +119,71 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
     void OnAddClicked()
     {
+        if (_addEntryPanel.style.display == DisplayStyle.None) _addEntryPanel.style.display = DisplayStyle.Flex;
+        else _addEntryPanel.style.display = DisplayStyle.None;
+    }
+
+    void OpenAddEntryPanel()
+    {
+        if (_addEntryPanel.style.display == DisplayStyle.None) _addEntryPanel.style.display = DisplayStyle.Flex;
+        else return;
+    }
+
+    void TryAddEntry()
+    {
+        int naifID = -1;
+        string name = string.Empty;
+        string designation = string.Empty;
+        string aliases = string.Empty;
+
+        if (_addNAIFIDInput.value == null || _addNAIFIDInput.value == string.Empty)
+        {
+            UIMessage.Instance.NewUIMessage(MessageType.Error, "NAIFID field cannot be empty.", "Invalid NAIF ID");
+            return;
+        }
+        if (_addNAIFIDInput.value != null)
+        {
+            string naifIDStr = _addNAIFIDInput.value.Trim();
+            if (!int.TryParse(naifIDStr, out naifID))
+            {
+                UIMessage.Instance.NewUIMessage(MessageType.Error, "NAIFID must be an integer.", "Invalid NAIF ID");
+                return;
+            }
+        }
+
+        if (_addNameInput.value != null)
+        {
+            name = _addNameInput.value.Trim();
+        }
+        if (_addDesignationInput.value != null)
+        {
+            designation = _addDesignationInput.value.Trim();
+        }
+        if (_addAliasesInput.value != null)
+        {
+            aliases = _addAliasesInput.value.Trim();
+        }
+
+        _NAIFCatalogDBManager.TryAddUserCatalogEntry(
+            new BodyCatalog
+            {
+                NAIFID = naifID,
+                Name = name,
+                Designation = designation,
+                Aliases = aliases
+            }
+        );
+    }
+
+    void CloseAddEntryPanel()
+    {
+        if (_addEntryPanel.style.display == DisplayStyle.Flex) _addEntryPanel.style.display = DisplayStyle.None;
+        else return;
     }
 
     void OnRemoveClicked()
     {
-
+        CloseAddEntryPanel();
     }
 
     void ConfigureDatabaseTable()

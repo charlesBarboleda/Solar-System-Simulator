@@ -219,6 +219,7 @@ public class NAIFCatalogManager : MonoBehaviour
     {
         if (catalogToAdd.NAIFID == -1)
         {
+            UIMessage.Instance.NewUIMessage(MessageType.Error, "Could not add the new catalog entry; Invalid NAIFID: -1", "Invalid NAIFID");
             Debug.LogError($"[NAIFCatalogManager] TryAddUserCatalogEntry(): Could not add the new catalog entry; Invalid NAIFID: -1");
             return false;
         }
@@ -227,6 +228,7 @@ public class NAIFCatalogManager : MonoBehaviour
 
         if (_runtimeCatalogDB != null && _runtimeCatalogDB.Exists(x => x.NAIFID == catalogToAdd.NAIFID))
         {
+            UIMessage.Instance.NewUIMessage(MessageType.Error, $"Could not add the new catalog entry; NAIFID '{catalogToAdd.NAIFID}' already exists in the database.", "Duplicate NAIFID");
             Debug.LogError($"Cannot add NAIFID '{catalogToAdd.NAIFID}', already exists in runtime catalog database.");
             return false;
         }

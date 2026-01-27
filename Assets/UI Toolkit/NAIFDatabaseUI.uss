@@ -1,25 +1,21 @@
-#Panel 
-{
+#Panel {
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
 }
 
-#SearchBar 
-{
+#SearchBar {
     flex-shrink: 0;
 }
 
-#DatabaseTable 
-{
+#DatabaseTable {
     flex-grow: 1;
     flex-shrink: 1;
     flex-basis: 0;
     min-height: 0;
 }
 
-.db-cell 
-{
+.db-cell {
     color: rgba(255, 255, 255, 0.92);
     font-size: 14px;
     white-space: nowrap;
@@ -29,42 +25,48 @@
 }
 
 #DatabaseTable .unity-multi-column-header__column,
-#DatabaseTable .unity-multi-column-header__column--sortable 
-{
+#DatabaseTable .unity-multi-column-header__column--sortable {
     flex-direction: row-reverse;
     align-items: center;
     justify-content: flex-end;
     background-color: black;
 }
 
-#DatabaseTable .unity-multi-column-header__column__sort-indicator 
-{
+#DatabaseTable .unity-multi-column-header__column__sort-indicator {
     margin-top: 3px;
 }
 
-#DatabaseTable .unity-multi-column-header__column__sort-indicator__arrow 
-{
+#DatabaseTable .unity-multi-column-header__column__sort-indicator__arrow {
     -unity-background-image-tint-color: white;
     width: 18px;
     height: 18px;
 }
 
-#AddPanel .unity-text-element--inner-input-field-component 
-{
+#AddPanel .unity-text-element--inner-input-field-component {
     font-size: 14px;
     -unity-font-style: bold-and-italic;
-    padding: 0px;
+    padding: 0;
 }
 
-#AddPanel .unity-base-field__input
-{
+#AddPanel .unity-base-field__input {
     border-radius: 10px;
     border-width: 1px;
-    padding-left: 10px;
-    margin: 0px;
+    padding-left: 15px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-right: 0px;
+    margin: 0;
 }
 
-#AddPanel .unity-text-field__label
-{
+#AddPanel .unity-text-field__label {
     font-size: 22px;
 }
+
+#AddPanel .unity-text-element--inner-input-field-component
+{
+    font-size: 18px;
+    color: black;
+    font-weight: bold;
+}
+
+#AddPanel 

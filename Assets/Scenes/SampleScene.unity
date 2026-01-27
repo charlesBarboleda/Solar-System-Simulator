@@ -912,7 +912,7 @@ GameObject:
   - component: {fileID: 296133895}
   - component: {fileID: 296133894}
   m_Layer: 5
-  m_Name: ErrorTitle
+  m_Name: MessageTitle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -932,10 +932,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 993212698}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 253, y: -20}
-  m_SizeDelta: {x: 466, y: 42.46}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &296133894
 MonoBehaviour:
@@ -957,7 +957,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Test Error123213
+  m_text: Test Success
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -984,8 +984,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 38
-  m_fontSizeBase: 38
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1023,7 +1023,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 49.125732, y: 0, z: 0, w: 0}
+  m_margin: {x: 0.6817627, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -1049,7 +1049,7 @@ GameObject:
   - component: {fileID: 306026471}
   - component: {fileID: 306026470}
   m_Layer: 5
-  m_Name: ErrorMessage
+  m_Name: MessageMain
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1069,10 +1069,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 993212698}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 253, y: -92.46}
-  m_SizeDelta: {x: 466, y: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &306026470
 MonoBehaviour:
@@ -1094,7 +1094,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: This is a test success message.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1699,7 +1699,7 @@ GameObject:
   - component: {fileID: 492416305}
   - component: {fileID: 492416306}
   m_Layer: 0
-  m_Name: UIErrorMessageManager
+  m_Name: UIMessageManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1732,9 +1732,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7eac45343ac3414e8e9e000d8a37fe2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIErrorMessage
-  _errorMessagePanel: {fileID: 1675091447}
-  _errorMessageText: {fileID: 306026470}
-  _errorTitleText: {fileID: 296133894}
+  _messagePanel: {fileID: 1675091447}
+  _messageText: {fileID: 306026470}
+  _messageTitleText: {fileID: 296133894}
+  _messageIcon: {fileID: 2104761940}
+  _errorIcon: {fileID: 21300000, guid: 67a89279a2b0d904d9398ea360936433, type: 3}
+  _checkmarkIcon: {fileID: 21300000, guid: 7962159e0533adf41849f68dbac5e8ae, type: 3}
+  _warningIcon: {fileID: 21300000, guid: 98368a11975443d419b03cfcc437a5bf, type: 3}
+  _infoIcon: {fileID: 21300000, guid: 98368a11975443d419b03cfcc437a5bf, type: 3}
 --- !u!1 &696061718
 GameObject:
   m_ObjectHideFlags: 0
@@ -2567,10 +2572,10 @@ RectTransform:
   - {fileID: 306026469}
   m_Father: {fileID: 1675091448}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 255, y: -2}
-  m_SizeDelta: {x: 506, y: 112.46}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &993212699
 MonoBehaviour:
@@ -3493,8 +3498,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 492416306}
-        m_TargetAssemblyTypeName: UIErrorMessage, Assembly-CSharp
-        m_MethodName: CloseErrorMessage
+        m_TargetAssemblyTypeName: UIMessage, Assembly-CSharp
+        m_MethodName: CloseMessage
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4311,10 +4316,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 993212698}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 253, y: -72.46}
-  m_SizeDelta: {x: 466, y: 10}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1477727301
 MonoBehaviour:
@@ -5359,12 +5364,12 @@ GameObject:
   - component: {fileID: 1675091452}
   - component: {fileID: 1675091451}
   m_Layer: 5
-  m_Name: ErrorMessagePanel
+  m_Name: UIMessagePanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1675091448
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5386,7 +5391,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 510, y: 116.46}
+  m_SizeDelta: {x: 510, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1675091450
 CanvasRenderer:
@@ -7093,7 +7098,7 @@ GameObject:
   - component: {fileID: 2104761940}
   - component: {fileID: 2104761939}
   m_Layer: 5
-  m_Name: ErrorIcon
+  m_Name: MessageIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7108,14 +7113,14 @@ RectTransform:
   m_GameObject: {fileID: 2104761937}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.41, y: 1.41, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1675091448}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 22, y: -20}
+  m_AnchoredPosition: {x: 22, y: -13}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2104761939
@@ -7158,7 +7163,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 67a89279a2b0d904d9398ea360936433, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 7962159e0533adf41849f68dbac5e8ae, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
