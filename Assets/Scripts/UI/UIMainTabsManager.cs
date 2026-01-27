@@ -6,6 +6,7 @@ public class UIMainTabsManager : MonoBehaviour
     [SerializeField] GameObject _3DContent;
     [SerializeField] GameObject _2DContent;
     [SerializeField] GameObject _settingsContent;
+    [SerializeField] NAIFDatabaseUIController _naifDatabaseUIController;
 
 
     public void OnClickHorizonsTab()
@@ -16,6 +17,7 @@ public class UIMainTabsManager : MonoBehaviour
         _3DContent.SetActive(false);
         _2DContent.SetActive(false);
         _settingsContent.SetActive(false);
+        _naifDatabaseUIController.ClosePanel();
     }
 
     public void OnClick3DTab()
@@ -26,6 +28,7 @@ public class UIMainTabsManager : MonoBehaviour
         _horizonsContent.SetActive(false);
         _2DContent.SetActive(false);
         _settingsContent.SetActive(false);
+        _naifDatabaseUIController.ClosePanel();
     }
 
     public void OnClick2DTab()
@@ -36,6 +39,7 @@ public class UIMainTabsManager : MonoBehaviour
         _horizonsContent.SetActive(false);
         _3DContent.SetActive(false);
         _settingsContent.SetActive(false);
+        _naifDatabaseUIController.ClosePanel();
     }
 
     public void OnClickSettingsTab()
@@ -46,5 +50,6 @@ public class UIMainTabsManager : MonoBehaviour
         _horizonsContent.SetActive(false);
         _3DContent.SetActive(false);
         _2DContent.SetActive(false);
+        _naifDatabaseUIController.ClosePanel();
     }
 }

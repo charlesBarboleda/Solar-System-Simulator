@@ -11,6 +11,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
     const string DatabaseTableName = "DatabaseTable";
     const string AddEntryButtonName = "AddButton";
     const string RemoveEntryButtonName = "RemoveButton";
+    const string DisplayPanelName = "Panel";
 
     [Header("References")]
     [SerializeField] NAIFCatalogManager _NAIFCatalogDBManager;
@@ -19,6 +20,8 @@ public class NAIFDatabaseUIController : MonoBehaviour
     UIDocument _uiDocument;
     TextField _searchField;
     MultiColumnListView _databaseTable;
+    VisualElement _displayPanel;
+
 
     // Data
     readonly List<BodyCatalog> _filteredCatalogDB = new();
@@ -47,6 +50,8 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
         _searchField = root.Q<TextField>(SearchFieldName);
         _databaseTable = root.Q<MultiColumnListView>(DatabaseTableName);
+        _displayPanel = root.Q<VisualElement>(DisplayPanelName);
+        _displayPanel.style.display = DisplayStyle.None;
 
         if (_searchField == null || _databaseTable == null)
         {
@@ -373,4 +378,22 @@ public class NAIFDatabaseUIController : MonoBehaviour
         ApplyCurrentSort();
         _databaseTable.RefreshItems();
     }
+
+    public void ClosePanel()
+    {
+        if (_displayPanel.style.display == DisplayStyle.Flex) _displayPanel.style.display = DisplayStyle.None;
+        else return;
+    }
+
+    public void OpenClosePanel()
+    {
+        if (_displayPanel.style.display == DisplayStyle.None)
+        {
+            _displayPanel.style.display = DisplayStyle.Flex;
+            _databaseTable.RefreshItems();
+        }
+        else if (_displayPanel.style.display == DisplayStyle.Flex) _displayPanel.style.display = DisplayStyle.None;
+    }
+
+
 }
