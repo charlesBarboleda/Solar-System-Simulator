@@ -313,15 +313,9 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
     void ConfigureDatabaseTable()
     {
-        // Source
         _databaseTable.itemsSource = _filteredCatalogDB;
-
-        // Appearance / behavior
         _databaseTable.selectionType = SelectionType.None;
         _databaseTable.fixedItemHeight = 28f;
-
-        // Built-in zebra striping
-        _databaseTable.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 
         BuildColumns();
 
@@ -463,7 +457,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
                 menu.AddSeparator("");
 
                 // Not implemented yet
-                menu.AddItem("Request Horizon", false, () => Debug.Log("Request Horizon (not implemented)"));
+                menu.AddItem("Request Horizons API", false, () => Debug.Log("Request Horizon (not implemented)"));
                 menu.AddItem("Check Ephemeris Database", false, () => Debug.Log("Check Ephemeris Database (not implemented)"));
 
                 menu.AddSeparator("");

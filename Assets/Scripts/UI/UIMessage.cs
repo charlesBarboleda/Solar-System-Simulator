@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using JetBrains.Annotations;
 
 public enum MessageType
 {
@@ -227,6 +228,11 @@ public class UIMessage : MonoBehaviour
         _messagePanel.SetActive(false);
     }
 
+    public void CloseBaseFadingMessage()
+    {
+        _fadingMessagePanel.SetActive(false);
+    }
+
     [ContextMenu("Test Error Message")]
     public void TestErrorMessage()
     {
@@ -249,5 +255,14 @@ public class UIMessage : MonoBehaviour
     public void TestInfoMessage()
     {
         NewUIMessage(MessageType.Info, "This is a test info message.", "Test Info");
+    }
+
+    [ContextMenu("Test Fading Messages")]
+    public void TestFadingMessages()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            NewFadingMessage($"[{i}] This is a test message.", 3f);
+        }
     }
 }

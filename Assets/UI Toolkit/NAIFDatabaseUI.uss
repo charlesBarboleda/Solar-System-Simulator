@@ -32,8 +32,7 @@
     background-color: black;
 }
 
-#DatabaseTable .unity-scroll-view
-{
+#DatabaseTable .unity-scroll-view {
     flex-shrink: 0;
     height: 725px;
 }
@@ -48,6 +47,11 @@
     height: 18px;
 }
 
+#DatabaseTable .unity-collection-view__item:hover
+{
+    background-color: black;
+}
+
 #AddPanel .unity-text-element--inner-input-field-component {
     font-size: 14px;
     -unity-font-style: bold-and-italic;
@@ -58,9 +62,9 @@
     border-radius: 10px;
     border-width: 1px;
     padding-left: 15px;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    padding-right: 0px;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-right: 0;
     margin: 0;
 }
 
@@ -68,10 +72,31 @@
     font-size: 22px;
 }
 
-#AddPanel .unity-text-element--inner-input-field-component
-{
-    font-size: 18px;
+#AddPanel .unity-text-element--inner-input-field-component {
+    font-size: 14px;
     color: black;
-    font-weight: bold;
+    -unity-font-style: bold;
 }
+
+#TryAddButton.unity-text-element{
+    color: white;
+}
+
+#TryAddButton:hover{
+    border-bottom-color: rgba(108, 255, 108, 1);
+    border-top-color: rgba(108, 255, 108, 1);
+    border-left-color: rgba(108, 255, 108, 1);
+    border-right-color: rgba(108, 255, 108, 1);
+    color: rgba(108, 255, 108, 1);
+}
+
+#ClosePanel:hover,
+#CloseAddPanel:hover{
+   scale: 1.25 1.25;
+}
+
+#AddCatalogEntry:hover{
+    scale: 1.1 1.1;
+}
+
 

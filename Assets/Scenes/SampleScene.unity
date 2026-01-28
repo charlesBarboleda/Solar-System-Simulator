@@ -950,6 +950,8 @@ GameObject:
   - component: {fileID: 283013204}
   - component: {fileID: 283013203}
   - component: {fileID: 283013206}
+  - component: {fileID: 283013208}
+  - component: {fileID: 283013207}
   m_Layer: 5
   m_Name: NoButton
   m_TagString: Untagged
@@ -1086,6 +1088,66 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 0, b: 0.038256645, a: 0.5}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &283013207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 283013201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20b7e348cd5b21e418b1a29845992cb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnlargeButton
+  _elementToResize: {fileID: 283013202}
+  _scaleXBy: 1.15
+  _scaleYBy: 1.15
+--- !u!114 &283013208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 283013201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventTrigger
+  m_Delegates:
+  - eventID: 0
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 283013207}
+          m_TargetAssemblyTypeName: EnlargeButton, Assembly-CSharp
+          m_MethodName: EnlargeElement
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  - eventID: 1
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 283013207}
+          m_TargetAssemblyTypeName: EnlargeButton, Assembly-CSharp
+          m_MethodName: ReturnOriginalSize
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
 --- !u!1 &284218882
 GameObject:
   m_ObjectHideFlags: 0
@@ -1572,7 +1634,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Yes
+  m_text: YES
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1605,7 +1667,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -2397,10 +2459,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1694837575}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 253, y: -44.879997}
-  m_SizeDelta: {x: 466, y: 49.76}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &654123324
 MonoBehaviour:
@@ -6931,10 +6993,10 @@ RectTransform:
   - {fileID: 654123323}
   m_Father: {fileID: 1986926558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 255, y: -2}
-  m_SizeDelta: {x: 506, y: 89.759995}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1694837576
 MonoBehaviour:
@@ -7303,6 +7365,8 @@ GameObject:
   - component: {fileID: 1824694351}
   - component: {fileID: 1824694350}
   - component: {fileID: 1824694353}
+  - component: {fileID: 1824694355}
+  - component: {fileID: 1824694354}
   m_Layer: 5
   m_Name: YesButton
   m_TagString: Untagged
@@ -7439,6 +7503,66 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 1, b: 0.026052952, a: 0.5}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &1824694354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1824694348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20b7e348cd5b21e418b1a29845992cb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enlarge
+  _elementToResize: {fileID: 1824694349}
+  _scaleXBy: 1.15
+  _scaleYBy: 1.15
+--- !u!114 &1824694355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1824694348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventTrigger
+  m_Delegates:
+  - eventID: 0
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 1824694354}
+          m_TargetAssemblyTypeName: EnlargeButton, Assembly-CSharp
+          m_MethodName: EnlargeElement
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  - eventID: 1
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 1824694354}
+          m_TargetAssemblyTypeName: EnlargeButton, Assembly-CSharp
+          m_MethodName: ReturnOriginalSize
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
 --- !u!1 &1829350444
 GameObject:
   m_ObjectHideFlags: 0
@@ -7613,7 +7737,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: No
+  m_text: NO
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -7646,7 +7770,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -8159,7 +8283,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1986926558
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8178,10 +8302,10 @@ RectTransform:
   - {fileID: 2027009069}
   m_Father: {fileID: 961875164}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -175, y: -1008.12}
-  m_SizeDelta: {x: 510, y: 93.759995}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 510, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1986926560
 MonoBehaviour:
@@ -8526,7 +8650,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2027009072}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 492416306}
+        m_TargetAssemblyTypeName: UIMessage, Assembly-CSharp
+        m_MethodName: CloseBaseFadingMessage
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2027009072
 MonoBehaviour:
   m_ObjectHideFlags: 0
