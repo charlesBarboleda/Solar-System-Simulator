@@ -25,16 +25,18 @@ public static class JSONCatalog
 
     public static bool TryStoreCatalogDBAsJSON(List<BodyCatalog> catalogDatabase, string fileName, string folderName)
     {
-        if (catalogDatabase == null || catalogDatabase.Count <= 0)
+        if (catalogDatabase == null)
         {
-            Debug.LogError($"Could not store {catalogDatabase} as JSON");
+            Debug.LogError("Could not store catalog database as JSON: catalogDatabase is null.");
             return false;
         }
 
         var jsonWrapper = new BodyCatalogListJSONWrapper { Database = catalogDatabase };
         string json = JsonUtility.ToJson(jsonWrapper, prettyPrint: true);
+
         string folder = GetCachedFolderFor(folderName);
         string filePath = GetCachedFilePathFor(fileName, folderName);
+
         Directory.CreateDirectory(folder);
         string tempPath = filePath + ".tmp";
 
@@ -49,16 +51,19 @@ public static class JSONCatalog
             Debug.LogError(e);
             return false;
         }
+        finally
+        {
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+        }
 
-        if (File.Exists(tempPath)) File.Delete(tempPath);
-
-        Debug.Log($"Saved catalog JSON to: {filePath}");
+        Debug.Log($"Catalog database saved locally: {filePath}");
+        UIMessage.Instance.NewFadingMessage("Catalog database saved locally", 3f);
         return true;
     }
 
+
     static string GetCachedFolderFor(string folderName) => Path.Combine(Application.persistentDataPath, folderName);
     static string GetCachedFilePathFor(string fileName, string folderName) => Path.Combine(GetCachedFolderFor(folderName), fileName);
-
     static bool HasLocalJSONDatabase(out string json, string fileName, string folderName)
     {
         json = null;
@@ -93,11 +98,8 @@ public static class JSONCatalog
         }
 
         var loaded = JsonUtility.FromJson<BodyCatalogListJSONWrapper>(json);
-        if (loaded == null || loaded.Database == null || loaded.Database.Count < 1)
-        {
-            Debug.LogError($"Could not deserialize a NAIF catalog database from JSON (empty/null)");
-            return false;
-        }
+        if (loaded == null || loaded.Database == null || loaded.Database.Count < 1) return false;
+
 
         database = new(loaded.Database);
         return true;

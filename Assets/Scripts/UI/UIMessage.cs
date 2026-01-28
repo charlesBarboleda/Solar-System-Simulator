@@ -1,8 +1,8 @@
 using System;
-using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public enum MessageType
 {
@@ -12,6 +12,8 @@ public enum MessageType
     Info
 }
 
+// make sure this class runs before any other UI scripts that might call it
+[DefaultExecutionOrder(-100)]
 public class UIMessage : MonoBehaviour
 {
     // Singleton
@@ -39,10 +41,18 @@ public class UIMessage : MonoBehaviour
     Action _onNoAction;
     bool _awaitingConfirmation;
 
+    // Fading Message UI element references
+    [SerializeField] GameObject _fadingMessagesContainer;
+    [SerializeField] GameObject _fadingMessagePanel;
+    [SerializeField] CanvasGroup _fadingMessageCanvasGroup;
+    [SerializeField] TextMeshProUGUI _fadingMessageText;
+    [SerializeField] Button _fadingMessageCloseButton;
+
 
     // Limits
     const int MaxMessageLength = 300;
-    const int MaxMessageTitleLength = 16;
+    const int MaxMessageTitleLength = 25;
+    const int MaxFadeMessageLength = 87;
 
     void Awake()
     {
@@ -59,8 +69,26 @@ public class UIMessage : MonoBehaviour
         }
         Instance = this;
 
+        _fadingMessagesContainer.SetActive(true);
+        _fadingMessagePanel.SetActive(false);
         _messagePanel.SetActive(false);
         _confirmationPanel.SetActive(false);
+    }
+
+    bool IsValidFadeMessage(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            Debug.LogError("Fade message is null or empty.");
+            return false;
+        }
+
+        if (message.Length > MaxFadeMessageLength)
+        {
+            Debug.LogError("Fade message too long: " + message);
+            return false;
+        }
+        return true;
     }
 
     bool IsValidMessage(string message, string title)
@@ -126,6 +154,35 @@ public class UIMessage : MonoBehaviour
 
         _confirmationPanel.SetActive(true);
         _confirmationPanel.transform.SetAsLastSibling();
+    }
+
+    public void NewFadingMessage(string message, float durationBeforeFade = 2f)
+    {
+        if (!IsValidFadeMessage(message)) return;
+
+        if (_fadingMessagePanel.activeInHierarchy)
+        {
+            // If a fading message is already being shown, create a new one
+            GameObject newFadingMessage = Instantiate(_fadingMessagePanel, _fadingMessagesContainer.transform);
+            TextMeshProUGUI newFadingMessageText = newFadingMessage.GetComponentInChildren<TextMeshProUGUI>();
+            CanvasGroup canvasGroup = newFadingMessage.GetComponent<CanvasGroup>();
+            Button closeButton = newFadingMessage.GetComponentInChildren<Button>();
+            closeButton.onClick.AddListener(() => Destroy(newFadingMessage));
+            newFadingMessageText.text = message;
+            newFadingMessage.SetActive(true);
+            newFadingMessage.transform.SetAsLastSibling();
+            canvasGroup.DOFade(0f, 0.5f).SetDelay(durationBeforeFade).OnComplete(() => Destroy(newFadingMessage));
+        }
+        else
+        {
+            _fadingMessageCanvasGroup.alpha = 1f;
+            _fadingMessageText.text = message;
+            _fadingMessageCloseButton.onClick.RemoveAllListeners();
+            _fadingMessageCloseButton.onClick.AddListener(() => _fadingMessagePanel.SetActive(false));
+            _fadingMessagePanel.SetActive(true);
+            _fadingMessagePanel.transform.SetAsLastSibling();
+            _fadingMessageCanvasGroup.DOFade(0f, 0.5f).SetDelay(durationBeforeFade).OnComplete(() => _fadingMessagePanel.SetActive(false));
+        }
     }
 
     public void NewUIMessage(MessageType type, string message, string title)

@@ -289,26 +289,68 @@ public class NAIFDatabaseUIController : MonoBehaviour
             label.AddToClassList("db-cell");
             label.style.paddingLeft = paddingLeft;
             label.style.unityTextAlign = align;
+            label.pickingMode = PickingMode.Position;
+            label.style.width = Length.Percent(100);
+            label.style.height = Length.Percent(100);
 
-            label.AddManipulator(new ContextualMenuManipulator(evt =>
+            label.RegisterCallback<PointerUpEvent>(evt =>
             {
-                if (label.userData is not int naifId) return;
+                // Right mouse on Windows/Linux.
+                // (Optional) treat Ctrl+LeftClick as context click on macOS.
+                bool isContextClick = evt.button == 1 || (evt.button == 0 && (evt.modifiers & EventModifiers.Control) != 0);
 
-                evt.menu.AppendAction("Request Horizon", _ => { }, DropdownMenuAction.Status.Normal);
-                evt.menu.AppendAction("Check Ephemeris Database", _ => { }, DropdownMenuAction.Status.Normal);
-                evt.menu.AppendAction("Remove NAIF ID Entry", _ =>
+                if (!isContextClick) return;
+
+                if (label.userData is not BodyCatalog entry) return;
+
+                var menu = new GenericDropdownMenu();
+
+                // Copy submenu
+                menu.AddItem("Copy/NAIF ID", false, () =>
                 {
-                    _NAIFCatalogDBManager.TryRemoveCatalogEntry(naifId, OnComplete =>
-                    {
-                        if (OnComplete)
-                            Debug.Log($"NAIFDatabaseUIController: Successfully removed NAIF ID '{naifId}' from catalog database.");
-                        else
-                            Debug.LogWarning($"NAIFDatabaseUIController: Failed to remove NAIF ID '{naifId}' from catalog database.");
-                    });
+                    GUIUtility.systemCopyBuffer = entry.NAIFID.ToString();
+                    UIMessage.Instance.NewFadingMessage($"Copied NAIF ID '{entry.NAIFID}' to clipboard.", 3f);
+                });
+                menu.AddItem("Copy/Name", false, () =>
+                {
+                    GUIUtility.systemCopyBuffer = entry.Name ?? string.Empty;
+                    UIMessage.Instance.NewFadingMessage($"Copied Name '{entry.Name}' to clipboard.", 3f);
+                });
+                menu.AddItem("Copy/Designation", false, () =>
+                {
+                    GUIUtility.systemCopyBuffer = entry.Designation ?? string.Empty;
+                    UIMessage.Instance.NewFadingMessage($"Copied Designation '{entry.Designation}' to clipboard.", 3f);
+                });
+                menu.AddItem("Copy/Aliases", false, () =>
+                {
+                    GUIUtility.systemCopyBuffer = entry.Aliases ?? string.Empty;
+                    UIMessage.Instance.NewFadingMessage($"Copied Aliases '{entry.Aliases}' to clipboard.", 3f);
+                });
 
-                }, DropdownMenuAction.Status.Normal);
-                evt.menu.AppendAction("Copy NAIFID", _ => GUIUtility.systemCopyBuffer = naifId.ToString(), DropdownMenuAction.Status.Normal);
-            }));
+                menu.AddSeparator("");
+
+                // Not implemented yet
+                menu.AddItem("Request Horizon", false, () => Debug.Log("Request Horizon (not implemented)"));
+                menu.AddItem("Check Ephemeris Database", false, () => Debug.Log("Check Ephemeris Database (not implemented)"));
+
+                menu.AddSeparator("");
+
+                // Remove entry
+                menu.AddItem("Remove Entry", false, () =>
+                {
+                    int naifId = entry.NAIFID;
+
+                    _NAIFCatalogDBManager.TryRemoveCatalogEntry(naifId, onComplete =>
+                    {
+                        if (onComplete) Debug.Log($"NAIFDatabaseUIController: Removed NAIF ID '{naifId}'.");
+                        else Debug.LogWarning($"NAIFDatabaseUIController: Failed to remove NAIF ID '{naifId}'.");
+                    });
+                });
+
+                menu.DropDown(new Rect(evt.position, Vector2.zero), label, DropdownMenuSizeMode.Content);
+
+                evt.StopPropagation();
+            });
 
             return label;
         }
@@ -319,11 +361,14 @@ public class NAIFDatabaseUIController : MonoBehaviour
                 return;
 
             var entry = _filteredCatalogDB[rowIndex];
-
             var label = (Label)e;
+
             label.text = getText(entry);
-            label.userData = entry.NAIFID; // used by right-click menu
+
+            // Store full entry for context menu actions (Copy fields, Remove, etc.)
+            label.userData = entry;
         }
+
 
         // Column: NAIF ID
         _databaseTable.columns.Add(new Column

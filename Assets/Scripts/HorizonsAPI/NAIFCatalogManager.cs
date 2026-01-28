@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
-using UnityEngine.Analytics;
-using Unity.VisualScripting;
 
+[DefaultExecutionOrder(-50)]
 public class NAIFCatalogManager : MonoBehaviour
 {
     public NAIFCatalogQueryManager QueryManager = new();
@@ -271,106 +270,102 @@ public class NAIFCatalogManager : MonoBehaviour
 
     public void TryRemoveCatalogEntry(int naifID, Action<bool> onComplete)
     {
-        BodyCatalog catalogToRemove = default;
-        bool isInHorizonsCatalogDatabase = false;
-        bool isInUserCatalogDatabase = false;
-
-        if (!_userCatalogDB.Exists(x => x.NAIFID == naifID))
-            Debug.LogWarning($"Cannot find NAIFID '{naifID}' in user catalog database to remove. Checking horizons catalog...");
-        else
-        {
-            catalogToRemove = _userCatalogDB.Find(x => x.NAIFID == naifID);
-            isInUserCatalogDatabase = true;
-        }
-
-        if (!isInUserCatalogDatabase && !_horizonsCatalogDB.Exists(x => x.NAIFID == naifID))
-        {
-            Debug.LogWarning($"Cannot find NAIFID '{naifID}' from horizon catalog database or user catalog database.");
-            isInHorizonsCatalogDatabase = false;
-        }
-        else
-        {
-            catalogToRemove = _horizonsCatalogDB.Find(x => x.NAIFID == naifID);
-            isInHorizonsCatalogDatabase = true;
-        }
+        bool isInUserCatalogDatabase = _userCatalogDB.Exists(x => x.NAIFID == naifID);
+        bool isInHorizonsCatalogDatabase = _horizonsCatalogDB.Exists(x => x.NAIFID == naifID);
 
         if (!isInUserCatalogDatabase && !isInHorizonsCatalogDatabase)
         {
-            UIMessage.Instance.NewUIMessage(MessageType.Error, $"Could not remove NAIF ID '{naifID}' from the catalog database. NAIF ID not found.", "Catalog Update Failed");
+            UIMessage.Instance.NewUIMessage(
+                MessageType.Error,
+                $"Could not remove NAIF ID '{naifID}' from the catalog database. NAIF ID not found.",
+                "Catalog Update Failed");
+
             Debug.LogWarning($"Could not find NAIFID '{naifID}' in either user or horizons catalog databases to remove.");
             onComplete?.Invoke(false);
             return;
         }
 
-        if (isInUserCatalogDatabase)
-        {
-            var catalogDatabaseCopy = new List<BodyCatalog>(_userCatalogDB);
+        // Choose which DB we are removing from.
+        List<BodyCatalog> sourceDb = isInUserCatalogDatabase ? _userCatalogDB : _horizonsCatalogDB;
+        string fileName = isInUserCatalogDatabase
+            ? JSONCatalog.UserCatalogDatabaseFileName
+            : JSONCatalog.CatalogDatabaseFileName;
 
-            UIMessage.Instance.NewUIConfirmation(
-                message: $"Are you sure you want to remove NAIF ID '{naifID}' from the catalog database?",
-                title: "Confirm Removal",
-                onYes: () =>
-                {
-                    catalogDatabaseCopy.Remove(catalogToRemove);
-                    if (JSONCatalog.TryStoreCatalogDBAsJSON(catalogDatabaseCopy, JSONCatalog.UserCatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
-                    {
-                        if (!TryMergeCatalogDB(_horizonsCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out _runtimeDatabaseChanges)) onComplete?.Invoke(false);
-                        else if (!QueryManager.TrySetQueryCatalog(_runtimeCatalogDB)) onComplete?.Invoke(false);
-                        else
-                        {
-                            _uiDatabaseController.UpdateUICatalogDB();
-                            _didRuntimeDatabaseChange = true;
-                            UIMessage.Instance.NewUIMessage(MessageType.Success, $"Successfully removed NAIF ID '{naifID}' from the catalog database.", "Catalog Updated");
-                            onComplete?.Invoke(true);
-                        }
-                    }
-                    else
-                    {
-                        onComplete?.Invoke(false);
-                    }
-                },
-                onNo: () =>
-                {
-                    UIMessage.Instance.NewUIMessage(MessageType.Warning, $"Removal of NAIF ID '{naifID}' from the catalog database was cancelled.", "Catalog Update Cancelled");
-                    onComplete?.Invoke(false);
-                }
-            );
-        }
-        else if (isInHorizonsCatalogDatabase)
-        {
-            var catalogDatabaseCopy = new List<BodyCatalog>(_horizonsCatalogDB);
+        string confirmMessage = isInUserCatalogDatabase
+            ? $"Are you sure you want to remove NAIF ID '{naifID}' from the catalog database?"
+            : $"The NAIF ID '{naifID}' exists in the Horizons catalog database. " +
+              $"If you have 'Auto Update Catalog Database' enabled, this NAIF ID will be added back on update.\n" +
+              $"Are you sure you want to remove NAIF ID '{naifID}' from the catalog database?";
 
-            UIMessage.Instance.NewUIConfirmation(
-                message: $"This NAIF ID '{naifID}' exists in the Horizons catalog database. If you have 'Auto Update Catalog Database' enabled, this NAIF ID will be added back on update.\nAre you sure you want to remove NAIF ID '{naifID}' from the catalog database?",
-                title: "Confirm Removal",
-                onYes: () =>
+        UIMessage.Instance.NewUIConfirmation(
+            message: confirmMessage,
+            title: "Confirm Removal",
+            onYes: () =>
+            {
+                var updatedDb = new List<BodyCatalog>(sourceDb);
+
+                int removedCount = updatedDb.RemoveAll(x => x.NAIFID == naifID);
+                if (removedCount <= 0)
                 {
-                    catalogDatabaseCopy.Remove(catalogToRemove);
-                    if (JSONCatalog.TryStoreCatalogDBAsJSON(catalogDatabaseCopy, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
-                    {
-                        if (!TryMergeCatalogDB(_horizonsCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out _runtimeDatabaseChanges)) onComplete?.Invoke(false);
-                        else if (!QueryManager.TrySetQueryCatalog(_runtimeCatalogDB)) onComplete?.Invoke(false);
-                        else
-                        {
-                            _uiDatabaseController.UpdateUICatalogDB();
-                            _didRuntimeDatabaseChange = true;
-                            UIMessage.Instance.NewUIMessage(MessageType.Success, $"Successfully removed NAIF ID '{naifID}' from the catalog database.", "Catalog Updated");
-                            onComplete?.Invoke(true);
-                        }
-                    }
-                    else
-                    {
-                        onComplete?.Invoke(false);
-                    }
-                },
-                onNo: () =>
-                {
-                    UIMessage.Instance.NewUIMessage(MessageType.Warning, $"Removal of NAIF ID '{naifID}' from the catalog database was cancelled.", "Catalog Update Cancelled");
+                    Debug.LogWarning($"Remove failed: NAIFID '{naifID}' not found in target list (unexpected).");
+                    UIMessage.Instance.NewUIMessage(
+                        MessageType.Error,
+                        $"Failed to remove NAIF ID '{naifID}'. Entry not found in target list.",
+                        "Catalog Update Failed");
                     onComplete?.Invoke(false);
+                    return;
                 }
-            );
-        }
+
+                if (!JSONCatalog.TryStoreCatalogDBAsJSON(updatedDb, fileName, JSONCatalog.CatalogDatabaseFolderName))
+                {
+                    UIMessage.Instance.NewUIMessage(
+                        MessageType.Error,
+                        $"Failed to save local catalog database after removing NAIF ID '{naifID}'.",
+                        "Catalog Save Failed");
+                    onComplete?.Invoke(false);
+                    return;
+                }
+
+                ReplaceListContents(sourceDb, updatedDb);
+
+                if (!TryMergeCatalogDB(_horizonsCatalogDB, _userCatalogDB, out _runtimeCatalogDB, out _runtimeDatabaseChanges))
+                {
+                    onComplete?.Invoke(false);
+                    return;
+                }
+
+                if (!QueryManager.TrySetQueryCatalog(_runtimeCatalogDB))
+                {
+                    onComplete?.Invoke(false);
+                    return;
+                }
+
+                _uiDatabaseController.UpdateUICatalogDB();
+                _didRuntimeDatabaseChange = true;
+
+                UIMessage.Instance.NewUIMessage(
+                    MessageType.Success,
+                    $"Successfully removed NAIF ID '{naifID}' from the catalog database.",
+                    "Catalog Updated");
+
+                onComplete?.Invoke(true);
+            },
+            onNo: () =>
+            {
+                UIMessage.Instance.NewFadingMessage(
+                    $"NAIF ID '{naifID}' removal cancelled.", 2f);
+
+                onComplete?.Invoke(false);
+            }
+        );
     }
+
+    static void ReplaceListContents(List<BodyCatalog> target, List<BodyCatalog> source)
+    {
+        target.Clear();
+        target.AddRange(source);
+    }
+
 
     bool TryInitializeCatalogDB()
     {
@@ -378,10 +373,12 @@ public class NAIFCatalogManager : MonoBehaviour
 
         if (!JSONCatalog.TryLoadLocalCatalogDB(out _userCatalogDB, JSONCatalog.UserCatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
         {
+            UIMessage.Instance.NewFadingMessage("No local user catalog database found.", 4f);
             _userCatalogDB = new();
         }
         if (!JSONCatalog.TryLoadLocalCatalogDB(out _horizonsCatalogDB, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
         {
+            UIMessage.Instance.NewFadingMessage("No local Horizons catalog database found. Starting initial download...", 4f);
             _horizonsCatalogDB = new();
             StartCoroutine(UpdateHorizonsDatabase());
         }
