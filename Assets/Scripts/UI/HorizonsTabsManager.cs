@@ -20,9 +20,7 @@ public class HorizonsTabsManager : MonoBehaviour
         if (!_horizonsAPIContent.activeInHierarchy) _horizonsAPIContent.SetActive(true);
         else _horizonsAPIContent.SetActive(false);
 
-        Debug.Log("Closing NAIF Database Panel");
         _naifDatabaseUIController.ClosePanel();
-        Debug.Log("Closed NAIF Database Panel");
         _ephemerisDBContent.SetActive(false);
     }
 

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,18 +13,23 @@ public class NAIFDatabaseUIController : MonoBehaviour
     const string DatabaseTableName = "DatabaseTable";
     const string AddEntryButtonName = "AddButton";
     const string DisplayPanelName = "Panel";
-    const string CloseAddPanelButtonName = "CloseAddPanel";
+    const string ClosePanelButtonName = "ClosePanel";
+    const string TooltipHoverName = "TooltipHover";
+    const string TooltipMessageName = "TooltipMessage";
 
     // Add Entry Panel
     const string TryAddButtonName = "TryAddButton";
     const string AddPanelName = "AddPanel";
+    const string CloseAddPanelButtonName = "CloseAddPanel";
     const string AddNAIFIDInputName = "NAIFIDInput";
     const string AddNameInputName = "NameInput";
     const string AddDesignationInputName = "DesignationInput";
     const string AddAliasesInputName = "AliasesInput";
+    const string NAIFIDInputName = "NAIFIDInput";
 
     [Header("References")]
     [SerializeField] NAIFCatalogManager _NAIFCatalogDBManager;
+    [SerializeField] TextMeshProUGUI _naifDatabaseTabText;
 
     // UI Toolkit refs
     UIDocument _uiDocument;
@@ -42,6 +49,19 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
     // For unregistering cleanly
     EventCallback<ChangeEvent<string>> _onSearchChangedCallback;
+
+    // Tooltip 
+    VisualElement _tooltip;
+    Label _tooltipMessage;
+    TextField _naifIDInput;
+    bool _isHovering;
+    bool _tooltipVisible;
+    float _lastMoveTimeUnscaled;
+    Vector2 _lastPointerPanelLocalPos; // event position is in panel space
+    string _pendingMessage;
+    readonly float _moveEpsilonSqr = 0;
+    readonly float _hoverDelaySeconds = 1.25f;
+    Coroutine _idleWatcherCoroutine;
 
     void Awake()
     {
@@ -63,6 +83,11 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
         _searchField = root.Q<TextField>(SearchFieldName);
         _databaseTable = root.Q<MultiColumnListView>(DatabaseTableName);
+        _tooltip = root.Q<VisualElement>(TooltipHoverName);
+        _tooltipMessage = root.Q<Label>(TooltipMessageName);
+        _tooltip.style.position = Position.Absolute;
+        _tooltip.pickingMode = PickingMode.Ignore;
+        _tooltip.style.display = DisplayStyle.None;
 
         _addEntryPanel = root.Q<VisualElement>(AddPanelName);
         _addEntryPanel.style.display = DisplayStyle.None;
@@ -86,10 +111,19 @@ public class NAIFDatabaseUIController : MonoBehaviour
             return;
         }
 
+        _naifIDInput = root.Q<TextField>(NAIFIDInputName);
+        _naifIDInput.RegisterCallback<PointerEnterEvent>(OnNAIFIDInputEnter);
+        _naifIDInput.RegisterCallback<PointerMoveEvent>(OnNAIFIDInputMove);
+        _naifIDInput.RegisterCallback<PointerLeaveEvent>(OnNAIFIDInputLeave);
+        _naifIDInput.RegisterCallback<PointerDownEvent>(_ => ResetHoverTimerAndHide());
+        _naifIDInput.RegisterCallback<WheelEvent>(_ => ResetHoverTimerAndHide());
+
+        var _closePanelButton = root.Q<Button>(ClosePanelButtonName);
         var _closeAddPanelButton = root.Q<Button>(CloseAddPanelButtonName);
         var _tryAddEntryButton = root.Q<Button>(TryAddButtonName);
         var _addEntryButton = root.Q<Button>(AddEntryButtonName);
 
+        _closePanelButton.clicked += ClosePanel;
         _closeAddPanelButton.clicked += CloseAddEntryPanel;
         _addEntryButton.clicked += OnAddClicked;
         _tryAddEntryButton.clicked += TryAddEntry;
@@ -113,6 +147,104 @@ public class NAIFDatabaseUIController : MonoBehaviour
         if (_searchField != null && _onSearchChangedCallback != null)
             _searchField.UnregisterValueChangedCallback(_onSearchChangedCallback);
     }
+
+    void OnNAIFIDInputEnter(PointerEnterEvent evt)
+    {
+        _isHovering = true;
+
+        _pendingMessage = "(*) Required Field. Must be a unique integer NAIF ID.";
+
+        _lastPointerPanelLocalPos = PanelSpaceToPanelLocal(evt.position);
+
+        _lastMoveTimeUnscaled = Time.unscaledTime;
+
+        HideTooltip();      // clean start
+        StartIdleWatcher(); // begins “stillness” countdown
+    }
+
+    void OnNAIFIDInputMove(PointerMoveEvent evt)
+    {
+        if (!_isHovering) return;
+
+        Vector2 newLocal = PanelSpaceToPanelLocal(evt.position);
+
+        if ((newLocal - _lastPointerPanelLocalPos).sqrMagnitude <= _moveEpsilonSqr)
+            return;
+
+        _lastPointerPanelLocalPos = newLocal;
+        _lastMoveTimeUnscaled = Time.unscaledTime;
+
+        HideTooltip();
+    }
+
+    void OnNAIFIDInputLeave(PointerLeaveEvent evt)
+    {
+        _isHovering = false;
+        StopIdleWatcher();
+        HideTooltip();
+    }
+
+    void ResetHoverTimerAndHide()
+    {
+        if (!_isHovering) return;
+        _lastMoveTimeUnscaled = Time.unscaledTime;
+        HideTooltip();
+    }
+
+    void StartIdleWatcher()
+    {
+        if (_idleWatcherCoroutine != null)
+            StopCoroutine(_idleWatcherCoroutine);
+
+        _idleWatcherCoroutine = StartCoroutine(IdleWatcher());
+    }
+
+    void StopIdleWatcher()
+    {
+        if (_idleWatcherCoroutine == null) return;
+
+        StopCoroutine(_idleWatcherCoroutine);
+        _idleWatcherCoroutine = null;
+    }
+
+    IEnumerator IdleWatcher()
+    {
+        while (_isHovering)
+        {
+            if (!_tooltipVisible)
+            {
+                float idleSeconds = Time.unscaledTime - _lastMoveTimeUnscaled;
+                if (idleSeconds >= _hoverDelaySeconds)
+                    ShowTooltipAtCursor(_pendingMessage, _lastPointerPanelLocalPos);
+            }
+
+            yield return null;
+        }
+    }
+
+    void ShowTooltipAtCursor(string message, Vector2 cursorPanelLocalPos)
+    {
+        _tooltipMessage.text = message;
+
+        Vector2 p = cursorPanelLocalPos;
+
+        _tooltip.style.left = p.x;
+        _tooltip.style.top = p.y;
+        _tooltip.style.display = DisplayStyle.Flex;
+
+        _tooltipVisible = true;
+    }
+
+    void HideTooltip()
+    {
+        if (_tooltip == null) return;
+
+        _tooltipMessage.text = string.Empty;
+        _tooltip.style.display = DisplayStyle.None;
+        _tooltipVisible = false;
+    }
+
+    Vector2 PanelSpaceToPanelLocal(Vector2 panelSpacePos) => panelSpacePos - _displayPanel.worldBound.position;
 
     void OnAddClicked()
     {
@@ -177,6 +309,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
         if (_addEntryPanel.style.display == DisplayStyle.Flex) _addEntryPanel.style.display = DisplayStyle.None;
         else return;
     }
+
 
     void ConfigureDatabaseTable()
     {
@@ -514,7 +647,11 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
     public void ClosePanel()
     {
-        if (_displayPanel.style.display == DisplayStyle.Flex) _displayPanel.style.display = DisplayStyle.None;
+        if (_displayPanel.style.display == DisplayStyle.Flex)
+        {
+            _naifDatabaseTabText.fontStyle = FontStyles.Normal;
+            _displayPanel.style.display = DisplayStyle.None;
+        }
         else return;
     }
 
@@ -523,9 +660,14 @@ public class NAIFDatabaseUIController : MonoBehaviour
         if (_displayPanel.style.display == DisplayStyle.None)
         {
             _displayPanel.style.display = DisplayStyle.Flex;
+            _naifDatabaseTabText.fontStyle = FontStyles.Underline;
             _databaseTable.RefreshItems();
         }
-        else if (_displayPanel.style.display == DisplayStyle.Flex) _displayPanel.style.display = DisplayStyle.None;
+        else if (_displayPanel.style.display == DisplayStyle.Flex)
+        {
+            _naifDatabaseTabText.fontStyle = FontStyles.Normal;
+            _displayPanel.style.display = DisplayStyle.None;
+        }
     }
 
 
