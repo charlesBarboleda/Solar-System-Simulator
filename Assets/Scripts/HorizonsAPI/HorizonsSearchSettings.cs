@@ -11,11 +11,11 @@ public struct HorizonsSearchSettings
             if (!_objData && _makeEphemeris) return ResponseType.Ephemeris;
             if (_objData && !_makeEphemeris) return ResponseType.ObjectData;
             if (_objData && _makeEphemeris) return ResponseType.Both;
-            return ResponseType.Database;
+            return ResponseType.ObjectData;
         }
     }
 
-    readonly HorizonFormat _horizonFormatType;
+    readonly HorizonsFormat _horizonFormatType;
     public readonly string HorizonFormatType
     {
         get
@@ -178,7 +178,7 @@ public struct HorizonsSearchSettings
         string stopTime,
         int stepSizeValue,
         BodySearchType bodySearchType,
-        HorizonFormat horizonFormatType = HorizonFormat.json,
+        HorizonsFormat horizonFormatType = HorizonsFormat.json,
         bool objData = true,
         bool makeEphemeris = true,
         StepSizeUnit stepSizeUnit = StepSizeUnit.days,
@@ -255,10 +255,6 @@ public struct HorizonsSearchSettings
                 url += _settings.OutputUnit + "&";
                 url += _settings.VecTable;
                 return url;
-            case ResponseType.Database:
-                url += _settings.HorizonFormatType + "&";
-                url += _settings.Command;
-                return url;
         }
 
         return url;
@@ -266,8 +262,13 @@ public struct HorizonsSearchSettings
 
 }
 
+public enum CoordinateType
+{
+    GEODETIC,
+    CYLINDRICAL
+}
 
-public enum HorizonFormat
+public enum HorizonsFormat
 {
     text,
     json

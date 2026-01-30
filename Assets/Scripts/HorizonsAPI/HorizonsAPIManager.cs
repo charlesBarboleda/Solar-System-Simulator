@@ -7,7 +7,7 @@ using System;
 public class HorizonsAPIManager : MonoBehaviour
 {
     [Header("Search Settings")]
-    public HorizonFormat FormatType;
+    public HorizonsFormat FormatType;
     public BodySearchType BodySearchType;
     public string TestCommandID;
     public string BodyName;
@@ -73,7 +73,7 @@ public class HorizonsAPIManager : MonoBehaviour
            stopTime: StopTime,
            stepSizeValue: StepSizeValue,
            stepSizeUnit: StepSizeUnit,
-           horizonFormatType: HorizonFormat.json,
+           horizonFormatType: HorizonsFormat.json,
            objData: ObjectData,
            makeEphemeris: MakeEphemeris,
            ephemerisType: EphemerisType,

@@ -103,6 +103,7 @@ public class NAIFCatalogManager : MonoBehaviour
                         {
                             ResetRuntimeDatabaseChangesState();
                             Debug.LogWarning("Merge failed after Horizons update.");
+                            UIMessage.Instance.NewFadingMessage("Horizons NAIF ID database update failed.", 3f);
                             _isUpdatingHorizonsDatabase = false;
                             yield break;
                         }
@@ -110,6 +111,7 @@ public class NAIFCatalogManager : MonoBehaviour
                         {
                             ResetRuntimeDatabaseChangesState();
                             Debug.LogWarning("Failed to set runtime catalog after Horizons update.");
+                            UIMessage.Instance.NewFadingMessage("Horizons NAIF ID database update failed.", 3f);
                             _isUpdatingHorizonsDatabase = false;
                             yield break;
                         }
@@ -117,12 +119,18 @@ public class NAIFCatalogManager : MonoBehaviour
                         _uiDatabaseController.UpdateUICatalogDB();
                         _didRuntimeDatabaseChange = true;
                         _runtimeDatabaseChanges = new List<string>(mergeChanges);
+                        UIMessage.Instance.NewFadingMessage("[AUTO-UPDATE ENABLED] Updated Horizons NAIF ID database.", 4f);
                     }
+                }
+                else
+                {
+                    UIMessage.Instance.NewFadingMessage("[AUTO-UPDATE ENABLED] NAIF ID database had no changes.", 4f);
                 }
             }
             else
             {
                 ResetRuntimeDatabaseChangesState();
+                UIMessage.Instance.NewFadingMessage("Horizons NAIF ID database update failed.", 3f);
                 Debug.LogError($"Could not parse catalog from 'formattedResponse'");
             }
         }
