@@ -73,7 +73,7 @@ public class HorizonsAPIManager : MonoBehaviour
            stopTime: StopTime,
            stepSizeValue: StepSizeValue,
            stepSizeUnit: StepSizeUnit,
-           horizonFormatType: HorizonsFormat.json,
+           horizonFormatType: HorizonsFormat.Json,
            objData: ObjectData,
            makeEphemeris: MakeEphemeris,
            ephemerisType: EphemerisType,

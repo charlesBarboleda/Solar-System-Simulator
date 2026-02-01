@@ -20,7 +20,7 @@ public struct HorizonsSearchSettings
     {
         get
         {
-            return "format=" + $"{_horizonFormatType}";
+            return "format=" + $"{_horizonFormatType.ToString().ToLower()}";
         }
     }
 
@@ -73,7 +73,7 @@ public struct HorizonsSearchSettings
     {
         get
         {
-            return "EPHEM_TYPE=" + $"'{_ephemerisType}'";
+            return "EPHEM_TYPE=" + $"'{_ephemerisType.ToString().ToUpper()}'";
         }
     }
 
@@ -112,11 +112,11 @@ public struct HorizonsSearchSettings
         {
             return _stepSizeUnit switch
             {
-                StepSizeUnit.days => "STEP_SIZE=" + $"'{_stepSizeValue + "d"}'",
-                StepSizeUnit.hours => "STEP_SIZE=" + $"'{_stepSizeValue + "h"}'",
-                StepSizeUnit.minutes => "STEP_SIZE=" + $"'{_stepSizeValue + "m"}'",
-                StepSizeUnit.years => "STEP_SIZE=" + $"'{_stepSizeValue + "y"}'",
-                StepSizeUnit.months => "STEP_SIZE=" + $"'{_stepSizeValue + "mo"}'",
+                StepSizeUnit.Days => "STEP_SIZE=" + $"'{_stepSizeValue + "d"}'",
+                StepSizeUnit.Hours => "STEP_SIZE=" + $"'{_stepSizeValue + "h"}'",
+                StepSizeUnit.Minutes => "STEP_SIZE=" + $"'{_stepSizeValue + "m"}'",
+                StepSizeUnit.Years => "STEP_SIZE=" + $"'{_stepSizeValue + "y"}'",
+                StepSizeUnit.Months => "STEP_SIZE=" + $"'{_stepSizeValue + "mo"}'",
                 _ => "STEP_SIZE='60min'",
             };
         }
@@ -127,7 +127,7 @@ public struct HorizonsSearchSettings
     {
         get
         {
-            return "REF_PLANE=" + $"'{_referencePlane}'";
+            return "REF_PLANE=" + $"'{_referencePlane.ToString().ToUpper()}'";
         }
     }
 
@@ -178,12 +178,12 @@ public struct HorizonsSearchSettings
         string stopTime,
         int stepSizeValue,
         BodySearchType bodySearchType,
-        HorizonsFormat horizonFormatType = HorizonsFormat.json,
+        HorizonsFormat horizonFormatType = HorizonsFormat.Json,
         bool objData = true,
         bool makeEphemeris = true,
-        StepSizeUnit stepSizeUnit = StepSizeUnit.days,
-        EphemerisType ephemerisType = global::EphemerisType.VECTORS,
-        ReferencePlane refPlane = global::ReferencePlane.ECLIPTIC,
+        StepSizeUnit stepSizeUnit = StepSizeUnit.Days,
+        EphemerisType ephemerisType = global::EphemerisType.Vectors,
+        ReferencePlane refPlane = global::ReferencePlane.Ecliptic,
         ReferenceSystem referenceSystem = global::ReferenceSystem.ICRF,
         OutputUnits outputUnits = OutputUnits.KM_S,
         int vecTable = 2,
@@ -262,41 +262,62 @@ public struct HorizonsSearchSettings
 
 }
 
+public enum TListType
+{
+    JulianDay,
+    ModifiedJulian,
+    Calendar
+}
+
+public enum TimeDigits
+{
+    Minutes,
+    Seconds,
+    FracSec
+}
+
+public enum TimeType
+{
+    UniversalTime,
+    TerrestrialTime,
+    BarycentricTime,
+}
+
 public enum CoordinateType
 {
-    GEODETIC,
-    CYLINDRICAL
+    Geodetic,
+    Cylindrical
 }
 
 public enum HorizonsFormat
 {
-    text,
-    json
+    Text,
+    Json
 }
 
 public enum EphemerisType
 {
-    OBSERVER,
-    VECTORS,
-    ELEMENTS,
+    Observer,
+    Vectors,
+    Elements,
     SPK,
-    APPROACH
+    Approach
 }
 
 public enum ReferencePlane
 {
-    ECLIPTIC,
-    FRAME,
-    BODYEQUATOR
+    Ecliptic,
+    Frame,
+    BodyEquator
 }
 
 public enum StepSizeUnit
 {
-    days,
-    hours,
-    minutes,
-    years,
-    months
+    Days,
+    Hours,
+    Minutes,
+    Years,
+    Months
 }
 
 public enum OutputUnits
