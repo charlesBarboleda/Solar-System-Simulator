@@ -7,16 +7,200 @@ public static class HorizonsAPIParameters
     // Julian Day & Modified constants
     const double JD_UNIX_EPOCH = 2440587.5;
     const double JD_MINUS_MJD = 2400000.5;
-    public static bool TryParseJulianDay(string julianDay, out string dateTime, bool isModified = false)
+
+    public static bool IsValidYear(string year, out int y)
+    {
+        if (!int.TryParse(year, NumberStyles.Integer, CultureInfo.InvariantCulture, out y) || y < 0 || y > 9999)
+        {
+            Debug.LogWarning($"Invalid Year input '{year}'");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool IsValidMonth(string month, out int m)
+    {
+        if (!int.TryParse(month, NumberStyles.Integer, CultureInfo.InvariantCulture, out m) || m < 1 || m > 12)
+        {
+            Debug.LogWarning($"Invalid Month input '{month}'");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool IsValidDay(string day, int month, int year, out int d)
+    {
+        if (!int.TryParse(day, NumberStyles.Integer, CultureInfo.InvariantCulture, out d))
+        {
+            Debug.LogWarning($"Invalid Day input '{day}'");
+            return false;
+        }
+
+        int maxDay = DateTime.DaysInMonth(year, month);
+        if (d < 1 || d > maxDay)
+        {
+            Debug.LogWarning($"Invalid Day input '{day}' for {year:D4}-{month:D2} (max {maxDay})");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool IsValidHour(string hour, out int h)
+    {
+        if (!int.TryParse(hour, NumberStyles.Integer, CultureInfo.InvariantCulture, out h) || h < 0 || h > 23)
+        {
+            Debug.LogWarning($"Invalid Hour input '{hour}'");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool IsValidMinute(string minute, out int min)
+    {
+        if (!int.TryParse(minute, NumberStyles.Integer, CultureInfo.InvariantCulture, out min) || min < 0 || min > 59)
+        {
+            Debug.LogWarning($"Invalid Minute input '{minute}'");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool IsValidSecond(string second, out double sec)
+    {
+        if (!double.TryParse(second, NumberStyles.Float, CultureInfo.InvariantCulture, out sec) || sec < 0.0 || sec >= 60.0)
+        {
+            Debug.LogWarning($"Invalid Second input '{second}'");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool TryBuildUTCTime(DateTimeOffset unixEpoch, long ticks, out string UTCTime)
+    {
+        UTCTime = string.Empty;
+
+        try
+        {
+            DateTimeOffset dto = unixEpoch + TimeSpan.FromTicks(ticks);
+            UTCTime = dto.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss.fff 'UTC'", CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            Debug.LogWarning($"Julian Day date out of range: unixEpoch={unixEpoch}, ticks={ticks}");
+            return false;
+        }
+    }
+
+    public static bool TryBuildUTCTime(int year, int month, int day, int hour, int minute, double second, out string UTCTime)
+    {
+        UTCTime = string.Empty;
+
+        try
+        {
+            var dto = new DateTimeOffset(year, month, day, hour, minute, 0, TimeSpan.Zero).AddSeconds(second);
+            UTCTime = dto.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss.fff 'UTC'", CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            Debug.LogWarning($"Calendar date out of range: y={year}, m={month}, d={day}, h={hour}, min={minute}, sec={second}");
+            return false;
+        }
+    }
+
+
+    public enum CalendarParseFailReason
+    {
+        InvalidYear,
+        InvalidMonth,
+        InvalidDay,
+        InvalidHour,
+        InvalidMinute,
+        InvalidSecond,
+        BuildUtcFailed
+    }
+    public static bool TryParseCalendarDay(
+    string year,
+    out string dateTime,
+    string month = "1",
+    string day = "1",
+    string hour = "0",
+    string minute = "0",
+    string second = "0",
+    Action<CalendarParseFailReason> onFail = null)
+    {
+        dateTime = default;
+
+        // Year
+        if (!IsValidYear(year, out int y))
+        {
+            onFail?.Invoke(CalendarParseFailReason.InvalidYear);
+            return false;
+        }
+
+        // Month (1-12)
+        if (!IsValidMonth(month, out int m))
+        {
+            onFail?.Invoke(CalendarParseFailReason.InvalidMonth);
+            return false;
+        }
+
+        // Day (1..DaysInMonth)
+        if (!IsValidDay(day, m, y, out int d))
+        {
+            onFail?.Invoke(CalendarParseFailReason.InvalidDay);
+            return false;
+        }
+
+        // Hour (0-23)
+        if (!IsValidHour(hour, out int h))
+        {
+            onFail?.Invoke(CalendarParseFailReason.InvalidHour);
+            return false;
+        }
+        // Minute (0-59)
+        if (!IsValidMinute(minute, out int min))
+        {
+            onFail?.Invoke(CalendarParseFailReason.InvalidMinute);
+            return false;
+        }
+
+        // Second (supports decimals as milliseconds)
+        if (!IsValidSecond(second, out double sec))
+        {
+            onFail?.Invoke(CalendarParseFailReason.InvalidSecond);
+            return false;
+        }
+
+        // Build UTC time
+        if (!TryBuildUTCTime(y, m, d, h, min, sec, out dateTime))
+        {
+            onFail?.Invoke(CalendarParseFailReason.BuildUtcFailed);
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool TryParseJulianDay(string julianDay, out string dateTime, bool isModified = false, Action onFail = null)
     {
         dateTime = default;
         if (string.IsNullOrWhiteSpace(julianDay))
         {
+            onFail?.Invoke();
             Debug.LogWarning("Julian Day input is null/empty.");
             return false;
         }
         if (!double.TryParse(julianDay, NumberStyles.Float, CultureInfo.InvariantCulture, out double jdDouble))
         {
+            onFail?.Invoke();
             Debug.LogWarning($"Invalid Julian Day input '{julianDay}'");
             return false;
         }
@@ -25,6 +209,7 @@ public static class HorizonsAPIParameters
 
         if (double.IsNaN(jdDouble) || double.IsInfinity(jdDouble))
         {
+            onFail?.Invoke();
             Debug.LogWarning($"Julian Day input '{julianDay}' produced NaN/Infinity.");
             return false;
         }
@@ -34,6 +219,7 @@ public static class HorizonsAPIParameters
         double ticksDouble = seconds * TimeSpan.TicksPerSecond;
         if (ticksDouble < long.MinValue || ticksDouble > long.MaxValue)
         {
+            onFail?.Invoke();
             Debug.LogWarning($"Julian Day '{julianDay}' is out of supported range for DateTimeOffset.");
             return false;
         }
@@ -43,83 +229,14 @@ public static class HorizonsAPIParameters
         var unixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         // Build UTC time
-        try
+        if (!TryBuildUTCTime(unixEpoch, ticks, out dateTime))
         {
-            DateTimeOffset dto = unixEpoch + TimeSpan.FromTicks(ticks);
-            dateTime = dto.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss.fff 'UTC'", CultureInfo.InvariantCulture);
-            return true;
-        }
-        catch (ArgumentOutOfRangeException)
-        {
+            onFail?.Invoke();
             return false;
         }
+
+        return true;
 
     }
 
-    public static bool TryParseCalendarDay(out string dateTime, string year, string month = "1", string day = "1", string hour = "0", string minute = "0", string second = "0")
-    {
-        dateTime = default;
-
-        // Year
-        if (!int.TryParse(year, NumberStyles.Integer, CultureInfo.InvariantCulture, out int y) || y < 0 || y > 9999)
-        {
-            Debug.LogWarning($"Invalid Year input '{year}'");
-            return false;
-        }
-
-        // Month (1-12)
-        if (!int.TryParse(month, NumberStyles.Integer, CultureInfo.InvariantCulture, out int m) || m < 1 || m > 12)
-        {
-            Debug.LogWarning($"Invalid Month input '{month}'");
-            return false;
-        }
-
-        // Day (1..DaysInMonth)
-        if (!int.TryParse(day, NumberStyles.Integer, CultureInfo.InvariantCulture, out int d))
-        {
-            Debug.LogWarning($"Invalid Day input '{day}'");
-            return false;
-        }
-        int maxDay = DateTime.DaysInMonth(y, m);
-        if (d < 1 || d > maxDay)
-        {
-            Debug.LogWarning($"Invalid Day input '{day}' for {y:D4}-{m:D2} (max {maxDay})");
-            return false;
-        }
-
-        // Hour (0-23)
-        if (!int.TryParse(hour, NumberStyles.Integer, CultureInfo.InvariantCulture, out int h) || h < 0 || h > 23)
-        {
-            Debug.LogWarning($"Invalid Hour input '{hour}'");
-            return false;
-        }
-
-        // Minute (0-59)
-        if (!int.TryParse(minute, NumberStyles.Integer, CultureInfo.InvariantCulture, out int min) || min < 0 || min > 59)
-        {
-            Debug.LogWarning($"Invalid Minute input '{minute}'");
-            return false;
-        }
-
-        // Second (supports decimals as milliseconds)
-        if (!double.TryParse(second, NumberStyles.Float, CultureInfo.InvariantCulture, out double sec) || sec < 0.0 || sec >= 60.0)
-        {
-            Debug.LogWarning($"Invalid Second input '{second}'");
-            return false;
-        }
-
-        // Build UTC time
-        try
-        {
-            var dto = new DateTimeOffset(y, m, d, h, min, 0, TimeSpan.Zero).AddSeconds(sec);
-
-            dateTime = dto.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss.fff 'UTC'", CultureInfo.InvariantCulture);
-            return true;
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            Debug.LogWarning($"Calendar date out of range: y={y}, m={m}, d={d}, h={h}, min={min}, sec={sec}");
-            return false;
-        }
-    }
 }
