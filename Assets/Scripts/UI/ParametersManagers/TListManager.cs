@@ -67,6 +67,31 @@ public class TListManager : MonoBehaviour
         }
     }
 
+    void HandleParseCalendarSuccess(HorizonsAPIParameters.CalendarParseSuccessReason reason)
+    {
+        switch (reason)
+        {
+            case HorizonsAPIParameters.CalendarParseSuccessReason.Year:
+                _yearInputInvalid.SetActive(false);
+                break;
+            case HorizonsAPIParameters.CalendarParseSuccessReason.Month:
+                _monthInputInvalid.SetActive(false);
+                break;
+            case HorizonsAPIParameters.CalendarParseSuccessReason.Day:
+                _dayInputInvalid.SetActive(false);
+                break;
+            case HorizonsAPIParameters.CalendarParseSuccessReason.Hour:
+                _hourInputInvalid.SetActive(false);
+                break;
+            case HorizonsAPIParameters.CalendarParseSuccessReason.Minute:
+                _minuteInputInvalid.SetActive(false);
+                break;
+            case HorizonsAPIParameters.CalendarParseSuccessReason.Second:
+                _secondInputInvalid.SetActive(false);
+                break;
+        }
+    }
+
     void HandleParseCalendarFail(HorizonsAPIParameters.CalendarParseFailReason reason, string year, string month, string day, string hour, string minute, string second)
     {
         switch (reason)
@@ -117,7 +142,8 @@ public class TListManager : MonoBehaviour
             minute: minute,
             second: second,
             dateTime: out string dateTimeOutput,
-            onFail: reason => HandleParseCalendarFail(reason, year, month, day, hour, minute, second)))
+            onFail: reason => HandleParseCalendarFail(reason, year, month, day, hour, minute, second),
+            onSuccess: reason => HandleParseCalendarSuccess(reason)))
         {
             return false;
         }

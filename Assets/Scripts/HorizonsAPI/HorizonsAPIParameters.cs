@@ -126,6 +126,17 @@ public static class HorizonsAPIParameters
         InvalidSecond,
         BuildUtcFailed
     }
+
+    public enum CalendarParseSuccessReason
+    {
+        Year,
+        Month,
+        Day,
+        Hour,
+        Minute,
+        Second,
+        BuildUtc
+    }
     public static bool TryParseCalendarDay(
     string year,
     out string dateTime,
@@ -134,59 +145,69 @@ public static class HorizonsAPIParameters
     string hour = "0",
     string minute = "0",
     string second = "0",
-    Action<CalendarParseFailReason> onFail = null)
+    Action<CalendarParseFailReason> onFail = null,
+    Action<CalendarParseSuccessReason> onSuccess = null)
     {
         dateTime = default;
+        bool didFail = false;
 
-        // Year
+        // Year (1-9999)
         if (!IsValidYear(year, out int y))
         {
             onFail?.Invoke(CalendarParseFailReason.InvalidYear);
-            return false;
+            didFail = true;
         }
+        else onSuccess?.Invoke(CalendarParseSuccessReason.Year);
 
         // Month (1-12)
         if (!IsValidMonth(month, out int m))
         {
             onFail?.Invoke(CalendarParseFailReason.InvalidMonth);
-            return false;
+            didFail = true;
         }
+        else onSuccess?.Invoke(CalendarParseSuccessReason.Month);
 
         // Day (1..DaysInMonth)
         if (!IsValidDay(day, m, y, out int d))
         {
             onFail?.Invoke(CalendarParseFailReason.InvalidDay);
-            return false;
+            didFail = true;
         }
+        else onSuccess?.Invoke(CalendarParseSuccessReason.Day);
 
         // Hour (0-23)
         if (!IsValidHour(hour, out int h))
         {
             onFail?.Invoke(CalendarParseFailReason.InvalidHour);
-            return false;
+            didFail = true;
         }
+        else onSuccess?.Invoke(CalendarParseSuccessReason.Hour);
+
         // Minute (0-59)
         if (!IsValidMinute(minute, out int min))
         {
             onFail?.Invoke(CalendarParseFailReason.InvalidMinute);
-            return false;
+            didFail = true;
         }
+        else onSuccess?.Invoke(CalendarParseSuccessReason.Minute);
 
         // Second (supports decimals as milliseconds)
         if (!IsValidSecond(second, out double sec))
         {
             onFail?.Invoke(CalendarParseFailReason.InvalidSecond);
-            return false;
+            didFail = true;
         }
+        else onSuccess?.Invoke(CalendarParseSuccessReason.Second);
 
         // Build UTC time
         if (!TryBuildUTCTime(y, m, d, h, min, sec, out dateTime))
         {
             onFail?.Invoke(CalendarParseFailReason.BuildUtcFailed);
-            return false;
+            didFail = true;
         }
+        else onSuccess?.Invoke(CalendarParseSuccessReason.BuildUtc);
 
-        return true;
+        return !didFail;
     }
 
     public static bool TryParseJulianDay(string julianDay, out string dateTime, bool isModified = false, Action onFail = null)
