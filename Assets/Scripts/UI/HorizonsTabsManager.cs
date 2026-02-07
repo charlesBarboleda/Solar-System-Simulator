@@ -6,6 +6,9 @@ public class HorizonsTabsManager : MonoBehaviour
     [SerializeField] GameObject _horizonsAPIContent;
     [SerializeField] GameObject _ephemerisDBContent;
     [SerializeField] NAIFDatabaseUIController _naifDatabaseUIController;
+    [SerializeField] Canvas _mainContentCanvas;
+
+    public void MainContentCanvasSortOrder(int sortOrder) => _mainContentCanvas.sortingOrder = sortOrder;
 
     public void OnClickCatalogDBTab()
     {

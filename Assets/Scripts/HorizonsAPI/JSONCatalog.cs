@@ -57,7 +57,7 @@ public static class JSONCatalog
         }
 
         Debug.Log($"Catalog database saved locally: {filePath}");
-        UIMessage.Instance.NewFadingMessage("Catalog database saved locally", 3f);
+        UIMessage.Instance.NewFadingMessage(MessageType.Success, "Catalog database saved locally", 3f);
         return true;
     }
 

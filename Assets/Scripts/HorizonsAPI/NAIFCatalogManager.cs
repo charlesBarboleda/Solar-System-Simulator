@@ -103,7 +103,7 @@ public class NAIFCatalogManager : MonoBehaviour
                         {
                             ResetRuntimeDatabaseChangesState();
                             Debug.LogWarning("Merge failed after Horizons update.");
-                            UIMessage.Instance.NewFadingMessage("Horizons NAIF ID database update failed.", 3f);
+                            UIMessage.Instance.NewFadingMessage(MessageType.Error, "Horizons NAIF ID database update failed.", 3f);
                             _isUpdatingHorizonsDatabase = false;
                             yield break;
                         }
@@ -111,7 +111,7 @@ public class NAIFCatalogManager : MonoBehaviour
                         {
                             ResetRuntimeDatabaseChangesState();
                             Debug.LogWarning("Failed to set runtime catalog after Horizons update.");
-                            UIMessage.Instance.NewFadingMessage("Horizons NAIF ID database update failed.", 3f);
+                            UIMessage.Instance.NewFadingMessage(MessageType.Error, "Horizons NAIF ID database update failed.", 3f);
                             _isUpdatingHorizonsDatabase = false;
                             yield break;
                         }
@@ -119,18 +119,18 @@ public class NAIFCatalogManager : MonoBehaviour
                         _uiDatabaseController.UpdateUICatalogDB();
                         _didRuntimeDatabaseChange = true;
                         _runtimeDatabaseChanges = new List<string>(mergeChanges);
-                        UIMessage.Instance.NewFadingMessage("[AUTO-UPDATE ENABLED] Updated Horizons NAIF ID database.", 4f);
+                        UIMessage.Instance.NewFadingMessage(MessageType.Success, "[AUTO-UPDATE ENABLED] Updated Horizons NAIF ID database.", 4f);
                     }
                 }
                 else
                 {
-                    UIMessage.Instance.NewFadingMessage("[AUTO-UPDATE ENABLED] NAIF ID database had no changes.", 4f);
+                    UIMessage.Instance.NewFadingMessage(MessageType.Info, "[AUTO-UPDATE ENABLED] NAIF ID database had no changes.", 4f);
                 }
             }
             else
             {
                 ResetRuntimeDatabaseChangesState();
-                UIMessage.Instance.NewFadingMessage("Horizons NAIF ID database update failed.", 3f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, "Horizons NAIF ID database update failed.", 3f);
                 Debug.LogError($"Could not parse catalog from 'formattedResponse'");
             }
         }
@@ -351,17 +351,13 @@ public class NAIFCatalogManager : MonoBehaviour
                 _uiDatabaseController.UpdateUICatalogDB();
                 _didRuntimeDatabaseChange = true;
 
-                UIMessage.Instance.NewUIMessage(
-                    MessageType.Success,
-                    $"Successfully removed NAIF ID '{naifID}' from the catalog database.",
-                    "Catalog Updated");
+                UIMessage.Instance.NewUIMessage(MessageType.Success, $"Successfully removed NAIF ID '{naifID}' from the catalog database.", "Catalog Updated");
 
                 onComplete?.Invoke(true);
             },
             onNo: () =>
             {
-                UIMessage.Instance.NewFadingMessage(
-                    $"NAIF ID '{naifID}' removal cancelled.", 2f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Info, $"NAIF ID '{naifID}' removal cancelled.", 2f);
 
                 onComplete?.Invoke(false);
             }
@@ -381,12 +377,12 @@ public class NAIFCatalogManager : MonoBehaviour
 
         if (!JSONCatalog.TryLoadLocalCatalogDB(out _userCatalogDB, JSONCatalog.UserCatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
         {
-            UIMessage.Instance.NewFadingMessage("No local user catalog database found.", 4f);
+            UIMessage.Instance.NewFadingMessage(MessageType.Warning, "No local user catalog database found.", 4f);
             _userCatalogDB = new();
         }
         if (!JSONCatalog.TryLoadLocalCatalogDB(out _horizonsCatalogDB, JSONCatalog.CatalogDatabaseFileName, JSONCatalog.CatalogDatabaseFolderName))
         {
-            UIMessage.Instance.NewFadingMessage("No local Horizons catalog database found. Starting initial download...", 4f);
+            UIMessage.Instance.NewFadingMessage(MessageType.Info, "No local Horizons catalog database found. Starting initial download...", 4f);
             _horizonsCatalogDB = new();
             StartCoroutine(UpdateHorizonsDatabase());
         }

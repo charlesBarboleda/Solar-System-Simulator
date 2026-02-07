@@ -1,14 +1,18 @@
-using System.Collections;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Collections.Generic;
 using TMPro;
-using Unity.AppUI.Core;
-using Unity.VisualScripting;
+using UnityEngine.UI;
 using UnityEngine;
 
-public class TListManager : MonoBehaviour
+public class TListManager : MonoBehaviour, IAPIParameterManager
 {
     [Header("TList Type Manager")]
     [SerializeField] TListTypeManager _tListTypeManager;
+
+    [Header("Added Dates contents")]
+    [SerializeField] List<string> _addedDatesList;
+    public List<string> AddedDatesList => _addedDatesList;
+    [SerializeField] List<GameObject> _addedDatesUI;
+
 
     [Header("Julian Day References")]
     [SerializeField] TMP_InputField _julianDayInput;
@@ -91,37 +95,36 @@ public class TListManager : MonoBehaviour
                 break;
         }
     }
-
     void HandleParseCalendarFail(HorizonsAPIParameters.CalendarParseFailReason reason, string year, string month, string day, string hour, string minute, string second)
     {
         switch (reason)
         {
             case HorizonsAPIParameters.CalendarParseFailReason.InvalidYear:
-                UIMessage.Instance.NewFadingMessage($"[TList] Invalid Calendar Date Year input '{year}'", 30f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Calendar Date Year input '{year}'", 20f);
                 _yearInputInvalid.SetActive(true);
                 break;
             case HorizonsAPIParameters.CalendarParseFailReason.InvalidMonth:
-                UIMessage.Instance.NewFadingMessage($"[TList] Invalid Calendar Date Month input '{month}'", 30f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Calendar Date Month input '{month}'", 20f);
                 _monthInputInvalid.SetActive(true);
                 break;
             case HorizonsAPIParameters.CalendarParseFailReason.InvalidDay:
-                UIMessage.Instance.NewFadingMessage($"[TList] Invalid Calendar Date Day input '{day}'", 30f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Calendar Date Day input '{day}'", 20f);
                 _dayInputInvalid.SetActive(true);
                 break;
             case HorizonsAPIParameters.CalendarParseFailReason.InvalidHour:
-                UIMessage.Instance.NewFadingMessage($"[TList] Invalid Calendar Date Hour input '{hour}'", 30f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Calendar Date Hour input '{hour}'", 20f);
                 _hourInputInvalid.SetActive(true);
                 break;
             case HorizonsAPIParameters.CalendarParseFailReason.InvalidMinute:
-                UIMessage.Instance.NewFadingMessage($"[TList] Invalid Calendar Date Minute input '{minute}'", 30f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Calendar Date Minute input '{minute}'", 20f);
                 _minuteInputInvalid.SetActive(true);
                 break;
             case HorizonsAPIParameters.CalendarParseFailReason.InvalidSecond:
-                UIMessage.Instance.NewFadingMessage($"[TList] Invalid Calendar Date Year input '{second}'", 30f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Calendar Date Second input '{second}'", 20f);
                 _secondInputInvalid.SetActive(true);
                 break;
             case HorizonsAPIParameters.CalendarParseFailReason.BuildUtcFailed:
-                UIMessage.Instance.NewFadingMessage($"[TList] Calendar Date UTC Build failed", 30f);
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Calendar Date UTC Build failed", 20f);
                 break;
         }
     }
@@ -149,6 +152,14 @@ public class TListManager : MonoBehaviour
         }
         else
         {
+            string reformatted = dateTimeOutput[..^6];
+
+            if (_addedDatesList.Contains(reformatted))
+            {
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Failed to add entry, duplicate date: '{reformatted}'", 20f);
+                return false;
+            }
+
             GameObject newDateTimeEntry = Instantiate(_contentText);
             newDateTimeEntry.transform.SetParent(_scrollableContent.transform, worldPositionStays: false);
             newDateTimeEntry.transform.localScale = Vector3.one;
@@ -156,10 +167,22 @@ public class TListManager : MonoBehaviour
             if (newDateTimeEntry.TryGetComponent(out TextMeshProUGUI textComponent)) textComponent.text = dateTimeOutput;
             else
             {
-                Debug.LogWarning($"Could not find a TextMeshProUGUI on {newDateTimeEntry.name}");
+                Debug.LogWarning($"[TList] Could not find a TextMeshProUGUI component on {newDateTimeEntry.name}");
                 return false;
             }
 
+            Button removeButton = newDateTimeEntry.GetComponentInChildren<Button>();
+            if (removeButton != null) removeButton.onClick.AddListener(() => OnRemoveButtonClick(newDateTimeEntry));
+            else
+            {
+                Debug.LogWarning($"[TList] Could not find a Button component on {newDateTimeEntry.name}");
+                return false;
+            }
+
+            _addedDatesList.Add(reformatted);
+            if (!_addedDatesUI.Contains(newDateTimeEntry)) _addedDatesUI.Add(newDateTimeEntry);
+
+            UIMessage.Instance.NewFadingMessage(MessageType.Success, $"[TList] Successfully added TList date: {dateTimeOutput}", 5f);
             return true;
         }
     }
@@ -168,12 +191,12 @@ public class TListManager : MonoBehaviour
     {
         if (isModified)
         {
-            UIMessage.Instance.NewFadingMessage($"[TList] Invalid Modified Julian Day input '{dayInput}'", 30f);
+            UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Modified Julian Day input '{dayInput}'", 20f);
             _mJulianDayInvalid.SetActive(true);
         }
         else
         {
-            UIMessage.Instance.NewFadingMessage($"[TList] Invalid Julian Day input '{dayInput}'", 30f);
+            UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Julian Day input '{dayInput}'", 20f);
             _julianDayInvalid.SetActive(true);
         }
     }
@@ -191,17 +214,92 @@ public class TListManager : MonoBehaviour
         }
         else
         {
-            GameObject newDateTimeEntry = Instantiate(_contentText);
-            newDateTimeEntry.transform.SetParent(_scrollableContent.transform);
-            newDateTimeEntry.transform.localScale = Vector3.one;
-            if (newDateTimeEntry.TryGetComponent(out TextMeshProUGUI textComponent)) textComponent.text = dateTimeOutput;
-            else
+            string reformatted = dateTimeOutput[..^6];
+
+            if (_addedDatesList.Contains(reformatted))
             {
-                Debug.LogWarning($"Could not find a TextMeshProUGUI on {newDateTimeEntry.name}");
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Failed to add entry, duplicate date: '{reformatted}'", 20f);
                 return false;
             }
 
+            GameObject newDateTimeEntry = Instantiate(_contentText);
+            newDateTimeEntry.transform.SetParent(_scrollableContent.transform, worldPositionStays: false);
+            newDateTimeEntry.transform.localScale = Vector3.one;
+
+            if (newDateTimeEntry.TryGetComponent(out TextMeshProUGUI textComponent)) textComponent.text = dateTimeOutput;
+            else
+            {
+                Debug.LogWarning($"[TList] Could not find a TextMeshProUGUI component on {newDateTimeEntry.name}");
+                return false;
+            }
+
+            Button removeButton = newDateTimeEntry.GetComponentInChildren<Button>();
+            if (removeButton != null) removeButton.onClick.AddListener(() => OnRemoveButtonClick(newDateTimeEntry));
+            else
+            {
+                Debug.LogWarning($"[TList] Could not find a Button component on {newDateTimeEntry.name}");
+                return false;
+            }
+
+            _addedDatesList.Add(reformatted);
+            if (!_addedDatesUI.Contains(newDateTimeEntry)) _addedDatesUI.Add(newDateTimeEntry);
+
+            UIMessage.Instance.NewFadingMessage(MessageType.Success, $"[TList] Successfully added TList date: {dateTimeOutput}", 5f);
             return true;
         }
     }
+
+    void OnRemoveButtonClick(GameObject entryToRemove)
+    {
+        int idx = _addedDatesUI.IndexOf(entryToRemove);
+
+        if (!TryRemoveEntry(idx)) return;
+
+        Destroy(entryToRemove);
+    }
+
+    bool TryRemoveEntry(int idxToRemove)
+    {
+        if (_addedDatesList == null || _addedDatesList.Count <= 0 || _addedDatesUI == null || _addedDatesUI.Count <= 0)
+        {
+            Debug.LogError("[TList] _addedDatesList or _addedDatesUI have no entries");
+            return false;
+        }
+        if (_addedDatesList.Count != _addedDatesUI.Count)
+        {
+            Debug.LogError("[TList] _addedDatesList and _addedDatesUI are out of sync");
+            return false;
+        }
+        if (idxToRemove < 0 || idxToRemove >= _addedDatesList.Count || idxToRemove >= _addedDatesUI.Count) return false;
+
+        _addedDatesList.RemoveAt(idxToRemove);
+        _addedDatesUI.RemoveAt(idxToRemove);
+
+        return true;
+    }
+
+    public bool TryGetURL(out string URL)
+    {
+        URL = string.Empty;
+
+        if (_addedDatesList == null || _addedDatesList.Count == 0)
+            return false;
+
+        var encodedEntries = new string[_addedDatesList.Count];
+
+        for (int i = 0; i < _addedDatesList.Count; i++)
+        {
+            string entry = _addedDatesList[i];
+            if (string.IsNullOrWhiteSpace(entry)) return false;
+
+            // quotes = %27
+            // spaces = %20
+            string entryEncoded = entry.Replace(" ", "%20");
+            encodedEntries[i] = $"%27{entryEncoded}%27";
+        }
+
+        URL = "TLIST=" + string.Join("%20", encodedEntries);
+        return true;
+    }
+
 }

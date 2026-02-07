@@ -8,6 +8,7 @@ using UnityEngine.UIElements;
 [RequireComponent(typeof(UIDocument))]
 public class NAIFDatabaseUIController : MonoBehaviour
 {
+    public static NAIFDatabaseUIController Instance { get; private set; }
     // UXML element names
     const string SearchFieldName = "SearchField";
     const string DatabaseTableName = "DatabaseTable";
@@ -65,6 +66,10 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
     void Awake()
     {
+        // Singleton
+        if (Instance != null && Instance != this) Destroy(this.gameObject);
+        else Instance = this;
+
         if (_NAIFCatalogDBManager == null)
         {
             Debug.LogError("NAIFDatabaseUIController: _NAIFCatalogDBManager is not assigned.");
@@ -436,22 +441,22 @@ public class NAIFDatabaseUIController : MonoBehaviour
                 menu.AddItem("Copy/NAIF ID", false, () =>
                 {
                     GUIUtility.systemCopyBuffer = entry.NAIFID.ToString();
-                    UIMessage.Instance.NewFadingMessage($"Copied NAIF ID '{entry.NAIFID}' to clipboard.", 3f);
+                    UIMessage.Instance.NewFadingMessage(MessageType.Info, $"Copied NAIF ID '{entry.NAIFID}' to clipboard.", 3f);
                 });
                 menu.AddItem("Copy/Name", false, () =>
                 {
                     GUIUtility.systemCopyBuffer = entry.Name ?? string.Empty;
-                    UIMessage.Instance.NewFadingMessage($"Copied Name '{entry.Name}' to clipboard.", 3f);
+                    UIMessage.Instance.NewFadingMessage(MessageType.Info, $"Copied Name '{entry.Name}' to clipboard.", 3f);
                 });
                 menu.AddItem("Copy/Designation", false, () =>
                 {
                     GUIUtility.systemCopyBuffer = entry.Designation ?? string.Empty;
-                    UIMessage.Instance.NewFadingMessage($"Copied Designation '{entry.Designation}' to clipboard.", 3f);
+                    UIMessage.Instance.NewFadingMessage(MessageType.Info, $"Copied Designation '{entry.Designation}' to clipboard.", 3f);
                 });
                 menu.AddItem("Copy/Aliases", false, () =>
                 {
                     GUIUtility.systemCopyBuffer = entry.Aliases ?? string.Empty;
-                    UIMessage.Instance.NewFadingMessage($"Copied Aliases '{entry.Aliases}' to clipboard.", 3f);
+                    UIMessage.Instance.NewFadingMessage(MessageType.Info, $"Copied Aliases '{entry.Aliases}' to clipboard.", 3f);
                 });
 
                 menu.AddSeparator("");
@@ -648,19 +653,30 @@ public class NAIFDatabaseUIController : MonoBehaviour
         }
         else return;
     }
+    void NAIFDatabaseSortOrder(int sortOrder) => _uiDocument.sortingOrder = sortOrder;
+
+    public void OpenPanel(int sortOrder = -1)
+    {
+        if (_displayPanel.style.display == DisplayStyle.None)
+        {
+            if (sortOrder != -1) NAIFDatabaseSortOrder(sortOrder);
+
+            _displayPanel.style.display = DisplayStyle.Flex;
+            _naifDatabaseTabText.fontStyle = FontStyles.Underline;
+            _databaseTable.RefreshItems();
+        }
+        else return;
+    }
 
     public void OpenClosePanel()
     {
         if (_displayPanel.style.display == DisplayStyle.None)
         {
-            _displayPanel.style.display = DisplayStyle.Flex;
-            _naifDatabaseTabText.fontStyle = FontStyles.Underline;
-            _databaseTable.RefreshItems();
+            OpenPanel();
         }
         else if (_displayPanel.style.display == DisplayStyle.Flex)
         {
-            _naifDatabaseTabText.fontStyle = FontStyles.Normal;
-            _displayPanel.style.display = DisplayStyle.None;
+            ClosePanel();
         }
     }
 

@@ -7,6 +7,7 @@ public static class HorizonsAPIParameters
     // Julian Day & Modified constants
     const double JD_UNIX_EPOCH = 2440587.5;
     const double JD_MINUS_MJD = 2400000.5;
+    const string DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.fff 'UTC'";
 
     public static bool IsValidYear(string year, out int y)
     {
@@ -88,7 +89,7 @@ public static class HorizonsAPIParameters
         try
         {
             DateTimeOffset dto = unixEpoch + TimeSpan.FromTicks(ticks);
-            UTCTime = dto.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss.fff 'UTC'", CultureInfo.InvariantCulture);
+            UTCTime = dto.UtcDateTime.ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture);
             return true;
         }
         catch (ArgumentOutOfRangeException)
@@ -105,7 +106,7 @@ public static class HorizonsAPIParameters
         try
         {
             var dto = new DateTimeOffset(year, month, day, hour, minute, 0, TimeSpan.Zero).AddSeconds(second);
-            UTCTime = dto.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss.fff 'UTC'", CultureInfo.InvariantCulture);
+            UTCTime = dto.UtcDateTime.ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture);
             return true;
         }
         catch (ArgumentOutOfRangeException)
@@ -115,6 +116,12 @@ public static class HorizonsAPIParameters
         }
     }
 
+    public static bool IsValidNAIFID(string input, out int NAIFID)
+    {
+        if (!int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out NAIFID)) return false;
+
+        return true;
+    }
 
     public enum CalendarParseFailReason
     {
@@ -126,7 +133,6 @@ public static class HorizonsAPIParameters
         InvalidSecond,
         BuildUtcFailed
     }
-
     public enum CalendarParseSuccessReason
     {
         Year,

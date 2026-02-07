@@ -3,7 +3,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
-using JetBrains.Annotations;
 
 public enum MessageType
 {
@@ -44,11 +43,13 @@ public class UIMessage : MonoBehaviour
 
     // Fading Message UI element references
     [SerializeField] GameObject _fadingMessagesContainer;
-    [SerializeField] GameObject _fadingMessagePanel;
+    [SerializeField] GameObject _firstFadingMessagePanel;
+    [SerializeField] GameObject _fadingMessagePrefab;
+
     [SerializeField] CanvasGroup _fadingMessageCanvasGroup;
     [SerializeField] TextMeshProUGUI _fadingMessageText;
     [SerializeField] Button _fadingMessageCloseButton;
-
+    [SerializeField] Image _fadingMessageIcon;
 
     // Limits
     const int MaxMessageLength = 300;
@@ -71,7 +72,7 @@ public class UIMessage : MonoBehaviour
         Instance = this;
 
         _fadingMessagesContainer.SetActive(true);
-        _fadingMessagePanel.SetActive(false);
+        _firstFadingMessagePanel.SetActive(false);
         _messagePanel.SetActive(false);
         _confirmationPanel.SetActive(false);
     }
@@ -92,32 +93,6 @@ public class UIMessage : MonoBehaviour
         return true;
     }
 
-    bool IsValidMessage(string message, string title)
-    {
-        if (string.IsNullOrEmpty(message))
-        {
-            Debug.LogError("Message is null or empty.");
-            return false;
-        }
-        if (string.IsNullOrEmpty(title))
-        {
-            Debug.LogError("Message title is null or empty.");
-            return false;
-        }
-
-        if (message.Length > MaxMessageLength)
-        {
-            Debug.LogError("Message too long: " + message);
-            return false;
-        }
-        if (title.Length > MaxMessageTitleLength)
-        {
-            Debug.LogError("Message title too long: " + title);
-            return false;
-        }
-
-        return true;
-    }
 
     public void SelectedYesConfirmation()
     {
@@ -157,38 +132,116 @@ public class UIMessage : MonoBehaviour
         _confirmationPanel.transform.SetAsLastSibling();
     }
 
-    public void NewFadingMessage(string message, float durationBeforeFade = 2f)
+
+    void HandleFadingMessageTypeIcon(MessageType messageType, ref Image imageComponent)
+    {
+        if (imageComponent == null) return;
+
+        imageComponent.rectTransform.anchorMin = new Vector2(0, 0.5f);
+        imageComponent.rectTransform.anchorMax = new Vector2(0, 0.5f);
+        imageComponent.rectTransform.pivot = new Vector2(0, 0.5f);
+
+        switch (messageType)
+        {
+            case MessageType.Error:
+                imageComponent.sprite = _errorIcon;
+                imageComponent.rectTransform.localScale = new Vector3(1.75f, 1.75f, 1.75f);
+                imageComponent.rectTransform.anchoredPosition = new Vector3(15, 0, 0);
+                return;
+            case MessageType.Success:
+                imageComponent.sprite = _checkmarkIcon;
+                imageComponent.rectTransform.localScale = new Vector3(1.85f, 1.85f, 1.85f);
+                imageComponent.rectTransform.anchoredPosition = new Vector3(15, 0, 0);
+                return;
+            case MessageType.Info:
+                imageComponent.sprite = _infoIcon;
+                imageComponent.rectTransform.localScale = new Vector3(2.3f, 2.3f, 2.3f);
+                imageComponent.rectTransform.anchoredPosition = new Vector3(10, 0, 0);
+                return;
+            case MessageType.Warning:
+                imageComponent.sprite = _warningIcon;
+                imageComponent.rectTransform.localScale = new Vector3(2.3f, 2.3f, 2.3f);
+                imageComponent.rectTransform.anchoredPosition = new Vector3(10, 0, 0);
+                return;
+        }
+    }
+
+    GameObject CreateFadingMessageObject(GameObject fadingMessagePrefab, GameObject parentObject, MessageType messageType, string message, float durationBeforeFade = 5f)
+    {
+        GameObject newFadingMessage = Instantiate(fadingMessagePrefab, parentObject.transform);
+
+        // Content references
+        TextMeshProUGUI newFadingMessageText = newFadingMessage.GetComponentInChildren<TextMeshProUGUI>();
+        Button closeButton = newFadingMessage.GetComponentInChildren<Button>();
+        newFadingMessage.transform.GetChild(2).TryGetComponent(out Image imageIcon);
+        CanvasGroup canvasGroup = newFadingMessage.GetComponent<CanvasGroup>();
+
+        // Apply references settings
+        closeButton.onClick.AddListener(() => Destroy(newFadingMessage));
+        newFadingMessageText.text = message;
+        newFadingMessage.SetActive(true);
+        HandleFadingMessageTypeIcon(messageType, ref imageIcon);
+        newFadingMessage.transform.SetAsLastSibling();
+        canvasGroup.DOFade(0f, 0.5f).SetDelay(durationBeforeFade).OnComplete(() => Destroy(newFadingMessage));
+
+        return newFadingMessage;
+    }
+    public void NewFadingMessage(MessageType messageType, string message, float durationBeforeFade = 5f)
     {
         if (!IsValidFadeMessage(message)) return;
 
-        if (_fadingMessagePanel.activeInHierarchy)
+        if (_firstFadingMessagePanel.activeInHierarchy)
         {
             // If a fading message is already being shown, create a new one
-            GameObject newFadingMessage = Instantiate(_fadingMessagePanel, _fadingMessagesContainer.transform);
-            TextMeshProUGUI newFadingMessageText = newFadingMessage.GetComponentInChildren<TextMeshProUGUI>();
-            CanvasGroup canvasGroup = newFadingMessage.GetComponent<CanvasGroup>();
-            Button closeButton = newFadingMessage.GetComponentInChildren<Button>();
-            closeButton.onClick.AddListener(() => Destroy(newFadingMessage));
-            newFadingMessageText.text = message;
-            newFadingMessage.SetActive(true);
-            newFadingMessage.transform.SetAsLastSibling();
-            canvasGroup.DOFade(0f, 0.5f).SetDelay(durationBeforeFade).OnComplete(() => Destroy(newFadingMessage));
+            GameObject newFadingMessage = CreateFadingMessageObject(
+                       fadingMessagePrefab: _fadingMessagePrefab,
+                       parentObject: _fadingMessagesContainer,
+                       messageType: messageType,
+                       message: message,
+                       durationBeforeFade: durationBeforeFade);
         }
         else
         {
             _fadingMessageCanvasGroup.alpha = 1f;
             _fadingMessageText.text = message;
             _fadingMessageCloseButton.onClick.RemoveAllListeners();
-            _fadingMessageCloseButton.onClick.AddListener(() => _fadingMessagePanel.SetActive(false));
-            _fadingMessagePanel.SetActive(true);
-            _fadingMessagePanel.transform.SetAsLastSibling();
-            _fadingMessageCanvasGroup.DOFade(0f, 0.5f).SetDelay(durationBeforeFade).OnComplete(() => _fadingMessagePanel.SetActive(false));
+            _fadingMessageCloseButton.onClick.AddListener(() => _firstFadingMessagePanel.SetActive(false));
+            _firstFadingMessagePanel.SetActive(true);
+            HandleFadingMessageTypeIcon(messageType, ref _fadingMessageIcon);
+            _firstFadingMessagePanel.transform.SetAsLastSibling();
+            _fadingMessageCanvasGroup.DOFade(0f, 0.5f).SetDelay(durationBeforeFade).OnComplete(() => _firstFadingMessagePanel.SetActive(false));
         }
     }
 
-    public void NewUIMessage(MessageType type, string message, string title)
+    bool IsValidMessage(string message, string title = null)
     {
-        if (!IsValidMessage(message, title)) return;
+        if (string.IsNullOrEmpty(message))
+        {
+            Debug.LogError("Message is null or empty.");
+            return false;
+        }
+        if (title != null && string.IsNullOrEmpty(title))
+        {
+            Debug.LogError("Message title is null or empty.");
+            return false;
+        }
+
+        if (message.Length > MaxMessageLength)
+        {
+            Debug.LogError("Message too long: " + message);
+            return false;
+        }
+        if (title != null && title.Length > MaxMessageTitleLength)
+        {
+            Debug.LogError("Message title too long: " + title);
+            return false;
+        }
+
+        return true;
+    }
+    public void NewUIMessage(MessageType type, string message, string title = null)
+    {
+        if (!IsValidMessage(message)) return;
 
         switch (type)
         {
@@ -223,16 +276,6 @@ public class UIMessage : MonoBehaviour
         _messagePanel.transform.SetAsLastSibling();
     }
 
-    public void CloseMessage()
-    {
-        _messagePanel.SetActive(false);
-    }
-
-    public void CloseBaseFadingMessage()
-    {
-        _fadingMessagePanel.SetActive(false);
-    }
-
     [ContextMenu("Test Error Message")]
     public void TestErrorMessage()
     {
@@ -260,9 +303,9 @@ public class UIMessage : MonoBehaviour
     [ContextMenu("Test Fading Messages")]
     public void TestFadingMessages()
     {
-        for (int i = 0; i < 6; i++)
-        {
-            NewFadingMessage($"[{i}] This is a test message.", 3f);
-        }
+        NewFadingMessage(MessageType.Error, $"This is a test Error message.", 10f);
+        NewFadingMessage(MessageType.Success, $"This is a test Success message.", 10f);
+        NewFadingMessage(MessageType.Info, $"This is a test Info message.", 10f);
+        NewFadingMessage(MessageType.Warning, $"This is a test Warning message.", 10f);
     }
 }
