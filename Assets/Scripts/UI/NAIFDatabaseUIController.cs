@@ -680,5 +680,4 @@ public class NAIFDatabaseUIController : MonoBehaviour
         }
     }
 
-
 }

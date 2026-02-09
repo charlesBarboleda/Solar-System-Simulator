@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -5,31 +6,42 @@ public class EphemerisTypeManager : MonoBehaviour, IAPIParameterManager, IDefaul
 {
     [SerializeField] TMP_Dropdown _ephemTypeDropdown;
 
+    enum InputType
+    {
+        Vectors,
+        Observer,
+        Elements,
+        SPK,
+        Approach
+    }
+
     public bool TryGetURL(out string URL)
     {
         URL = "EPHEM_TYPE=";
+        string value;
+        InputType inputType = (InputType)_ephemTypeDropdown.value;
 
-        switch (_ephemTypeDropdown.value)
+        switch (inputType)
         {
-            // Vectors
-            case 0:
-                URL += "'VECTORS'";
+            case InputType.Vectors:
+                value = Uri.EscapeDataString("'VECTORS'");
+                URL += value;
                 return true;
-            // Observer
-            case 1:
-                URL += "'OBSERVER'";
+            case InputType.Observer:
+                value = Uri.EscapeDataString("'OBSERVER'");
+                URL += value;
                 return true;
-            // Elements
-            case 2:
-                URL += "'ELEMENTS'";
+            case InputType.Elements:
+                value = Uri.EscapeDataString("'ELEMENTS'");
+                URL += value;
                 return true;
-            // SPK
-            case 3:
-                URL += "'SPK'";
+            case InputType.SPK:
+                value = Uri.EscapeDataString("'SPK'");
+                URL += value;
                 return true;
-            // Approach
-            case 4:
-                URL += "'APPROACH'";
+            case InputType.Approach:
+                value = Uri.EscapeDataString("'APPROACH'");
+                URL += value;
                 return true;
         }
 

@@ -1,63 +1,123 @@
+using System;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 
 public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputValidation, IDefaultable
 {
     [SerializeField] TMP_Dropdown _inputTypeDropdown;
+    [SerializeField] HorizonsTabsManager _horizonsTabManager;
     [Header("SiteName / IAU Code references")]
     [SerializeField] TextMeshProUGUI _inputLabel;
     [SerializeField] TMP_InputField _inputField;
+    [SerializeField] GameObject _invalidInputField;
     [SerializeField] TextMeshProUGUI _inputPlaceholderText;
 
     [Header("Container object references")]
     [SerializeField] GameObject _inputContainer;
     [SerializeField] GameObject _coordinateTypeContainer;
-    [SerializeField] GameObject _siteCoordinateContainer;
+    [SerializeField] GameObject _siteCoordinateInputOneContainer;
+    [SerializeField] GameObject _siteCoordinateInputTwoContainer;
+    [SerializeField] GameObject _siteCoordinateInputThreeContainer;
+
     [SerializeField] GameObject _nameIAUContainer;
     [SerializeField] GameObject _IAUCodesButton;
 
     [Header("Site Coordinate references")]
     [SerializeField] TMP_Dropdown _coordinateTypeDropdown;
-    [SerializeField] TMP_InputField _siteCoordinateInput;
-    [SerializeField] TextMeshProUGUI _siteCoordinateInputPlaceholderText;
+    [SerializeField] TMP_InputField _bodyNAIFInput;
+    [SerializeField] GameObject _bodyNAIFContainer;
+    [SerializeField] GameObject _invalidInputNAIFInput;
+    [SerializeField] TMP_InputField _siteCoordInputOne;
+    [SerializeField] GameObject _invalidInputOne;
+    [SerializeField] TextMeshProUGUI _inputOneLabel;
+    [SerializeField] TextMeshProUGUI _inputOnePlaceholderText;
+    [SerializeField] TMP_InputField _siteCoordInputTwo;
+    [SerializeField] GameObject _invalidInputTwo;
+    [SerializeField] TextMeshProUGUI _inputTwoLabel;
+    [SerializeField] TextMeshProUGUI _inputTwoPlaceholderText;
+    [SerializeField] TMP_InputField _siteCoordInputThree;
+    [SerializeField] GameObject _invalidInputThree;
+    [SerializeField] TextMeshProUGUI _inputThreeLabel;
+    [SerializeField] TextMeshProUGUI _inputThreePlaceholderText;
+
+    public void OnNAIFDatabaseClick()
+    {
+        _horizonsTabManager.MainContentCanvasSortOrder(sortOrder: 0);
+        NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 1);
+    }
 
     const string IAU_CODES_URL = "https://www.minorplanetcenter.net/iau/lists/ObsCodesF.html";
 
     public void OnCoordinateTypeChange(int idx)
     {
-        switch (idx)
+        CoordinateType coordinateType = (CoordinateType)idx;
+        switch (coordinateType)
         {
-            // Geodetic
-            case 0:
-                _siteCoordinateInputPlaceholderText.SetText("e.g. '120.0000,-33.9000,0.050'");
-                _siteCoordinateInputPlaceholderText.fontSize = 10;
+            case CoordinateType.Geodetic:
+                SwitchInputContents(_inputOneLabel, _inputOnePlaceholderText, label: "Longitude :", placeholder: "e.g. '236.8793'");
+                SwitchInputContents(_inputTwoLabel, _inputTwoPlaceholderText, label: "Latitude :", placeholder: "e.g. '49.2827'");
+                SwitchInputContents(_inputThreeLabel, _inputThreePlaceholderText, label: "Altitude :", placeholder: "e.g. '0.070'");
                 break;
-            case 1:
-                _siteCoordinateInputPlaceholderText.SetText("e.g. '357.260068,4755.22874,4238.09323'");
-                _siteCoordinateInputPlaceholderText.fontSize = 7.5f;
+            case CoordinateType.Cylindrical:
+                SwitchInputContents(_inputOneLabel, _inputOnePlaceholderText, label: "Longitude :", placeholder: "e.g. '236.8793'");
+                SwitchInputContents(_inputTwoLabel, _inputTwoPlaceholderText, label: "DXY :", placeholder: "e.g. '4185.000'");
+                SwitchInputContents(_inputThreeLabel, _inputThreePlaceholderText, label: "DZ :", placeholder: "e.g. '4815.000'");
                 break;
         }
     }
 
+    enum CoordinateType
+    {
+        Geodetic,
+        Cylindrical
+    }
+
+    public void OnOneInputStartEdit()
+    {
+        if (_invalidInputOne.activeInHierarchy) _invalidInputOne.SetActive(false);
+        return;
+    }
+    public void OnTwoInputStartEdit()
+    {
+        if (_invalidInputTwo.activeInHierarchy) _invalidInputTwo.SetActive(false);
+        return;
+    }
+    public void OnThreeInputStartEdit()
+    {
+        if (_invalidInputThree.activeInHierarchy) _invalidInputThree.SetActive(false);
+        return;
+    }
+    public void OnNameIAUInputStartEdit()
+    {
+        if (_invalidInputField.activeInHierarchy) _invalidInputField.SetActive(false);
+        return;
+    }
+    public void OnNAIFInputStartEdit()
+    {
+        if (_invalidInputNAIFInput.activeInHierarchy) _invalidInputNAIFInput.SetActive(false);
+        return;
+    }
+
     public void OnInputTypeChange(int idx)
     {
-        switch (idx)
+        InputType inputType = (InputType)idx;
+        switch (inputType)
         {
-            // DEFAULT: Geocenter
-            case 0:
+            case InputType.Geocenter:
                 SetExclusive(InputType.Geocenter);
                 break;
-            // Site Name
-            case 1:
+            case InputType.SiteName:
                 SetExclusive(InputType.SiteName);
                 break;
-            // IAU Site Code
-            case 2:
+            case InputType.IAU:
                 SetExclusive(InputType.IAU);
                 break;
-            // Site Coordinate
-            case 3:
+            case InputType.SiteCoordinate:
                 SetExclusive(InputType.SiteCoordinate);
+                break;
+            default:
+                SetExclusive(InputType.Geocenter);
                 break;
         }
     }
@@ -76,7 +136,10 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
         {
             case InputType.Geocenter:
                 _coordinateTypeContainer.SetActive(false);
-                _siteCoordinateContainer.SetActive(false);
+                _bodyNAIFContainer.SetActive(false);
+                _siteCoordinateInputOneContainer.SetActive(false);
+                _siteCoordinateInputTwoContainer.SetActive(false);
+                _siteCoordinateInputThreeContainer.SetActive(false);
                 _nameIAUContainer.SetActive(false);
                 _IAUCodesButton.SetActive(false);
                 _inputContainer.SetActive(false);
@@ -84,19 +147,32 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
             case InputType.SiteName:
                 _inputContainer.SetActive(true);
                 _nameIAUContainer.SetActive(true);
-                SwitchInputContents("Site Name :", "e.g. 'Mauna Kea'");
-                _siteCoordinateContainer.SetActive(false);
+                SwitchInputContents(_inputLabel, _inputPlaceholderText, label: "Site Name :", placeholder: "e.g. 'Mauna Kea'");
+                _inputField.characterLimit = 0;
+                _bodyNAIFContainer.SetActive(false);
+                _siteCoordinateInputOneContainer.SetActive(false);
+                _siteCoordinateInputTwoContainer.SetActive(false);
+                _siteCoordinateInputThreeContainer.SetActive(false);
                 _coordinateTypeContainer.SetActive(false);
                 break;
             case InputType.IAU:
                 _inputContainer.SetActive(true);
                 _IAUCodesButton.SetActive(true);
                 _nameIAUContainer.SetActive(true);
-                SwitchInputContents("IAU Code :", "e.g. 'W84'");
+                _coordinateTypeContainer.SetActive(false);
+                _bodyNAIFContainer.SetActive(false);
+                _siteCoordinateInputOneContainer.SetActive(false);
+                _siteCoordinateInputTwoContainer.SetActive(false);
+                _siteCoordinateInputThreeContainer.SetActive(false);
+                SwitchInputContents(_inputLabel, _inputPlaceholderText, label: "IAU Code :", placeholder: "e.g. 'W84'");
+                _inputField.characterLimit = 3;
                 break;
             case InputType.SiteCoordinate:
                 _inputContainer.SetActive(true);
-                _siteCoordinateContainer.SetActive(true);
+                _bodyNAIFContainer.SetActive(true);
+                _siteCoordinateInputOneContainer.SetActive(true);
+                _siteCoordinateInputTwoContainer.SetActive(true);
+                _siteCoordinateInputThreeContainer.SetActive(true);
                 _coordinateTypeContainer.SetActive(true);
                 _IAUCodesButton.SetActive(false);
                 _nameIAUContainer.SetActive(false);
@@ -104,30 +180,147 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
         }
     }
 
-    void SwitchInputContents(string label, string placeholder)
+    void SwitchInputContents(TextMeshProUGUI labelText, TextMeshProUGUI placeholderText, string label, string placeholder)
     {
-        _inputLabel.SetText(label);
-        _inputPlaceholderText.SetText(placeholder);
+        labelText.SetText(label);
+        placeholderText.SetText(placeholder);
     }
 
     public bool IsValidInput()
     {
-        string input = _inputField.text.Trim();
-        if (string.IsNullOrEmpty(input)) return false;
-        return true;
+        InputType inputType = (InputType)_inputTypeDropdown.value;
+        switch (inputType)
+        {
+            case InputType.Geocenter:
+                return true;
+            case InputType.IAU:
+                string IAUInput = _inputField.text.Trim();
+                if (string.IsNullOrEmpty(IAUInput)) return false;
+                return true;
+            case InputType.SiteName:
+                string siteNameInput = _inputField.text.Trim();
+                if (string.IsNullOrEmpty(siteNameInput)) return false;
+                return true;
+            case InputType.SiteCoordinate:
+                string naifIDInput = _bodyNAIFInput.text.Trim();
+                if (string.IsNullOrEmpty(naifIDInput))
+                {
+                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Center Body] Invalid input; Input cannot be empty", 20f);
+                    _invalidInputNAIFInput.SetActive(true);
+                    return false;
+                }
+                string inputOne = _siteCoordInputOne.text.Trim();
+                if (string.IsNullOrEmpty(inputOne))
+                {
+                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Center Body] Invalid input; Input cannot be empty", 20f);
+                    _invalidInputOne.SetActive(true);
+                    return false;
+                }
+                string inputTwo = _siteCoordInputTwo.text.Trim();
+                if (string.IsNullOrEmpty(inputTwo))
+                {
+                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Center Body] Invalid input; Input cannot be empty", 20f);
+                    _invalidInputTwo.SetActive(true);
+                    return false;
+                }
+                string inputThree = _siteCoordInputThree.text.Trim();
+                if (string.IsNullOrEmpty(inputThree))
+                {
+                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Center Body] Invalid input; Input cannot be empty", 20f);
+                    _invalidInputThree.SetActive(true);
+                    return false;
+                }
+
+                return true;
+        }
+
+        return false;
+
     }
 
     public bool TryGetURL(out string URL)
     {
         URL = string.Empty;
+        InputType inputType = (InputType)_inputTypeDropdown.value;
 
-        switch (_inputTypeDropdown.value)
+        if (!IsValidInput())
         {
-            // Geocenter
-            case 0:
-                break;
+            if (inputType == InputType.SiteName || inputType == InputType.IAU)
+            {
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, "[Center Body] Invalid input; Input cannot be empty", 20f);
+
+                if (_invalidInputField != null) _invalidInputField.SetActive(true);
+            }
+
+            return false;
         }
-        return true;
+
+        switch (inputType)
+        {
+            case InputType.Geocenter:
+                {
+                    URL = $"CENTER={HorizonsAPIParameters.EncodeQuoted("geo")}";
+                    return true;
+                }
+
+            case InputType.SiteName:
+                {
+                    string siteName = _inputField.text.Trim();
+                    URL = $"CENTER={HorizonsAPIParameters.EncodeQuoted(siteName)}";
+                    return true;
+                }
+
+            case InputType.IAU:
+                {
+                    string code = _inputField.text.Trim().ToUpperInvariant();
+
+                    if (code.Length != 3)
+                    {
+                        UIMessage.Instance.NewFadingMessage(MessageType.Error, "[Center Body] IAU/MPC site code must be exactly 3 characters (e.g. W84).", 20f);
+
+                        if (_invalidInputField != null) _invalidInputField.SetActive(true);
+
+                        return false;
+                    }
+
+                    URL = $"CENTER={HorizonsAPIParameters.EncodeQuoted(code)}";
+                    return true;
+                }
+
+            case InputType.SiteCoordinate:
+                {
+                    string naifRaw = _bodyNAIFInput.text.Trim();
+                    if (!int.TryParse(naifRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int NAIFID))
+                    {
+                        UIMessage.Instance.NewFadingMessage(MessageType.Error, "[Center Body] Invalid NAIF ID; must be a positive integer (e.g. 399).", 20f);
+
+                        if (_invalidInputNAIFInput != null) _invalidInputNAIFInput.SetActive(true);
+
+                        return false;
+                    }
+
+                    CoordinateType coordType = (CoordinateType)_coordinateTypeDropdown.value;
+                    string coordTypeToken = (coordType == CoordinateType.Geodetic) ? "GEODETIC" : "CYLINDRICAL";
+
+                    string one = _siteCoordInputOne.text.Trim();
+                    string two = _siteCoordInputTwo.text.Trim();
+                    string three = _siteCoordInputThree.text.Trim();
+
+                    string siteCoordRaw = $"{one},{two},{three}";
+
+                    string centerValue = $"coord@{NAIFID}";
+
+                    URL =
+                        $"CENTER={HorizonsAPIParameters.EncodeQuoted(centerValue)}" +
+                        $"&COORD_TYPE={HorizonsAPIParameters.EncodeQuoted(coordTypeToken)}" +
+                        $"&SITE_COORD={HorizonsAPIParameters.EncodeQuoted(siteCoordRaw)}";
+
+                    return true;
+                }
+
+            default:
+                return false;
+        }
     }
 
     public void ApplyDefault()
@@ -137,6 +330,4 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
     }
 
     public void OnIAUCodesClick() => Application.OpenURL(IAU_CODES_URL);
-
-
 }

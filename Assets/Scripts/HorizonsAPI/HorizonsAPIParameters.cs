@@ -123,6 +123,9 @@ public static class HorizonsAPIParameters
         return true;
     }
 
+    public static string EncodeQuoted(string inner) => "%27" + Uri.EscapeDataString(inner ?? string.Empty) + "%27";
+
+
     public enum CalendarParseFailReason
     {
         InvalidYear,

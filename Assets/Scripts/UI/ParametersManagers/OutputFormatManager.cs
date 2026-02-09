@@ -1,22 +1,29 @@
 using TMPro;
 using UnityEngine;
+using System;
+using UnityEditor.Search;
 
 public class OutputFormatManager : MonoBehaviour, IAPIParameterManager, IDefaultable
 {
     [SerializeField] TMP_Dropdown _outputFormatDropdown;
 
+    enum InputType
+    {
+        Json,
+        Text
+    }
+
     public bool TryGetURL(out string URL)
     {
         URL = "format=";
 
-        switch (_outputFormatDropdown.value)
+        InputType inputType = (InputType)_outputFormatDropdown.value;
+        switch (inputType)
         {
-            // json
-            case 0:
+            case InputType.Json:
                 URL += "json";
                 return true;
-            // text
-            case 1:
+            case InputType.Text:
                 URL += "text";
                 return true;
         }

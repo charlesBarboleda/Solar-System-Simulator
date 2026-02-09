@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -18,6 +19,12 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
         NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 1);
     }
 
+    enum InputType
+    {
+        ID,
+        Name
+    }
+
     public void OnInputValueChange(string valueChanged)
     {
         if (_invalidInput.activeInHierarchy)
@@ -29,19 +36,17 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
 
     void ChangeInputField(int idx)
     {
-        switch (idx)
+        InputType inputType = (InputType)idx;
+        switch (inputType)
         {
-            // ID
-            case 0:
-                // SetText avoids some allocations vs 'text='.
-                // NOTE: Not that important, but try to use it from now on
+            case InputType.ID:
+                // SetText avoids some allocations vs 'text='. Not that important, but try to use it from now on
                 _inputPlaceholderText.SetText("e.g. '300'");
                 _inputLabelText.text = "NAIF ID :";
                 _mainBodyNAIFInput.contentType = TMP_InputField.ContentType.IntegerNumber;
                 _mainBodyNAIFInput.text = string.Empty;
                 break;
-            // Name
-            case 1:
+            case InputType.Name:
                 _inputPlaceholderText.SetText("e.g. 'Earth'");
                 _inputLabelText.text = "NAIF Name :";
                 _mainBodyNAIFInput.contentType = TMP_InputField.ContentType.Alphanumeric;
@@ -52,7 +57,7 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
 
     public bool TryGetURL(out string URL)
     {
-        URL = string.Empty;
+        URL = "COMMAND=";
         _invalidInput.SetActive(false);
         string input = _mainBodyNAIFInput.text.Trim();
 
@@ -63,7 +68,8 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
             return false;
         }
 
-        URL = $"COMMAND='{input}'";
+        input = Uri.EscapeDataString(input);
+        URL += $"{input}";
         return true;
     }
 
