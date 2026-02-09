@@ -41,11 +41,8 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
     [SerializeField] TextMeshProUGUI _inputThreeLabel;
     [SerializeField] TextMeshProUGUI _inputThreePlaceholderText;
 
-    public void OnNAIFDatabaseClick()
-    {
-        _horizonsTabManager.MainContentCanvasSortOrder(sortOrder: 0);
-        NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 1);
-    }
+    public void OnNAIFDatabaseClick() => NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 2);
+
 
     const string IAU_CODES_URL = "https://www.minorplanetcenter.net/iau/lists/ObsCodesF.html";
 

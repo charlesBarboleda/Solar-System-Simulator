@@ -31,6 +31,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
     [Header("References")]
     [SerializeField] NAIFCatalogManager _NAIFCatalogDBManager;
     [SerializeField] TextMeshProUGUI _naifDatabaseTabText;
+    [SerializeField] PanelSettings _panelSettings;
 
     // UI Toolkit refs
     UIDocument _uiDocument;
@@ -650,10 +651,12 @@ public class NAIFDatabaseUIController : MonoBehaviour
         {
             _naifDatabaseTabText.fontStyle = FontStyles.Normal;
             _displayPanel.style.display = DisplayStyle.None;
+
+            NAIFDatabaseSortOrder(0);
         }
         else return;
     }
-    void NAIFDatabaseSortOrder(int sortOrder) => _uiDocument.sortingOrder = sortOrder;
+    void NAIFDatabaseSortOrder(int sortOrder) => _panelSettings.sortingOrder = sortOrder;
 
     public void OpenPanel(int sortOrder = -1)
     {
@@ -672,7 +675,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
     {
         if (_displayPanel.style.display == DisplayStyle.None)
         {
-            OpenPanel();
+            OpenPanel(sortOrder: 2);
         }
         else if (_displayPanel.style.display == DisplayStyle.Flex)
         {

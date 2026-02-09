@@ -13,11 +13,8 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
     [SerializeField] HorizonsTabsManager _horizonsTabManager;
 
     public void OnInputTypeChange(int valueChanged) => ChangeInputField(valueChanged);
-    public void OnNAIFDatabaseClick()
-    {
-        _horizonsTabManager.MainContentCanvasSortOrder(sortOrder: 0);
-        NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 1);
-    }
+    public void OnNAIFDatabaseClick() => NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 2);
+
 
     enum InputType
     {
