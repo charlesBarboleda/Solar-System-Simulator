@@ -11,7 +11,7 @@ public static class HorizonsAPIParameters
 
     public static bool IsValidYear(string year, out int y)
     {
-        if (!int.TryParse(year, NumberStyles.Integer, CultureInfo.InvariantCulture, out y) || y < 0 || y > 9999)
+        if (!int.TryParse(year, NumberStyles.Integer, CultureInfo.InvariantCulture, out y) || y < 1 || y > 9999)
         {
             Debug.LogWarning($"Invalid Year input '{year}'");
             return false;
@@ -82,7 +82,13 @@ public static class HorizonsAPIParameters
         return true;
     }
 
-    public static bool TryBuildUTCTime(DateTimeOffset unixEpoch, long ticks, out string UTCTime)
+    static string StripUtcSuffix(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        return s.EndsWith(" UTC", StringComparison.Ordinal) ? s[..^4] : s;
+    }
+
+    public static bool TryBuildUTCTime(DateTimeOffset unixEpoch, long ticks, out string UTCTime, bool stripUTC = false)
     {
         UTCTime = string.Empty;
 
@@ -90,6 +96,7 @@ public static class HorizonsAPIParameters
         {
             DateTimeOffset dto = unixEpoch + TimeSpan.FromTicks(ticks);
             UTCTime = dto.UtcDateTime.ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture);
+            if (stripUTC) UTCTime = StripUtcSuffix(UTCTime);
             return true;
         }
         catch (ArgumentOutOfRangeException)
@@ -99,7 +106,7 @@ public static class HorizonsAPIParameters
         }
     }
 
-    public static bool TryBuildUTCTime(int year, int month, int day, int hour, int minute, double second, out string UTCTime)
+    public static bool TryBuildUTCTime(int year, int month, int day, int hour, int minute, double second, out string UTCTime, bool stripUTC = false)
     {
         UTCTime = string.Empty;
 
@@ -107,6 +114,7 @@ public static class HorizonsAPIParameters
         {
             var dto = new DateTimeOffset(year, month, day, hour, minute, 0, TimeSpan.Zero).AddSeconds(second);
             UTCTime = dto.UtcDateTime.ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture);
+            if (stripUTC) UTCTime = StripUtcSuffix(UTCTime);
             return true;
         }
         catch (ArgumentOutOfRangeException)
@@ -155,7 +163,8 @@ public static class HorizonsAPIParameters
     string minute = "0",
     string second = "0",
     Action<CalendarParseFailReason> onFail = null,
-    Action<CalendarParseSuccessReason> onSuccess = null)
+    Action<CalendarParseSuccessReason> onSuccess = null,
+    bool stripUTC = false)
     {
         dateTime = default;
         bool didFail = false;
@@ -209,7 +218,7 @@ public static class HorizonsAPIParameters
         else onSuccess?.Invoke(CalendarParseSuccessReason.Second);
 
         // Build UTC time
-        if (!TryBuildUTCTime(y, m, d, h, min, sec, out dateTime))
+        if (!TryBuildUTCTime(y, m, d, h, min, sec, out dateTime, stripUTC: stripUTC))
         {
             onFail?.Invoke(CalendarParseFailReason.BuildUtcFailed);
             didFail = true;
@@ -219,7 +228,7 @@ public static class HorizonsAPIParameters
         return !didFail;
     }
 
-    public static bool TryParseJulianDay(string julianDay, out string dateTime, bool isModified = false, Action onFail = null)
+    public static bool TryParseJulianDay(string julianDay, out string dateTime, bool isModified = false, Action onFail = null, bool stripUTC = false)
     {
         dateTime = default;
         if (string.IsNullOrWhiteSpace(julianDay))
@@ -259,7 +268,7 @@ public static class HorizonsAPIParameters
         var unixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         // Build UTC time
-        if (!TryBuildUTCTime(unixEpoch, ticks, out dateTime))
+        if (!TryBuildUTCTime(unixEpoch, ticks, out dateTime, stripUTC: stripUTC))
         {
             onFail?.Invoke();
             return false;
