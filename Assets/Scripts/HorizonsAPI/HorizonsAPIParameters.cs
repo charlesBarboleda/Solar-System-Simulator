@@ -88,6 +88,33 @@ public static class HorizonsAPIParameters
         return s.EndsWith(" UTC", StringComparison.Ordinal) ? s[..^4] : s;
     }
 
+    public static bool IsValidStartStopTime(
+       DateTimeOffset startUtc,
+       DateTimeOffset stopUtc,
+       bool allowEqual = false)
+    {
+
+        int cmp = DateTimeOffset.Compare(stopUtc, startUtc);
+
+        if (allowEqual)
+        {
+            if (cmp < 0)
+            {
+                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"STOP_TIME must be greater than or equal to START_TIME", 20f);
+                return false;
+            }
+            return true;
+        }
+
+        if (cmp <= 0)
+        {
+            UIMessage.Instance.NewFadingMessage(MessageType.Error, $"STOP_TIME must be strictly greater than START_TIME", 20f);
+            return false;
+        }
+
+        return true;
+    }
+
     public static bool TryBuildUTCTime(DateTimeOffset unixEpoch, long ticks, out string UTCTime, bool stripUTC = false)
     {
         UTCTime = string.Empty;
