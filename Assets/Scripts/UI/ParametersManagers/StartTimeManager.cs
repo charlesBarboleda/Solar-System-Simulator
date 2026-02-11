@@ -140,6 +140,15 @@ public class StartTimeManager : MonoBehaviour, IAPIParameterManager, IInputValid
 
     public bool IsValidInput()
     {
+        _yearInvalidInput.SetActive(false);
+        _monthInvalidInput.SetActive(false);
+        _dayInvalidInput.SetActive(false);
+        _hourInvalidInput.SetActive(false);
+        _minuteInvalidInput.SetActive(false);
+        _secondInvalidInput.SetActive(false);
+        _julianInvalidInput.SetActive(false);
+        _mJulianInvalidInput.SetActive(false);
+
         InputType inputType = (InputType)_inputTypeDropdown.value;
         switch (inputType)
         {

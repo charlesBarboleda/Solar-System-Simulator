@@ -185,6 +185,7 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
 
     public bool IsValidInput()
     {
+        _invalidInputField.SetActive(false);
         InputType inputType = (InputType)_inputTypeDropdown.value;
         switch (inputType)
         {

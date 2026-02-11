@@ -106,7 +106,7 @@ public class StepSizeManager : MonoBehaviour, IAPIParameterManager, IInputValida
 
         if (n <= 0)
         {
-            UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Step Size] Value must be > 0 (input {n})", 20f);
+            UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Step Size] Value must be > 0 (input '{n}')", 20f);
             _invalidInputError.SetActive(true);
             return false;
         }
@@ -122,10 +122,10 @@ public class StepSizeManager : MonoBehaviour, IAPIParameterManager, IInputValida
                 return true;
 
             case InputType.RiseTransitSet:
-                // Restriction: Within integer <= 9 minute resolution
+                // Horizons: within integer <= 9 minute resolution
                 if (n > 9)
                 {
-                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Step Size] RTS mode requires minutes <= 9 (input: {n})", 20f);
+                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Step Size] RTS mode requires minutes <= 9 (input '{n}')", 20f);
                     _invalidInputError.SetActive(true);
                     return false;
                 }
@@ -135,7 +135,7 @@ public class StepSizeManager : MonoBehaviour, IAPIParameterManager, IInputValida
                 // Horizons: VAR range 60..3600 arcseconds
                 if (n < 60 || n > 3600)
                 {
-                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Step Size] Angular stepping must be 60..3600 arcsec (input: {n})", 20f);
+                    UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[Step Size] Angular stepping must be 60..3600 arcsec (input '{n}')", 20f);
                     _invalidInputError.SetActive(true);
                     return false;
                 }

@@ -72,6 +72,7 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
 
     public bool IsValidInput()
     {
+        _invalidInput.SetActive(false);
         string input = _mainBodyNAIFInput.text.Trim();
         if (input == string.Empty || string.IsNullOrEmpty(input)) return false;
 
