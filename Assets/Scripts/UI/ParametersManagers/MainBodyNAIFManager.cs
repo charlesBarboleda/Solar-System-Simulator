@@ -12,6 +12,9 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
     [SerializeField] TMP_Dropdown _naifInputTypeDropdown;
     [SerializeField] HorizonsTabsManager _horizonsTabManager;
 
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
+
     public void OnInputTypeChange(int valueChanged) => ChangeInputField(valueChanged);
     public void OnNAIFDatabaseClick() => NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 2);
 

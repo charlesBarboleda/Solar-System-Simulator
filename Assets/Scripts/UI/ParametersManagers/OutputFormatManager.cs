@@ -1,11 +1,11 @@
 using TMPro;
 using UnityEngine;
-using System;
-using UnityEditor.Search;
-
+using NaughtyAttributes;
 public class OutputFormatManager : MonoBehaviour, IAPIParameterManager, IDefaultable
 {
     [SerializeField] TMP_Dropdown _outputFormatDropdown;
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
 
     enum InputType
     {

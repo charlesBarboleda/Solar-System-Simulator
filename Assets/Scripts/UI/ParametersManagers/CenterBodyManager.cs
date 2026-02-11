@@ -6,7 +6,9 @@ using UnityEngine;
 public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputValidation, IDefaultable
 {
     [SerializeField] TMP_Dropdown _inputTypeDropdown;
-    [SerializeField] HorizonsTabsManager _horizonsTabManager;
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
+
     [Header("SiteName / IAU Code references")]
     [SerializeField] TextMeshProUGUI _inputLabel;
     [SerializeField] TMP_InputField _inputField;

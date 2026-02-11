@@ -4,6 +4,9 @@ using System.Globalization;
 
 public class StepSizeManager : MonoBehaviour, IAPIParameterManager, IInputValidation, IDefaultable
 {
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
+
     [Header("Input Type references")]
     [SerializeField] TMP_Dropdown _inputTypeDropdown;
 

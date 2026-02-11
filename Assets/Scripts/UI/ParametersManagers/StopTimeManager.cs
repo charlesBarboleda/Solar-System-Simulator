@@ -4,6 +4,9 @@ using System.Globalization;
 using System;
 public class StopTimeManager : MonoBehaviour, IAPIParameterManager, IInputValidation
 {
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
+
     [Header("Input Type dropdown reference")]
     [SerializeField] TMP_Dropdown _inputTypeDropdown;
     [Header("Input Fields references")]

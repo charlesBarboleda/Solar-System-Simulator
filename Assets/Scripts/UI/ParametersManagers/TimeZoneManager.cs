@@ -4,6 +4,9 @@ using System.Globalization;
 
 public class TimeZoneManager : MonoBehaviour, IAPIParameterManager, IInputValidation
 {
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
+
     [SerializeField] TMP_InputField _timeZoneInputField;
     [SerializeField] GameObject _invalidInput;
 

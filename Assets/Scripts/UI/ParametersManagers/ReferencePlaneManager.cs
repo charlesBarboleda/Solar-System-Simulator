@@ -6,6 +6,8 @@ public class ReferencePlaneManager : MonoBehaviour, IAPIParameterManager, IDefau
 {
     [SerializeField] TMP_Dropdown _referencePlaneDropdown;
 
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
 
     public void ApplyDefault()
     {

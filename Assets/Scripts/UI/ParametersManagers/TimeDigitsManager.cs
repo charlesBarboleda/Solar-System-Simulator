@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class TimeDigitsManager : MonoBehaviour, IAPIParameterManager, IDefaultable
 {
+    [SerializeField] GameObject _parameterContainer;
+    public GameObject ParameterContainer => _parameterContainer;
     [SerializeField] TMP_Dropdown _timeDigitsDropdown;
 
     public bool TryGetURL(out string URL)
