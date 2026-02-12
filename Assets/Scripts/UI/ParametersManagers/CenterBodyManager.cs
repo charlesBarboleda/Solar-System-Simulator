@@ -1,4 +1,3 @@
-using System;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
@@ -7,7 +6,6 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
 {
     [SerializeField] TMP_Dropdown _inputTypeDropdown;
     [SerializeField] GameObject _parameterContainer;
-    public GameObject ParameterContainer => _parameterContainer;
 
     [Header("SiteName / IAU Code references")]
     [SerializeField] TextMeshProUGUI _inputLabel;
@@ -327,6 +325,7 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
     {
         _inputTypeDropdown.value = 0;
         _inputTypeDropdown.RefreshShownValue();
+        OnInputTypeChange(_inputTypeDropdown.value);
     }
 
     public void OnIAUCodesClick() => Application.OpenURL(IAU_CODES_URL);

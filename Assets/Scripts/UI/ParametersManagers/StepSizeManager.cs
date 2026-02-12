@@ -88,7 +88,6 @@ public class StepSizeManager : MonoBehaviour, IAPIParameterManager, IInputValida
 
         _invalidInputError.SetActive(false);
 
-        // Ensure UI reflects defaults
         OnInputTypeChange(_inputTypeDropdown.value);
     }
 

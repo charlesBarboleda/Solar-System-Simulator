@@ -13,7 +13,6 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
     [SerializeField] HorizonsTabsManager _horizonsTabManager;
 
     [SerializeField] GameObject _parameterContainer;
-    public GameObject ParameterContainer => _parameterContainer;
 
     public void OnInputTypeChange(int valueChanged) => ChangeInputField(valueChanged);
     public void OnNAIFDatabaseClick() => NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 2);
@@ -86,6 +85,8 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
     {
         _naifInputTypeDropdown.value = 0;
         _naifInputTypeDropdown.RefreshShownValue();
+
+        OnInputTypeChange(_naifInputTypeDropdown.value);
     }
 
     public GameObject GetParameterContainer() => _parameterContainer;

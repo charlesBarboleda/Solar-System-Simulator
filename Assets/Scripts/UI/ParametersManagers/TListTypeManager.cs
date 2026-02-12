@@ -29,6 +29,7 @@ public class TListTypeManager : MonoBehaviour
         {
             case TListInputTypes.Julian:
                 _julianDayContainer.SetActive(true);
+
                 _mJulianDayContainer.SetActive(false);
                 _calendarYearContainer.SetActive(false);
                 _calendarMonthContainer.SetActive(false);
@@ -39,6 +40,7 @@ public class TListTypeManager : MonoBehaviour
                 break;
             case TListInputTypes.ModifiedJulian:
                 _mJulianDayContainer.SetActive(true);
+
                 _julianDayContainer.SetActive(false);
                 _calendarYearContainer.SetActive(false);
                 _calendarMonthContainer.SetActive(false);
@@ -54,6 +56,7 @@ public class TListTypeManager : MonoBehaviour
                 _calendarHourContainer.SetActive(true);
                 _calendarMinuteContainer.SetActive(true);
                 _calendarSecondContainer.SetActive(true);
+
                 _mJulianDayContainer.SetActive(false);
                 _julianDayContainer.SetActive(false);
                 break;

@@ -100,8 +100,6 @@ public class TListManager : MonoBehaviour, IAPIParameterManager, IDefaultable
             return false;
         }
 
-        // IMPROVEMENT: Format the string for NASA TLIST specifically
-        // NASA requires years to be at least 4 digits. Year 1 becomes 0001. Year -500 becomes -0500.
         if (int.TryParse(y, out int yearInt))
         {
             y = yearInt < 0 ? $"-{Mathf.Abs(yearInt):D4}" : $"{yearInt:D4}";
@@ -116,7 +114,6 @@ public class TListManager : MonoBehaviour, IAPIParameterManager, IDefaultable
     {
         string inputText = isModified ? _modifiedJulianDayInput.text : _julianDayInput.text;
 
-        // Validate numeric input
         if (!HorizonsAPIParameters.TryParseJulianDay(inputText, out _, isModified,
             onFail: () => HandleParseJulianDayFail(inputText, isModified)))
         {
@@ -270,6 +267,8 @@ public class TListManager : MonoBehaviour, IAPIParameterManager, IDefaultable
     {
         _tListTypeManager.TListTypeDropdown.value = 0;
         _tListTypeManager.TListTypeDropdown.RefreshShownValue();
+
+        _tListTypeManager.OnValueChanged(_tListTypeManager.TListTypeDropdown.value);
     }
 
     public void OnJulianInputEdit()

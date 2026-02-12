@@ -56,5 +56,7 @@ public class EphemerisTypeManager : MonoBehaviour, IAPIParameterManager, IDefaul
     {
         _ephemTypeDropdown.value = 0;
         _ephemTypeDropdown.RefreshShownValue();
+
+
     }
 }

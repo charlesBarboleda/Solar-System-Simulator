@@ -5,7 +5,6 @@ public class OutputFormatManager : MonoBehaviour, IAPIParameterManager, IDefault
 {
     [SerializeField] TMP_Dropdown _outputFormatDropdown;
     [SerializeField] GameObject _parameterContainer;
-    public GameObject ParameterContainer => _parameterContainer;
 
     enum InputType
     {
