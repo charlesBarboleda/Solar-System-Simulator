@@ -5,7 +5,6 @@ using System.Globalization;
 public class StepSizeManager : MonoBehaviour, IAPIParameterManager, IInputValidation, IDefaultable
 {
     [SerializeField] GameObject _parameterContainer;
-    public GameObject ParameterContainer => _parameterContainer;
 
     [Header("Input Type references")]
     [SerializeField] TMP_Dropdown _inputTypeDropdown;
@@ -213,6 +212,8 @@ public class StepSizeManager : MonoBehaviour, IAPIParameterManager, IInputValida
         if (_invalidInputError.activeInHierarchy)
             _invalidInputError.SetActive(false);
     }
+
+    public GameObject GetParameterContainer() => _parameterContainer;
 
     enum Units
     {

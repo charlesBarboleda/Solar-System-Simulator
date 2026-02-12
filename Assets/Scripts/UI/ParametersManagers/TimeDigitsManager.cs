@@ -8,6 +8,8 @@ public class TimeDigitsManager : MonoBehaviour, IAPIParameterManager, IDefaultab
     public GameObject ParameterContainer => _parameterContainer;
     [SerializeField] TMP_Dropdown _timeDigitsDropdown;
 
+    public GameObject GetParameterContainer() => _parameterContainer;
+
     public bool TryGetURL(out string URL)
     {
         TimeDigitsDropdown selection = (TimeDigitsDropdown)_timeDigitsDropdown.value;

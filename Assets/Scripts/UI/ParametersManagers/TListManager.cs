@@ -2,9 +2,12 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine;
+using NaughtyAttributes;
+using System.Linq;
 
-public class TListManager : MonoBehaviour, IAPIParameterManager
+public class TListManager : MonoBehaviour, IAPIParameterManager, IDefaultable
 {
+    [SerializeField] GameObject _parameterContainer;
     [Header("TList Type Manager")]
     [SerializeField] TListTypeManager _tListTypeManager;
 
@@ -40,35 +43,126 @@ public class TListManager : MonoBehaviour, IAPIParameterManager
     [SerializeField] GameObject _julianDayInvalid;
     [SerializeField] GameObject _mJulianDayInvalid;
 
+    public GameObject GetParameterContainer() => _parameterContainer;
 
+    [Button]
+    public void GetURLTest()
+    {
+        if (TryGetURL(out string URL))
+        {
+            Debug.Log($"URL: {URL}");
+        }
+    }
     public void AddButton()
     {
-        if (_tListTypeManager != null)
+        if (_tListTypeManager == null) return;
+
+        TListTypeManager.TListInputTypes inputType = (TListTypeManager.TListInputTypes)_tListTypeManager.TListTypeDropdown.value;
+
+        switch (inputType)
         {
-            switch (_tListTypeManager.TListTypeDropdown.value)
-            {
-                // Julian Day
-                case 0:
-                    if (TryAddJulianDay(isModified: false)) _julianDayInvalid.SetActive(false);
-                    break;
-                // Modified Julian Day
-                case 1:
-                    if (TryAddJulianDay(isModified: true)) _mJulianDayInvalid.SetActive(false);
-                    break;
-                // Calendar
-                case 2:
-                    if (TryAddCalendarDay())
-                    {
-                        _yearInputInvalid.SetActive(false);
-                        _monthInputInvalid.SetActive(false);
-                        _dayInputInvalid.SetActive(false);
-                        _hourInputInvalid.SetActive(false);
-                        _minuteInputInvalid.SetActive(false);
-                        _secondInputInvalid.SetActive(false);
-                    }
-                    break;
-            }
+            case TListTypeManager.TListInputTypes.Julian:
+                if (TryAddAstronomicalDate(isModified: false)) _julianDayInvalid.SetActive(false);
+                break;
+            case TListTypeManager.TListInputTypes.ModifiedJulian:
+                if (TryAddAstronomicalDate(isModified: true)) _mJulianDayInvalid.SetActive(false);
+                break;
+            case TListTypeManager.TListInputTypes.Calendar:
+                if (TryAddCalendarDay()) ClearCalendarValidation();
+                break;
         }
+    }
+
+    void ClearCalendarValidation()
+    {
+        _yearInputInvalid.SetActive(false);
+        _monthInputInvalid.SetActive(false);
+        _dayInputInvalid.SetActive(false);
+        _hourInputInvalid.SetActive(false);
+        _minuteInputInvalid.SetActive(false);
+        _secondInputInvalid.SetActive(false);
+    }
+
+    bool TryAddCalendarDay()
+    {
+        string y = !string.IsNullOrEmpty(_yearInput.text) ? _yearInput.text : "2000";
+        string m = !string.IsNullOrEmpty(_monthInput.text) ? _monthInput.text : "1";
+        string d = !string.IsNullOrEmpty(_dayInput.text) ? _dayInput.text : "1";
+        string h = !string.IsNullOrEmpty(_hourInput.text) ? _hourInput.text : "0";
+        string min = !string.IsNullOrEmpty(_minuteInput.text) ? _minuteInput.text : "0";
+        string s = !string.IsNullOrEmpty(_secondInput.text) ? _secondInput.text : "0";
+
+        if (!HorizonsAPIParameters.TryParseCalendarDay(year: y, month: m, day: d, hour: h, minute: min, second: s,
+            dateTime: out string _,
+            onFail: reason => HandleParseCalendarFail(reason, y, m, d, h, min, s),
+            onSuccess: reason => HandleParseCalendarSuccess(reason)))
+        {
+            return false;
+        }
+
+        // IMPROVEMENT: Format the string for NASA TLIST specifically
+        // NASA requires years to be at least 4 digits. Year 1 becomes 0001. Year -500 becomes -0500.
+        if (int.TryParse(y, out int yearInt))
+        {
+            y = yearInt < 0 ? $"-{Mathf.Abs(yearInt):D4}" : $"{yearInt:D4}";
+        }
+
+        string rawCalendarString = $"{y}-{int.Parse(m):D2}-{int.Parse(d):D2} {int.Parse(h):D2}:{int.Parse(min):D2}:{float.Parse(s):00.0}";
+
+        return CreateListEntry(rawCalendarString);
+    }
+
+    bool TryAddAstronomicalDate(bool isModified)
+    {
+        string inputText = isModified ? _modifiedJulianDayInput.text : _julianDayInput.text;
+
+        // Validate numeric input
+        if (!HorizonsAPIParameters.TryParseJulianDay(inputText, out _, isModified,
+            onFail: () => HandleParseJulianDayFail(inputText, isModified)))
+        {
+            return false;
+        }
+
+        string prefix = isModified ? "MJD " : "JD ";
+        return CreateListEntry(prefix + inputText.Trim());
+    }
+
+    bool CreateListEntry(string entryString)
+    {
+        if (_addedDatesList.Contains(entryString))
+        {
+            UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Duplicate entry: {entryString}", 5f);
+            return false;
+        }
+
+        GameObject newUIEntry = Instantiate(_contentText, _scrollableContent.transform);
+        newUIEntry.transform.localScale = Vector3.one;
+
+        if (newUIEntry.TryGetComponent(out TextMeshProUGUI textComp))
+        {
+            textComp.text = entryString;
+        }
+
+        Button btn = newUIEntry.GetComponentInChildren<Button>();
+        if (btn != null) btn.onClick.AddListener(() => OnRemoveButtonClick(newUIEntry));
+
+        _addedDatesList.Add(entryString);
+        _addedDatesUI.Add(newUIEntry);
+
+        UIMessage.Instance.NewFadingMessage(MessageType.Success, $"Added: {entryString}", 3f);
+        return true;
+    }
+
+    public bool TryGetURL(out string URL)
+    {
+        URL = string.Empty;
+        if (_addedDatesList == null || _addedDatesList.Count == 0) return false;
+
+        // Encoding Rules: ' -> %27, Space -> %20, Comma -> %2C
+        var formattedParts = _addedDatesList.Select(date => $"%27{date.Replace(" ", "%20")}%27");
+
+        URL = "TLIST=" + string.Join("%2C", formattedParts);
+        return true;
     }
 
     void HandleParseCalendarSuccess(HorizonsAPIParameters.CalendarParseSuccessReason reason)
@@ -128,64 +222,6 @@ public class TListManager : MonoBehaviour, IAPIParameterManager
                 break;
         }
     }
-    bool TryAddCalendarDay()
-    {
-        string year = !string.IsNullOrEmpty(_yearInput.text) ? _yearInput.text : string.Empty;
-        string month = !string.IsNullOrEmpty(_monthInput.text) ? _monthInput.text : "1";
-        string day = !string.IsNullOrEmpty(_dayInput.text) ? _dayInput.text : "1";
-        string hour = !string.IsNullOrEmpty(_hourInput.text) ? _hourInput.text : "0";
-        string minute = !string.IsNullOrEmpty(_minuteInput.text) ? _minuteInput.text : "0";
-        string second = !string.IsNullOrEmpty(_secondInput.text) ? _secondInput.text : "0";
-
-        if (!HorizonsAPIParameters.TryParseCalendarDay(
-            year: year,
-            month: month,
-            day: day,
-            hour: hour,
-            minute: minute,
-            second: second,
-            dateTime: out string dateTimeOutput,
-            onFail: reason => HandleParseCalendarFail(reason, year, month, day, hour, minute, second),
-            onSuccess: reason => HandleParseCalendarSuccess(reason)))
-        {
-            return false;
-        }
-        else
-        {
-            string reformatted = dateTimeOutput[..^6];
-
-            if (_addedDatesList.Contains(reformatted))
-            {
-                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Failed to add entry, duplicate date: '{reformatted}'", 20f);
-                return false;
-            }
-
-            GameObject newDateTimeEntry = Instantiate(_contentText);
-            newDateTimeEntry.transform.SetParent(_scrollableContent.transform, worldPositionStays: false);
-            newDateTimeEntry.transform.localScale = Vector3.one;
-
-            if (newDateTimeEntry.TryGetComponent(out TextMeshProUGUI textComponent)) textComponent.text = dateTimeOutput;
-            else
-            {
-                Debug.LogWarning($"[TList] Could not find a TextMeshProUGUI component on {newDateTimeEntry.name}");
-                return false;
-            }
-
-            Button removeButton = newDateTimeEntry.GetComponentInChildren<Button>();
-            if (removeButton != null) removeButton.onClick.AddListener(() => OnRemoveButtonClick(newDateTimeEntry));
-            else
-            {
-                Debug.LogWarning($"[TList] Could not find a Button component on {newDateTimeEntry.name}");
-                return false;
-            }
-
-            _addedDatesList.Add(reformatted);
-            if (!_addedDatesUI.Contains(newDateTimeEntry)) _addedDatesUI.Add(newDateTimeEntry);
-
-            UIMessage.Instance.NewFadingMessage(MessageType.Success, $"[TList] Successfully added TList date: {dateTimeOutput}", 5f);
-            return true;
-        }
-    }
 
     void HandleParseJulianDayFail(string dayInput, bool isModified = false)
     {
@@ -198,54 +234,6 @@ public class TListManager : MonoBehaviour, IAPIParameterManager
         {
             UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Invalid Julian Day input '{dayInput}'", 20f);
             _julianDayInvalid.SetActive(true);
-        }
-    }
-    bool TryAddJulianDay(bool isModified = false)
-    {
-        string inputText = isModified ? _modifiedJulianDayInput.text : _julianDayInput.text;
-
-        if (!HorizonsAPIParameters.TryParseJulianDay(
-            julianDay: inputText,
-            dateTime: out string dateTimeOutput,
-            isModified: isModified,
-            onFail: () => HandleParseJulianDayFail(inputText, isModified)))
-        {
-            return false;
-        }
-        else
-        {
-            string reformatted = dateTimeOutput[..^6];
-
-            if (_addedDatesList.Contains(reformatted))
-            {
-                UIMessage.Instance.NewFadingMessage(MessageType.Error, $"[TList] Failed to add entry, duplicate date: '{reformatted}'", 20f);
-                return false;
-            }
-
-            GameObject newDateTimeEntry = Instantiate(_contentText);
-            newDateTimeEntry.transform.SetParent(_scrollableContent.transform, worldPositionStays: false);
-            newDateTimeEntry.transform.localScale = Vector3.one;
-
-            if (newDateTimeEntry.TryGetComponent(out TextMeshProUGUI textComponent)) textComponent.text = dateTimeOutput;
-            else
-            {
-                Debug.LogWarning($"[TList] Could not find a TextMeshProUGUI component on {newDateTimeEntry.name}");
-                return false;
-            }
-
-            Button removeButton = newDateTimeEntry.GetComponentInChildren<Button>();
-            if (removeButton != null) removeButton.onClick.AddListener(() => OnRemoveButtonClick(newDateTimeEntry));
-            else
-            {
-                Debug.LogWarning($"[TList] Could not find a Button component on {newDateTimeEntry.name}");
-                return false;
-            }
-
-            _addedDatesList.Add(reformatted);
-            if (!_addedDatesUI.Contains(newDateTimeEntry)) _addedDatesUI.Add(newDateTimeEntry);
-
-            UIMessage.Instance.NewFadingMessage(MessageType.Success, $"[TList] Successfully added TList date: {dateTimeOutput}", 5f);
-            return true;
         }
     }
 
@@ -278,28 +266,54 @@ public class TListManager : MonoBehaviour, IAPIParameterManager
         return true;
     }
 
-    public bool TryGetURL(out string URL)
+    public void ApplyDefault()
     {
-        URL = string.Empty;
+        _tListTypeManager.TListTypeDropdown.value = 0;
+        _tListTypeManager.TListTypeDropdown.RefreshShownValue();
+    }
 
-        if (_addedDatesList == null || _addedDatesList.Count == 0)
-            return false;
+    public void OnJulianInputEdit()
+    {
+        if (_julianDayInvalid.activeInHierarchy) _julianDayInvalid.SetActive(false);
+        return;
+    }
 
-        var encodedEntries = new string[_addedDatesList.Count];
+    public void OnMJulianInputEdit()
+    {
+        if (_mJulianDayInvalid.activeInHierarchy) _mJulianDayInvalid.SetActive(false);
+        return;
+    }
 
-        for (int i = 0; i < _addedDatesList.Count; i++)
-        {
-            string entry = _addedDatesList[i];
-            if (string.IsNullOrWhiteSpace(entry)) return false;
+    public void OnYearInputEdit()
+    {
+        if (_yearInputInvalid.activeInHierarchy) _yearInputInvalid.SetActive(false);
+        return;
+    }
 
-            // quotes = %27
-            // spaces = %20
-            string entryEncoded = entry.Replace(" ", "%20");
-            encodedEntries[i] = $"%27{entryEncoded}%27";
-        }
-
-        URL = "TLIST=" + string.Join("%20", encodedEntries);
-        return true;
+    public void OnMonthInputEdit()
+    {
+        if (_monthInputInvalid.activeInHierarchy) _monthInputInvalid.SetActive(false);
+        return;
+    }
+    public void OnDayInputEdit()
+    {
+        if (_dayInputInvalid.activeInHierarchy) _dayInputInvalid.SetActive(false);
+        return;
+    }
+    public void OnHourInputEdit()
+    {
+        if (_hourInputInvalid.activeInHierarchy) _hourInputInvalid.SetActive(false);
+        return;
+    }
+    public void OnMinuteInputEdit()
+    {
+        if (_minuteInputInvalid.activeInHierarchy) _minuteInputInvalid.SetActive(false);
+        return;
+    }
+    public void OnSecondInputEdit()
+    {
+        if (_secondInputInvalid.activeInHierarchy) _secondInputInvalid.SetActive(false);
+        return;
     }
 
 }

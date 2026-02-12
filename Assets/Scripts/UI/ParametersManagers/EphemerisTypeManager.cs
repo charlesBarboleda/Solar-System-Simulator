@@ -7,7 +7,9 @@ public class EphemerisTypeManager : MonoBehaviour, IAPIParameterManager, IDefaul
     [SerializeField] TMP_Dropdown _ephemTypeDropdown;
 
     [SerializeField] GameObject _parameterContainer;
-    public GameObject ParameterContainer => _parameterContainer;
+
+    public GameObject GetParameterContainer() => _parameterContainer;
+
     enum InputType
     {
         Vectors,

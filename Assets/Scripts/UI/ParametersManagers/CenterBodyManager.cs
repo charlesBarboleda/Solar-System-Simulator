@@ -44,7 +44,7 @@ public class CenterBodyManager : MonoBehaviour, IAPIParameterManager, IInputVali
     [SerializeField] TextMeshProUGUI _inputThreePlaceholderText;
 
     public void OnNAIFDatabaseClick() => NAIFDatabaseUIController.Instance.OpenPanel(sortOrder: 2);
-
+    public GameObject GetParameterContainer() => _parameterContainer;
 
     const string IAU_CODES_URL = "https://www.minorplanetcenter.net/iau/lists/ObsCodesF.html";
 

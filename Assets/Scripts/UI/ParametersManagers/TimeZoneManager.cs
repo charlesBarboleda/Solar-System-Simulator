@@ -10,6 +10,8 @@ public class TimeZoneManager : MonoBehaviour, IAPIParameterManager, IInputValida
     [SerializeField] TMP_InputField _timeZoneInputField;
     [SerializeField] GameObject _invalidInput;
 
+    public GameObject GetParameterContainer() => _parameterContainer;
+
     public bool IsValidInput()
     {
         _invalidInput.SetActive(false);

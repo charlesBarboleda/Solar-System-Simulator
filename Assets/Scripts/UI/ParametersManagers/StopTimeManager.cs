@@ -258,4 +258,6 @@ public class StopTimeManager : MonoBehaviour, IAPIParameterManager, IInputValida
         if (_secondInvalidInput.activeInHierarchy) _secondInvalidInput.SetActive(false);
         return;
     }
+    public GameObject GetParameterContainer() => _parameterContainer;
+
 }

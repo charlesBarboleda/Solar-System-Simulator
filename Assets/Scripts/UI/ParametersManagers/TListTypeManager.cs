@@ -16,12 +16,18 @@ public class TListTypeManager : MonoBehaviour
     [SerializeField] GameObject _calendarMinuteContainer;
     [SerializeField] GameObject _calendarSecondContainer;
 
-    // Julian Day = 0, M-Julian Day = 1, Calendar = 2
+    public enum TListInputTypes
+    {
+        Calendar,
+        Julian,
+        ModifiedJulian
+    }
     public void OnValueChanged(int idx)
     {
-        switch (idx)
+        TListInputTypes inputType = (TListInputTypes)idx;
+        switch (inputType)
         {
-            case 0:
+            case TListInputTypes.Julian:
                 _julianDayContainer.SetActive(true);
                 _mJulianDayContainer.SetActive(false);
                 _calendarYearContainer.SetActive(false);
@@ -31,7 +37,7 @@ public class TListTypeManager : MonoBehaviour
                 _calendarMinuteContainer.SetActive(false);
                 _calendarSecondContainer.SetActive(false);
                 break;
-            case 1:
+            case TListInputTypes.ModifiedJulian:
                 _mJulianDayContainer.SetActive(true);
                 _julianDayContainer.SetActive(false);
                 _calendarYearContainer.SetActive(false);
@@ -41,7 +47,7 @@ public class TListTypeManager : MonoBehaviour
                 _calendarMinuteContainer.SetActive(false);
                 _calendarSecondContainer.SetActive(false);
                 break;
-            case 2:
+            case TListInputTypes.Calendar:
                 _calendarYearContainer.SetActive(true);
                 _calendarMonthContainer.SetActive(true);
                 _calendarDayContainer.SetActive(true);

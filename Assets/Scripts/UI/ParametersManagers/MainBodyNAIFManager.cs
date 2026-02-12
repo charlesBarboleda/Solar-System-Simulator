@@ -88,4 +88,5 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
         _naifInputTypeDropdown.RefreshShownValue();
     }
 
+    public GameObject GetParameterContainer() => _parameterContainer;
 }

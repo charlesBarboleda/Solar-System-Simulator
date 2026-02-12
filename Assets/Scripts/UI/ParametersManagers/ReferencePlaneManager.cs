@@ -31,4 +31,7 @@ public class ReferencePlaneManager : MonoBehaviour, IAPIParameterManager, IDefau
         Frame,
         BodyEquator
     }
+
+    public GameObject GetParameterContainer() => _parameterContainer;
+
 }

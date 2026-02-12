@@ -39,6 +39,8 @@ public class StartTimeManager : MonoBehaviour, IAPIParameterManager, IInputValid
     [SerializeField] GameObject _julianInvalidInput;
     [SerializeField] GameObject _mJulianInvalidInput;
 
+    public GameObject GetParameterContainer() => _parameterContainer;
+
     public void OnInputTypeChange(int idx)
     {
         InputType inputType = (InputType)idx;

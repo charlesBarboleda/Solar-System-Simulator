@@ -36,4 +36,7 @@ public class OutputFormatManager : MonoBehaviour, IAPIParameterManager, IDefault
         _outputFormatDropdown.value = 0;
         _outputFormatDropdown.RefreshShownValue();
     }
+
+    public GameObject GetParameterContainer() => _parameterContainer;
+
 }
