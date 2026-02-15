@@ -9,7 +9,7 @@ public class AstronomicalObject : SimulationObject
 
     void Awake()
     {
-        if (_meshRenderer == null || !TryGetComponent(out _meshRenderer))
+        if (_meshRenderer == null && !TryGetComponent(out _meshRenderer))
         {
             Debug.LogError($"No MeshRenderer component found on {name}. Cannot Initialize.");
             return;

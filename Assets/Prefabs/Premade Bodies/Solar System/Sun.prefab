@@ -4857,8 +4857,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7851117704320093603}
-  - component: {fileID: 6339607701970248752}
-  - component: {fileID: 672657889159871701}
   - component: {fileID: 5457047973709925531}
   - component: {fileID: 6788156608325211985}
   m_Layer: 0
@@ -4886,63 +4884,6 @@ Transform:
   - {fileID: 991960965963827380}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &6339607701970248752
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2689115849984590809}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &672657889159871701
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2689115849984590809}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 1e14bb05546c54c5592fd7918d09db74, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &5457047973709925531
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4957,6 +4898,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
   _debugPositions: 1
   _authoritativePosition:
+    x: 0
+    y: 0
+    z: 0
+  _authoritativeVelocity:
     x: 0
     y: 0
     z: 0
@@ -4976,7 +4921,7 @@ MonoBehaviour:
       z: 0
     VisualAppearance: {fileID: 2100000, guid: 1e14bb05546c54c5592fd7918d09db74, type: 2}
   Initialized: 0
-  _meshRenderer: {fileID: 672657889159871701}
+  _meshRenderer: {fileID: 0}
 --- !u!114 &6788156608325211985
 MonoBehaviour:
   m_ObjectHideFlags: 0
