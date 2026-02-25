@@ -5,15 +5,9 @@ public class AstronomicalObject : SimulationObject
 {
     public BodyData Data;
     public bool Initialized = false;
-    [SerializeField] MeshRenderer _meshRenderer;
 
     void Awake()
     {
-        if (_meshRenderer == null && !TryGetComponent(out _meshRenderer))
-        {
-            Debug.LogError($"No MeshRenderer component found on {name}. Cannot Initialize.");
-            return;
-        }
         Initialize();
     }
 
@@ -34,19 +28,16 @@ public class AstronomicalObject : SimulationObject
             // Init size
             if (Data.Type == BodyType.Star || Data.Type == BodyType.Planet || Data.Type == BodyType.Moon)
             {
-                float UnityDiameter = (float)PhysicsConstants.ToUnityUnitsFromM(Data.Diameter);
-                if (UnityDiameter > 0) transform.localScale = Vector3.one * UnityDiameter;
-                else Debug.LogWarning($"Diameter is too small for {Data.Name}");
+                // Convert the real-world diameter directly to simulation units
+                float simulationDiameter = (float)PhysicsConstants.ToUnityUnitsFromM(Data.Diameter);
 
-                float baseDiameterLocal = _meshRenderer.localBounds.size.x;
-                float UniformScale = UnityDiameter / baseDiameterLocal;
-                _meshRenderer.transform.localScale = (float)PhysicsConstants.UNITY_SIZE_SCALE_FACTOR * UniformScale * Vector3.one;
+                if (simulationDiameter > 0)
+                    transform.localScale = new Vector3(simulationDiameter * (float)PhysicsConstants.UNITY_SIZE_SCALE_FACTOR, simulationDiameter * (float)PhysicsConstants.UNITY_SIZE_SCALE_FACTOR, simulationDiameter * (float)PhysicsConstants.UNITY_SIZE_SCALE_FACTOR);
+                else
+                    Debug.LogWarning($"Diameter is too small or invalid for {Data.Name}. Check Data.Diameter.");
+
             }
         }
-
-        // Init Material/Appearance
-        if (Data.VisualAppearance != null && _meshRenderer != null) _meshRenderer.material = Data.VisualAppearance;
-        else Debug.LogWarning($"No material assigned for {Data.Name}");
 
         // Init Particles
         switch (Data.Type)
@@ -251,6 +242,7 @@ public class AstronomicalObject : SimulationObject
 
         Initialized = true;
     }
+
 }
 
 
