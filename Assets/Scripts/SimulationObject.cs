@@ -46,6 +46,11 @@ public class SimulationObject : MonoBehaviour, ISimulationObject
         UpdateTransform();
     }
 
+    public Vector3 GetLocalPosition() => (Vector3)(float3)RenderSpace.ToLocal(Position);
+
+    public double3 GetGlobalPosition() => RenderSpace.ToGlobal(Position);
+
+
     void LateUpdate()
     {
         if (_debugPositions)

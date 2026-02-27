@@ -6,20 +6,20 @@ public class SimulationSettings : MonoBehaviour
     public static SimulationSettings Instance { get; private set; }
 
     [Header("Scales")]
-    [Tooltip("Time scale multiplier. 1.0 = base speed (1 real second = 1 simulation day).")]
+    [Tooltip("Time scale multiplier. 1.0 = base speed (1 real second = 1 simulation day)")]
     [Min(0)] public double TimeScale = 1.0;
 
     [Tooltip("Gravity scale multiplier. 1.0 = real gravity.")]
     [Min(0)] public double GravityScale = 1.0;
 
     [Header("Integration")]
-    [Tooltip("Fixed simulation-days per internal physics step. This is your accuracy knob.")]
+    [Tooltip("Fixed simulation-days per internal physics step")]
     [Min(1e-9f)] public double FixedStepSimDays = 0.01; // ~14.4 minutes
 
-    [Tooltip("Hard cap to prevent runaway CPU cost if TimeScale is huge.")]
+    [Tooltip("Hard cap to prevent runaway CPU cost if TimeScale is huge")]
     [Min(1)] public int MaxSubstepsPerFixedUpdate = 256;
 
-    [Tooltip("Clamp backlog so it doesn't grow without bound if warp > CPU budget.")]
+    [Tooltip("Clamp backlog so it doesn't grow without bound if warp > CPU budget")]
     [Min(0)] public double MaxBacklogSimDays = 10.0; // allow up to 10 sim days of "debt"
 
     [Header("Simulation Time State")]
