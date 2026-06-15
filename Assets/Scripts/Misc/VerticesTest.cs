@@ -8,7 +8,6 @@ public class VerticesTest : MonoBehaviour
     [SerializeField] Mesh _ringMesh;
     [SerializeField] Transform _ringGameObject;
     Vector3[] _initVertices, _vertices, _outerRingVertices;
-    float _maxDistance;
     int[] _initTriangles, _triangles;
 
     double _maxRingDistance => PhysicsConstants.ToUnityUnitsFromM(PhysicsConstants.REAL_SATURN_MAX_RING_DISTANCE_FROM_CENTER_M);
@@ -31,7 +30,6 @@ public class VerticesTest : MonoBehaviour
             _initTriangles = _ringMesh.triangles;
             _triangles = _ringMesh.triangles;
 
-            _maxDistance = 0f;
             Debug.Log($"Target Min Distance: {_minRingDistance}");
             Debug.Log($"Target Max Distance: {_maxRingDistance}");
 

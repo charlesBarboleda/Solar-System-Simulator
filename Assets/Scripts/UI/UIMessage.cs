@@ -21,6 +21,7 @@ public class UIMessage : MonoBehaviour
 
     // Message Panel UI element references
     [SerializeField] GameObject _messagePanel;
+    [SerializeField] Button _messagePanelCloseButton;
     [SerializeField] TextMeshProUGUI _messageText;
     [SerializeField] TextMeshProUGUI _messageTitleText;
     [SerializeField] Image _messageIcon;
@@ -273,6 +274,8 @@ public class UIMessage : MonoBehaviour
         _messageTitleText.text = title;
         _messageText.text = message;
         _messagePanel.SetActive(true);
+        _messagePanelCloseButton.onClick.RemoveAllListeners();
+        _messagePanelCloseButton.onClick.AddListener(() => _messagePanel.SetActive(false));
         _messagePanel.transform.SetAsLastSibling();
     }
 

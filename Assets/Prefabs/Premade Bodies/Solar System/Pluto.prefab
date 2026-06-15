@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4027206140694857561
+--- !u!1 &6084895146988866111
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,47 +8,47 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7774429032311575529}
-  - component: {fileID: 700058689543806091}
-  - component: {fileID: 77172281362072855}
-  - component: {fileID: 4633345151697642779}
+  - component: {fileID: 6739502632704325937}
+  - component: {fileID: 4220717532158124452}
+  - component: {fileID: 5784067259718624911}
+  - component: {fileID: 2760333714530334927}
   m_Layer: 0
   m_Name: Pluto
-  m_TagString: Untagged
+  m_TagString: AstronomicalObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7774429032311575529
+--- !u!4 &6739502632704325937
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4027206140694857561}
+  m_GameObject: {fileID: 6084895146988866111}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 40, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &700058689543806091
+--- !u!33 &4220717532158124452
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4027206140694857561}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &77172281362072855
+  m_GameObject: {fileID: 6084895146988866111}
+  m_Mesh: {fileID: 4711208715938537054, guid: bb8656dfcc3ecc54c97e2dc2c61f1eed, type: 3}
+--- !u!23 &5784067259718624911
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4027206140694857561}
+  m_GameObject: {fileID: 6084895146988866111}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -91,13 +91,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &4633345151697642779
+--- !u!114 &2760333714530334927
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4027206140694857561}
+  m_GameObject: {fileID: 6084895146988866111}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
@@ -108,20 +108,56 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
+  _authoritativeVelocity:
+    x: 0
+    y: 0
+    z: 0
   _localPosition: {x: 0, y: 0, z: 0}
   Data:
-    Name: Pluto
-    Type: 0
-    Mass: 1.3025e+22
-    Diameter: 1188300
-    StartVelocity:
-      x: 0
-      y: 0
-      z: 0
-    StartPosition:
-      x: 250
-      y: 0
-      z: 0
-    VisualAppearance: {fileID: 2100000, guid: 89e79642fd54940e0a8465ce67a29db3, type: 2}
-  Initialized: 0
-  _meshRenderer: {fileID: 77172281362072855}
+    Body:
+      Name: 
+      Type: 0
+      Mass: 0
+      Diameter: 0
+      Temperature: 0
+    Position:
+      StartPosition:
+        x: 0
+        y: 0
+        z: 0
+    Velocity:
+      StartVelocity:
+        x: 0
+        y: 0
+        z: 0
+    Rotation:
+      RotationRate: 0
+      MeanSiderealDay: 0
+      AxialTiltDeg: 0
+      AxisAzimuthDeg: 0
+      InitialSpinDeg: 0
+      ModelPrimeMeridianOffset: 0
+      Retrograde: 0
+      RotationPeriod: 0
+      IsBasicRotation: 0
+    Visual:
+      MaterialName: 
+    Ring:
+      IsRingPlanet: 0
+      InnerGapKM: 0
+      RingWidthKM: 0
+    Display:
+      DisplayImage: {fileID: 0}
+      DisplayImageFileName: 
+  _lightManagerObject: {fileID: 0}
+  _axisRoot: {fileID: 0}
+  _spinRoot: {fileID: 0}
+  _visualRoot: {fileID: 0}
+  _currentSpinAngleRad: 0
+  _angularSpeedRadPerSimSecond: 0
+  _debugPoleDirection: {x: 0, y: 0, z: 0}
+  _cachedSafetyRadiusUnity: 0
+  _visualScaleMaxComponent: 2.5
+  _simulationScaleComponent: 0
+  _needsVisualScaling: 0
+  _initialized: 0

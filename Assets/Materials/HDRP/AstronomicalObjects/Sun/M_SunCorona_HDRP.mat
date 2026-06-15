@@ -72,7 +72,7 @@ Material:
     - _CoronaDetailNoiseStrength: 0.5
     - _CoronaFresnelPower: 7
     - _CoronaFresnelStrength: 1
-    - _CoronaIntensity: 500
+    - _CoronaIntensity: 5
     - _CoronaNoiseScale: 16
     - _CoronaNoiseSpeed: 0.25
     - _CoronaNoiseStrength: 0.8

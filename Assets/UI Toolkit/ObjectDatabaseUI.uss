@@ -1,0 +1,90 @@
+#EphemerisDisplayPanel,
+#TraitsDisplayPanel,
+#Panel
+{
+    overflow: visible;
+}
+
+/* Close buttons for panels */
+#ClosePanel:hover,
+#CloseTraitsPanel:hover,
+#CloseEphemerisPanel:hover {
+    scale: 1.1 1.1;
+}
+
+/* Header container for panels */
+#Panel #DatabaseTable .unity-multi-column-header__column,
+#Panel #DatabaseTable .unity-multi-column-header__column--sortable,
+#TraitsDisplayPanel #DatabaseTable .unity-multi-column-header__column,
+#TraitsDisplayPanel #DatabaseTable .unity-multi-column-header__column--sortable,
+#EphemerisDisplayPanel #DatabaseTable .unity-multi-column-header__column,
+#EphemerisDisplayPanel #DatabaseTable .unity-multi-column-header__column--sortable{
+    background-color: black;
+    border-right-width: 1px;
+    border-right-color: rgb(80, 80, 80);
+}
+
+/* Container for each header in main panesl */
+#Panel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column,
+#Panel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column--sortable,
+#TraitsDisplayPanel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column,
+#TraitsDisplayPanel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column--sortable,
+#EphemerisDisplayPanel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column,
+#EphemerisDisplayPanel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column--sortable
+{
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Sort indicator for panels header */
+#Panel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column__sort-indicator__arrow,
+#TraitsDisplayPanel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column__sort-indicator__arrow,
+#EphemerisDisplayPanel #DatabaseTable #unity-multi-column-view__header-container .unity-multi-column-header__column__sort-indicator__arrow
+{
+    -unity-background-image-tint-color: white;
+    width: 18px;
+    height: 18px;
+}
+
+/* Text/Labels for panels cells */
+#Panel #DatabaseTable .db-cell,
+#TraitsDisplayPanel #DatabaseTable .db-cell,
+#EphemerisDisplayPanel #DatabaseTable .db-cell
+{
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 12px;
+}
+
+/* Panels search field placeholder text */
+#Panel #SearchBar #SearchField #unity-text-input .unity-text-element,
+#TraitsDisplayPanel #SearchBar #SearchField #unity-text-input .unity-text-element,
+#EphemerisDisplayPanel #SearchBar #SearchField #unity-text-input .unity-text-element
+{
+    font-size: 15px;
+}
+
+#Panel #DatabaseTable .unity-collection-view__item:hover,
+#TraitsDisplayPanel #DatabaseTable .unity-collection-view__item:hover,
+#EphemerisDisplayPanel #DatabaseTable .unity-collection-view__item:hover
+{
+    background-color: rgba(100, 100, 100, 0.8);
+}
+
+#Panel #DatabaseTable .unity-multi-column-header__column Label,
+#TraitsDisplayPanel #DatabaseTable .unity-multi-column-header__column Label,
+#EphemerisDisplayPanel #DatabaseTable .unity-multi-column-header__column Label
+{
+    font-size: 16px;
+    color: rgb(255, 255, 255);
+    -unity-font-style: normal;
+    -unity-text-align: middle-center;
+    padding-bottom: 4px;
+    padding-left: 3px;
+    padding-right: 2px;
+    padding-top: 6px;
+}

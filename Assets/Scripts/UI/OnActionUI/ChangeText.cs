@@ -36,7 +36,7 @@ public class ChangeText : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
                 enabled = false;
                 return;
             }
-            else Debug.LogError("No TextMeshProUGUI component found.");
+            else Debug.LogError("[ChangeText.cs] Awake(): No TextMeshProUGUI component found.");
 
         }
     }

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &628357524412787184
+--- !u!1 &4126981435778294739
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,47 +8,47 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2869355315221124612}
-  - component: {fileID: 2355068666378310005}
-  - component: {fileID: 6423164937229124908}
-  - component: {fileID: 8548894592655035278}
+  - component: {fileID: 5095182990208322649}
+  - component: {fileID: 3672589826449893771}
+  - component: {fileID: 4635285719952737178}
+  - component: {fileID: 4433412717171215722}
   m_Layer: 0
   m_Name: Neptune
-  m_TagString: Untagged
+  m_TagString: AstronomicalObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2869355315221124612
+--- !u!4 &5095182990208322649
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 628357524412787184}
+  m_GameObject: {fileID: 4126981435778294739}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 40, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &2355068666378310005
+--- !u!33 &3672589826449893771
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 628357524412787184}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &6423164937229124908
+  m_GameObject: {fileID: 4126981435778294739}
+  m_Mesh: {fileID: 4711208715938537054, guid: bb8656dfcc3ecc54c97e2dc2c61f1eed, type: 3}
+--- !u!23 &4635285719952737178
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 628357524412787184}
+  m_GameObject: {fileID: 4126981435778294739}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -91,13 +91,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &8548894592655035278
+--- !u!114 &4433412717171215722
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 628357524412787184}
+  m_GameObject: {fileID: 4126981435778294739}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
@@ -108,20 +108,56 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
+  _authoritativeVelocity:
+    x: 0
+    y: 0
+    z: 0
   _localPosition: {x: 0, y: 0, z: 0}
   Data:
-    Name: Neptune
-    Type: 0
-    Mass: 1.024e+26
-    Diameter: 49244000
-    StartVelocity:
-      x: 0
-      y: 0
-      z: 0
-    StartPosition:
-      x: 200
-      y: 0
-      z: 0
-    VisualAppearance: {fileID: 2100000, guid: f29f4f3d96cac4e53954f0d84aad655d, type: 2}
-  Initialized: 0
-  _meshRenderer: {fileID: 6423164937229124908}
+    Body:
+      Name: 
+      Type: 0
+      Mass: 0
+      Diameter: 0
+      Temperature: 0
+    Position:
+      StartPosition:
+        x: 0
+        y: 0
+        z: 0
+    Velocity:
+      StartVelocity:
+        x: 0
+        y: 0
+        z: 0
+    Rotation:
+      RotationRate: 0
+      MeanSiderealDay: 0
+      AxialTiltDeg: 0
+      AxisAzimuthDeg: 0
+      InitialSpinDeg: 0
+      ModelPrimeMeridianOffset: 0
+      Retrograde: 0
+      RotationPeriod: 0
+      IsBasicRotation: 0
+    Visual:
+      MaterialName: 
+    Ring:
+      IsRingPlanet: 0
+      InnerGapKM: 0
+      RingWidthKM: 0
+    Display:
+      DisplayImage: {fileID: 0}
+      DisplayImageFileName: 
+  _lightManagerObject: {fileID: 0}
+  _axisRoot: {fileID: 0}
+  _spinRoot: {fileID: 0}
+  _visualRoot: {fileID: 0}
+  _currentSpinAngleRad: 0
+  _angularSpeedRadPerSimSecond: 0
+  _debugPoleDirection: {x: 0, y: 0, z: 0}
+  _cachedSafetyRadiusUnity: 0
+  _visualScaleMaxComponent: 2.5
+  _simulationScaleComponent: 0
+  _needsVisualScaling: 0
+  _initialized: 0

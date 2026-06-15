@@ -92,22 +92,22 @@ public class TListManager : MonoBehaviour, IAPIParameterManager, IDefaultable
         string min = !string.IsNullOrEmpty(_minuteInput.text) ? _minuteInput.text : "0";
         string s = !string.IsNullOrEmpty(_secondInput.text) ? _secondInput.text : "0";
 
-        if (!HorizonsAPIParameters.TryParseCalendarDay(year: y, month: m, day: d, hour: h, minute: min, second: s,
-            dateTime: out string _,
-            onFail: reason => HandleParseCalendarFail(reason, y, m, d, h, min, s),
-            onSuccess: reason => HandleParseCalendarSuccess(reason)))
+        if (!HorizonsAPIParameters.TryParseCalendarDay(
+                year: y,
+                month: m,
+                day: d,
+                hour: h,
+                minute: min,
+                second: s,
+                dateTime: out string formattedDate,
+                onFail: reason => HandleParseCalendarFail(reason, y, m, d, h, min, s),
+                onSuccess: reason => HandleParseCalendarSuccess(reason),
+                stripUTC: true))
         {
             return false;
         }
 
-        if (int.TryParse(y, out int yearInt))
-        {
-            y = yearInt < 0 ? $"-{Mathf.Abs(yearInt):D4}" : $"{yearInt:D4}";
-        }
-
-        string rawCalendarString = $"{y}-{int.Parse(m):D2}-{int.Parse(d):D2} {int.Parse(h):D2}:{int.Parse(min):D2}:{float.Parse(s):00.0}";
-
-        return CreateListEntry(rawCalendarString);
+        return CreateListEntry(formattedDate);
     }
 
     bool TryAddAstronomicalDate(bool isModified)

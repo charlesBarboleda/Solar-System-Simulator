@@ -89,5 +89,7 @@ public class MainBodyNAIFManager : MonoBehaviour, IAPIParameterManager, IInputVa
         OnInputTypeChange(_naifInputTypeDropdown.value);
     }
 
+    public void ApplyNAIFIDInput(int naifID) => _mainBodyNAIFInput.text = naifID.ToString();
+
     public GameObject GetParameterContainer() => _parameterContainer;
 }

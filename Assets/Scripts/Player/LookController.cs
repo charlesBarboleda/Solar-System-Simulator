@@ -1,10 +1,25 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using NaughtyAttributes;
 
 public class LookController : MonoBehaviour
 {
+    public static LookController Instance { get; private set; }
     public float LookSensitivity = 1f;
     float _xRotation = 0f;
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
 
     void Start()
     {
@@ -12,9 +27,26 @@ public class LookController : MonoBehaviour
         // Cursor.visible = false;
     }
 
+
     void LateUpdate()
     {
+        if (UIInputStopper.Instance.IsUIActive) return;
+        if (MovementController.Instance.IsTeleporting) return;
+        if (MainMenuManager.Instance.IsActive) return;
+
         CameraRotation();
+    }
+
+    public void SetLookDirection(Vector3 worldDirection)
+    {
+        if (worldDirection.sqrMagnitude < 0.0001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(worldDirection, Vector3.up);
+        Vector3 euler = targetRotation.eulerAngles;
+
+        _xRotation = euler.x > 180f ? euler.x - 360f : euler.x;
+
+        transform.localRotation = Quaternion.Euler(_xRotation, euler.y, 0f);
     }
 
     void CameraRotation()

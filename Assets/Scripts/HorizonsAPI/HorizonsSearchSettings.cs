@@ -4,14 +4,14 @@ public struct HorizonsSearchSettings
 {
     public const string HORIZONS_BASE_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?";
     public readonly string Result;
-    public readonly ResponseType ResponseType
+    public readonly RequestTypeFull RequestTypeFull
     {
         get
         {
-            if (!_objData && _makeEphemeris) return ResponseType.Ephemeris;
-            if (_objData && !_makeEphemeris) return ResponseType.ObjectData;
-            if (_objData && _makeEphemeris) return ResponseType.Both;
-            return ResponseType.ObjectData;
+            if (!_objData && _makeEphemeris) return RequestTypeFull.Ephemeris;
+            if (_objData && !_makeEphemeris) return RequestTypeFull.ObjectData;
+            if (_objData && _makeEphemeris) return RequestTypeFull.Both;
+            return RequestTypeFull.ObjectData;
         }
     }
 
@@ -215,12 +215,12 @@ public struct HorizonsSearchSettings
 
     public readonly string BuildQuery(HorizonsSearchSettings _settings)
     {
-        ResponseType type = _settings.ResponseType;
+        RequestTypeFull type = _settings.RequestTypeFull;
         string url = HORIZONS_BASE_URL;
 
         switch (type)
         {
-            case ResponseType.Ephemeris:
+            case RequestTypeFull.Ephemeris:
                 url += _settings.HorizonFormatType + "&";
                 url += _settings.Command + "&";
                 url += _settings.ObjData + "&";
@@ -235,12 +235,12 @@ public struct HorizonsSearchSettings
                 url += _settings.OutputUnit + "&";
                 url += _settings.VecTable;
                 return url;
-            case ResponseType.ObjectData:
+            case RequestTypeFull.ObjectData:
                 url += _settings.HorizonFormatType + "&";
                 url += _settings.Command + "&";
                 url += _settings.ObjData;
                 return url;
-            case ResponseType.Both:
+            case RequestTypeFull.Both:
                 url += _settings.HorizonFormatType + "&";
                 url += _settings.Command + "&";
                 url += _settings.ObjData + "&";
@@ -332,14 +332,6 @@ public enum ReferenceSystem
 {
     ICRF,
     B1950
-}
-
-public enum ResponseType
-{
-    Ephemeris,
-    ObjectData,
-    Both,
-    Database
 }
 
 public enum BodySearchType

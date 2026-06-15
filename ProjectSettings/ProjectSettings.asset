@@ -854,7 +854,7 @@ PlayerSettings:
     QNX: DOTWEEN
     Standalone: APP_UI_EDITOR_ONLY;DOTWEEN
     VisionOS: DOTWEEN
-    WebGL: DOTWEEN
+    WebGL: DOTWEEN;APP_UI_EDITOR_ONLY
     Windows Store Apps: DOTWEEN
     XboxOne: DOTWEEN
     iPhone: DOTWEEN

@@ -32,6 +32,9 @@ public class NAIFDatabaseUIController : MonoBehaviour
     [SerializeField] NAIFCatalogManager _NAIFCatalogDBManager;
     [SerializeField] TextMeshProUGUI _naifDatabaseTabText;
     [SerializeField] PanelSettings _panelSettings;
+    [SerializeField] HorizonsTabsManager _horizonsTabsManager;
+    [SerializeField] MainBodyNAIFManager _mainBodyNAIFManager;
+    [SerializeField] ObjectDatabaseUIController _objectDatabaseUIController;
 
     // UI Toolkit refs
     UIDocument _uiDocument;
@@ -134,7 +137,6 @@ public class NAIFDatabaseUIController : MonoBehaviour
         _addEntryButton.clicked += OnAddClicked;
         _tryAddEntryButton.clicked += TryAddEntry;
 
-        // Optional: remove built-in label spacing
         _searchField.label = string.Empty;
 
         ConfigureDatabaseTable();
@@ -336,7 +338,7 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
         _databaseTable.Rebuild();
 
-        // Fix header column flex "inline" issues
+        // Fix header column flex inline issues
         _databaseTable.schedule.Execute(() =>
         {
             _databaseTable
@@ -462,9 +464,8 @@ public class NAIFDatabaseUIController : MonoBehaviour
 
                 menu.AddSeparator("");
 
-                // Not implemented yet
-                menu.AddItem("Request Horizons API", false, () => Debug.Log("Request Horizon (not implemented)"));
-                menu.AddItem("Check Ephemeris Database", false, () => Debug.Log("Check Ephemeris Database (not implemented)"));
+                menu.AddItem("Request Horizons API", false, () => RequestHorizonsAPI(entry.NAIFID));
+                menu.AddItem("Check Database for this Object", false, () => CheckObjectDatabase(entry.Name));
 
                 menu.AddSeparator("");
 
@@ -582,10 +583,6 @@ public class NAIFDatabaseUIController : MonoBehaviour
         });
     }
 
-    /// <summary>
-    /// Pulls latest runtime DB from manager and refreshes the UI view.
-    /// Called whenever NAIFCatalogManager updates its RuntimeCatalogDB.
-    /// </summary>
     public void UpdateUICatalogDB()
     {
         _runtimeCatalogDB = new List<BodyCatalog>(_NAIFCatalogDBManager.RuntimeCatalogDB);
@@ -607,7 +604,6 @@ public class NAIFDatabaseUIController : MonoBehaviour
             return;
         }
 
-        // Empty query = show all
         if (string.IsNullOrEmpty(query))
         {
             _filteredCatalogDB.AddRange(_runtimeCatalogDB);
@@ -615,16 +611,11 @@ public class NAIFDatabaseUIController : MonoBehaviour
             return;
         }
 
-        // Token-based AND search:
-        // "earth 399" requires BOTH tokens to match somewhere in the entry.
-        string[] tokens = query.ToLowerInvariant()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string[] tokens = query.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var entry in _runtimeCatalogDB)
         {
-            string haystack =
-                $"{entry.NAIFID} {entry.Name} {entry.Designation} {entry.Aliases}"
-                .ToLowerInvariant();
+            string haystack = $"{entry.NAIFID} {entry.Name} {entry.Designation} {entry.Aliases}".ToLowerInvariant();
 
             bool matchesAll = true;
 
@@ -675,12 +666,24 @@ public class NAIFDatabaseUIController : MonoBehaviour
     {
         if (_displayPanel.style.display == DisplayStyle.None)
         {
-            OpenPanel(sortOrder: 2);
+            OpenPanel(sortOrder: 200);
         }
         else if (_displayPanel.style.display == DisplayStyle.Flex)
         {
             ClosePanel();
         }
+    }
+
+    void RequestHorizonsAPI(int naifID)
+    {
+        _horizonsTabsManager.OnClickHorizonsAPITab();
+        _mainBodyNAIFManager.ApplyNAIFIDInput(naifID);
+    }
+
+    void CheckObjectDatabase(string objectName)
+    {
+        _horizonsTabsManager.OnClickObjectDatabaseTab();
+        _objectDatabaseUIController.ApplySearchText(objectName);
     }
 
 }

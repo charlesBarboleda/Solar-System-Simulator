@@ -6,6 +6,10 @@ public class APIParametersManager : MonoBehaviour
 
     [Header("Parameter Managers references")]
     [SerializeField] OutputFormatManager _outputFormatManager;
+    [SerializeField] CenterBodyManager _centerBodyManager;
+    [SerializeField] MainBodyNAIFManager _mainBodyManager;
+    [SerializeField] StartTimeManager _startTimeManager;
+    [SerializeField] StopTimeManager _stopTimeManager;
     [SerializeField] TListManager _tListManager;
 
     void Awake()
@@ -23,6 +27,15 @@ public class APIParametersManager : MonoBehaviour
             enabled = false;
             return;
         }
+    }
+
+    public string URLBuilder()
+    {
+        string URL = string.Empty;
+
+
+
+        return URL;
     }
 
 

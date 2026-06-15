@@ -1,1 +1,8 @@
-public enum BodyType { Planet, Asteroid, Star, Moon, Comet }
+public enum BodyType
+{
+    Planet,
+    Asteroid,
+    Star,
+    Moon,
+    Satellite
+}

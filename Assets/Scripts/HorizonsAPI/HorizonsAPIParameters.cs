@@ -123,7 +123,23 @@ public static class HorizonsAPIParameters
         try
         {
             DateTimeOffset dto = unixEpoch + TimeSpan.FromTicks(ticks);
-            UTCTime = dto.UtcDateTime.ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture);
+            var dt = dto.UtcDateTime;
+
+            if (dt.Year > 0 && dt.Year < 100)
+            {
+                string monthName = CultureInfo.InvariantCulture.DateTimeFormat
+                    .GetAbbreviatedMonthName(dt.Month);
+
+                UTCTime =
+                    $"{dt.Year}ad-{monthName}-{dt.Day:00} " +
+                    $"{dt.Hour:00}:{dt.Minute:00}:{dt.Second:00}.{dt.Millisecond:000}";
+            }
+            else
+            {
+                UTCTime =
+                    $"{dt.Year:0000}-{dt.Month:00}-{dt.Day:00} " +
+                    $"{dt.Hour:00}:{dt.Minute:00}:{dt.Second:00}.{dt.Millisecond:000}";
+            }
             if (stripUTC) UTCTime = StripUtcSuffix(UTCTime);
             return true;
         }
@@ -141,7 +157,23 @@ public static class HorizonsAPIParameters
         try
         {
             var dto = new DateTimeOffset(year, month, day, hour, minute, 0, TimeSpan.Zero).AddSeconds(second);
-            UTCTime = dto.UtcDateTime.ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture);
+            var dt = dto.UtcDateTime;
+
+            if (dt.Year > 0 && dt.Year < 100)
+            {
+                string monthName = CultureInfo.InvariantCulture.DateTimeFormat
+                    .GetAbbreviatedMonthName(dt.Month);
+
+                UTCTime =
+                    $"{dt.Year}ad-{monthName}-{dt.Day:00} " +
+                    $"{dt.Hour:00}:{dt.Minute:00}:{dt.Second:00}.{dt.Millisecond:000}";
+            }
+            else
+            {
+                UTCTime =
+                    $"{dt.Year:0000}-{dt.Month:00}-{dt.Day:00} " +
+                    $"{dt.Hour:00}:{dt.Minute:00}:{dt.Second:00}.{dt.Millisecond:000}";
+            }
             if (stripUTC) UTCTime = StripUtcSuffix(UTCTime);
             return true;
         }

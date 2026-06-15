@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4104748322227426815
+--- !u!1 &319091442186706928
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,135 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5700916059668748313}
-  - component: {fileID: 1868778523748061701}
-  - component: {fileID: 2673229607728045120}
-  - component: {fileID: 5999278984217045476}
-  m_Layer: 0
-  m_Name: Saturn
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5700916059668748313
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4104748322227426815}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 53.07, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 1
-  m_Children:
-  - {fileID: 2116666350756505850}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &1868778523748061701
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4104748322227426815}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &2673229607728045120
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4104748322227426815}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 3b93dc7ab96024123abc24e04ca01e32, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &5999278984217045476
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4104748322227426815}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
-  _debugPositions: 0
-  _authoritativePosition:
-    x: 0
-    y: 0
-    z: 0
-  _localPosition: {x: 0, y: 0, z: 0}
-  Data:
-    Name: Saturn
-    Type: 0
-    Mass: 5.6834e+26
-    Diameter: 118482000
-    StartVelocity:
-      x: 0
-      y: 0
-      z: 0
-    StartPosition:
-      x: 300
-      y: 0
-      z: 0
-    VisualAppearance: {fileID: 2100000, guid: 3b93dc7ab96024123abc24e04ca01e32, type: 2}
-  Initialized: 0
-  _meshRenderer: {fileID: 2673229607728045120}
---- !u!1 &9182944174656608284
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2116666350756505850}
-  - component: {fileID: 2713546579845754413}
-  - component: {fileID: 2870454410981310956}
+  - component: {fileID: 8566655341585287919}
+  - component: {fileID: 5584419495952718321}
+  - component: {fileID: 5582462443139464433}
   m_Layer: 0
   m_Name: VisualRing
   m_TagString: Untagged
@@ -144,36 +18,36 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2116666350756505850
+--- !u!4 &8566655341585287919
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9182944174656608284}
+  m_GameObject: {fileID: 319091442186706928}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 5700916059668748313}
+  m_Father: {fileID: 1663044906087185946}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &2713546579845754413
+--- !u!33 &5584419495952718321
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9182944174656608284}
+  m_GameObject: {fileID: 319091442186706928}
   m_Mesh: {fileID: 4300000, guid: 8aa4a8814028a42fea37772e41f89781, type: 3}
---- !u!23 &2870454410981310956
+--- !u!23 &5582462443139464433
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9182944174656608284}
+  m_GameObject: {fileID: 319091442186706928}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -216,3 +90,183 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2353323790281135633
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1663044906087185946}
+  - component: {fileID: 1002112535556651512}
+  - component: {fileID: 2297968647260242439}
+  - component: {fileID: 8109511749414284328}
+  - component: {fileID: 3685607177598201009}
+  m_Layer: 0
+  m_Name: Saturn
+  m_TagString: AstronomicalObject
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1663044906087185946
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2353323790281135633}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
+  m_Children:
+  - {fileID: 8566655341585287919}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &1002112535556651512
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2353323790281135633}
+  m_Mesh: {fileID: -2294522286854558387, guid: d192e774ce2381244b2a1e512b56875b, type: 3}
+--- !u!23 &2297968647260242439
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2353323790281135633}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 3b93dc7ab96024123abc24e04ca01e32, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8109511749414284328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2353323790281135633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be507d448d74f5c44a02b0290f288783, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AstronomicalObject
+  _debugPositions: 0
+  _authoritativePosition:
+    x: 0
+    y: 0
+    z: 0
+  _authoritativeVelocity:
+    x: 0
+    y: 0
+    z: 0
+  _localPosition: {x: 0, y: 0, z: 0}
+  Data:
+    Body:
+      Name: 
+      Type: 0
+      Mass: 0
+      Diameter: 0
+      Temperature: 0
+    Position:
+      StartPosition:
+        x: 0
+        y: 0
+        z: 0
+    Velocity:
+      StartVelocity:
+        x: 0
+        y: 0
+        z: 0
+    Rotation:
+      RotationRate: 0
+      MeanSiderealDay: 0
+      AxialTiltDeg: 0
+      AxisAzimuthDeg: 0
+      InitialSpinDeg: 0
+      ModelPrimeMeridianOffset: 0
+      Retrograde: 0
+      RotationPeriod: 0
+      IsBasicRotation: 0
+    Visual:
+      MaterialName: 
+    Ring:
+      IsRingPlanet: 0
+      InnerGapKM: 0
+      RingWidthKM: 0
+    Display:
+      DisplayImage: {fileID: 0}
+      DisplayImageFileName: 
+  _lightManagerObject: {fileID: 0}
+  _axisRoot: {fileID: 0}
+  _spinRoot: {fileID: 0}
+  _visualRoot: {fileID: 0}
+  _currentSpinAngleRad: 0
+  _angularSpeedRadPerSimSecond: 0
+  _debugPoleDirection: {x: 0, y: 0, z: 0}
+  _cachedSafetyRadiusUnity: 0
+  _visualScaleMaxComponent: 2.5
+  _simulationScaleComponent: 0
+  _needsVisualScaling: 0
+  _initialized: 0
+--- !u!114 &3685607177598201009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2353323790281135633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd80b409eaff6ab478c541cf19b70627, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RingPlanet
+  _ringObject: {fileID: 319091442186706928}
+  _meshCylinder: {fileID: 5584419495952718321}
+  _innerGapKM: 0
+  _ringWidthKM: 0
+  _planetDiameterM: 0

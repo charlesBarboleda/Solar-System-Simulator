@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -31,14 +31,18 @@ public sealed class UIObjectMarker : MonoBehaviour
         public string StaticLabel;
     }
 
+    public static UIObjectMarker Instance { get; private set; }
+
     [Header("Canvas / Root")]
     [SerializeField] RectTransform safeAreaRoot;
+    [SerializeField] Canvas _canvasRoot;
 
     [Header("Camera")]
     [SerializeField] Camera worldCamera;
 
     [Header("_Markers")]
-    [SerializeField] MarkerBinding[] _markers;
+    [SerializeField] List<MarkerBinding> _markers;
+    [SerializeField] List<GameObject> _markerGameObjects;
 
     [Header("Update")]
     [SerializeField] bool updateInLateUpdate = true;
@@ -60,39 +64,87 @@ public sealed class UIObjectMarker : MonoBehaviour
 
         if (_markers == null) return;
 
-        for (int i = 0; i < _nBodyManager.SystemBodies.Length; i++)
+        if (Instance != null && Instance != this)
         {
-            AstronomicalObject obj = _nBodyManager.SystemBodies[i];
-            if (obj.Data.Type == BodyType.Star || obj.Data.Type == BodyType.Planet || obj.Data.Type == BodyType.Moon)
-            {
-                // Create a marker for this object
-                GameObject markerGO = Instantiate(_markerPrefab, safeAreaRoot);
-                MarkerBinding binding = new()
-                {
-                    Target = obj.transform,
-                    MarkerRect = markerGO.GetComponent<RectTransform>(),
-                    MarkerText = markerGO.GetComponent<TMP_Text>(),
-                    ClampToScreenEdge = true,
-                    HideWhenOffscreen = false,
-                    HideWhenOccluded = true,
-                };
-
-                binding.MarkerText.text = obj.Data.Name;
-                _markers = _markers.Append(binding).ToArray();
-            }
+            Destroy(gameObject);
+            return;
         }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    public void InitializeSystem(List<AstronomicalObject> systemBodies)
+    {
+        foreach (GameObject markerGO in _markerGameObjects)
+        {
+            if (markerGO != null) Destroy(markerGO);
+        }
+
+        _markers.Clear();
+        _markerGameObjects.Clear();
+
+        if (systemBodies == null) return;
+
+        for (int i = 0; i < systemBodies.Count; i++)
+        {
+            if (systemBodies[i] != null) AddMarker(systemBodies[i]);
+        }
+    }
+    public void RemoveMarker(string bodyName)
+    {
+        int index = _markers.FindIndex(m =>
+            m.MarkerText != null && m.MarkerText.text == bodyName);
+
+        if (index < 0) return;
+
+        if (_markers[index].MarkerRect != null)
+            Destroy(_markers[index].MarkerRect.gameObject);
+
+        _markers.RemoveAt(index);
+        _markerGameObjects.RemoveAt(index);
+    }
+
+    public void AddMarker(AstronomicalObject obj)
+    {
+        GameObject markerGO = Instantiate(_markerPrefab, safeAreaRoot);
+        MarkerBinding binding = new()
+        {
+            Target = obj.transform,
+            MarkerRect = markerGO.GetComponent<RectTransform>(),
+            MarkerText = markerGO.GetComponent<TMP_Text>(),
+            ClampToScreenEdge = true,
+            HideWhenOffscreen = false,
+            HideWhenOccluded = true,
+        };
+
+        binding.MarkerText.text = obj.Data.Body.Name;
+        _markers.Add(binding);
+        _markerGameObjects.Add(markerGO);
     }
 
     void Update()
     {
-        if (!updateInLateUpdate)
-            Tick();
+        if (!updateInLateUpdate) Tick();
     }
 
     void LateUpdate()
     {
-        if (updateInLateUpdate)
-            Tick();
+        if (updateInLateUpdate) Tick();
+    }
+
+    void OnEnable()
+    {
+        UIInputStopper.OnUIActiveChanged += HandleUIActiveChanged;
+    }
+
+    void OnDisable()
+    {
+        UIInputStopper.OnUIActiveChanged -= HandleUIActiveChanged;
+    }
+
+    void HandleUIActiveChanged(bool isUIActive)
+    {
+        _canvasRoot.enabled = !isUIActive;
     }
 
     void Tick()
@@ -102,7 +154,7 @@ public sealed class UIObjectMarker : MonoBehaviour
         if (worldCamera == null) return;
         if (_markers == null) return;
 
-        for (int i = 0; i < _markers.Length; i++)
+        for (int i = 0; i < _markers.Count; i++)
         {
             UpdateMarker(_markers[i]);
         }

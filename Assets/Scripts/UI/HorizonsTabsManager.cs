@@ -4,7 +4,7 @@ public class HorizonsTabsManager : MonoBehaviour
 {
     [SerializeField] GameObject _catalogDBContent;
     [SerializeField] GameObject _horizonsAPIContent;
-    [SerializeField] GameObject _ephemerisDBContent;
+    [SerializeField] ObjectDatabaseUIController _objectDatabaseUIController;
     [SerializeField] NAIFDatabaseUIController _naifDatabaseUIController;
     [SerializeField] Canvas _mainContentCanvas;
 
@@ -15,7 +15,8 @@ public class HorizonsTabsManager : MonoBehaviour
         _naifDatabaseUIController.OpenClosePanel();
 
         _horizonsAPIContent.SetActive(false);
-        _ephemerisDBContent.SetActive(false);
+        _objectDatabaseUIController.ClosePanel();
+        ApplyVectorManager.Instance.OnCloseButtonClick();
     }
 
     public void OnClickHorizonsAPITab()
@@ -24,16 +25,17 @@ public class HorizonsTabsManager : MonoBehaviour
         else _horizonsAPIContent.SetActive(false);
 
         _naifDatabaseUIController.ClosePanel();
-        _ephemerisDBContent.SetActive(false);
+        _objectDatabaseUIController.ClosePanel();
+        ApplyVectorManager.Instance.OnCloseButtonClick();
     }
 
-    public void OnClickEphemerisDBTab()
+    public void OnClickObjectDatabaseTab()
     {
-        if (!_ephemerisDBContent.activeInHierarchy) _ephemerisDBContent.SetActive(true);
-        else _ephemerisDBContent.SetActive(false);
+        _objectDatabaseUIController.OpenClosePanel();
 
         _naifDatabaseUIController.ClosePanel();
         _horizonsAPIContent.SetActive(false);
+        ApplyVectorManager.Instance.OnCloseButtonClick();
     }
 
 

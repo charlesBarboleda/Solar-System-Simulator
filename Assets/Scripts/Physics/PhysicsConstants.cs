@@ -1,4 +1,5 @@
 using Unity.Mathematics;
+using UnityEngine;
 
 public static class PhysicsConstants
 {
@@ -12,23 +13,20 @@ public static class PhysicsConstants
     public const double REAL_KG_PER_SOLAR_MASS = 1.98847e30;  // kg in 1 solar mass
 
     // --- Unity world-space scaling (3D sim) ---
-    public const double UNITY_UNITS_PER_AU = 10000;   // DEFAULT VALUE: 3000 Unity world-space units ≈ 1 AU
-    public const double UNITY_METERS_PER_UNIT = REAL_METERS_PER_AU / UNITY_UNITS_PER_AU;  // meters/Unity unit: 1 Unity unit ≈ (1/3000) AU
+    public const double UNITY_UNITS_PER_AU = 20000;   // DEFAULT VALUE: 20000 Unity world-space units ≈ 1 AU
+    public const double UNITY_METERS_PER_UNIT = REAL_METERS_PER_AU / UNITY_UNITS_PER_AU;  // meters/Unity unit: 1 Unity unit ≈ (1/20000) AU
     public const double UNITY_SIZE_SCALE_FACTOR = 1.0;
 
     // --- Unity time scaling ---
     public const double UNITY_DAYS_PER_REAL_SECOND = 1.0;
 
     // --- Unity converted SI real-world constants ---
-    private const double UNITY_G_BASE = REAL_G_SI
-                                    * (REAL_SECONDS_PER_DAY * REAL_SECONDS_PER_DAY)
-                                    / (UNITY_METERS_PER_UNIT * UNITY_METERS_PER_UNIT * UNITY_METERS_PER_UNIT);
+    private const double UNITY_G_BASE = REAL_G_SI * (REAL_SECONDS_PER_DAY * REAL_SECONDS_PER_DAY) / (UNITY_METERS_PER_UNIT * UNITY_METERS_PER_UNIT * UNITY_METERS_PER_UNIT);
 
     // Converted scaled G (gravity) constant
     public static double UNITY_G => UNITY_G_BASE * SimulationSettings.Instance.GravityScale;
     // Converted speed of light constant
-    public const double UNITY_SPEED_OF_LIGHT = REAL_SPEED_OF_LIGHT_M_PER_S
-                                             * (REAL_SECONDS_PER_DAY / UNITY_METERS_PER_UNIT);
+    public const double UNITY_SPEED_OF_LIGHT = REAL_SPEED_OF_LIGHT_M_PER_S * (REAL_SECONDS_PER_DAY / UNITY_METERS_PER_UNIT);
 
     // --- Real-world planetary body diameters in meters ---
     public const double REAL_SUN_DIAMETER_M = 1391400000;
@@ -69,8 +67,7 @@ public static class PhysicsConstants
     public static double ToUnityUnitsFromKM(double km) => (km * 1000.0) / UNITY_METERS_PER_UNIT;
 
     // km/s -> Unity units/day
-    public static double ToUnityUnitsFromKMPerSec(double kmps) =>
-        (kmps * 1000.0) / UNITY_METERS_PER_UNIT * REAL_SECONDS_PER_DAY;
+    public static double ToUnityUnitsFromKMPerSec(double kmps) => (kmps * 1000.0) / UNITY_METERS_PER_UNIT * REAL_SECONDS_PER_DAY;
 
     // Unity units -> m -> km
     public static double ToKMFromUnityUnits(double unityUnits) => (unityUnits * UNITY_METERS_PER_UNIT) / 1000.0;
@@ -81,5 +78,33 @@ public static class PhysicsConstants
     // Unity units -> AU
     public static double ToAUFromUnityUnits(double unityUnits) => unityUnits / UNITY_UNITS_PER_AU;
 
+    // Calculate distance between two coordinates in KM
+    public static double GetDistanceKM(double3 worldCoordinate1, double3 worldCoordinate2)
+    {
+        double distKM = 0.0;
 
+        Vector3 coordinate1 = (Vector3)(float3)worldCoordinate1;
+        Vector3 coordinate2 = (Vector3)(float3)worldCoordinate2;
+
+        float worldDist = math.length(coordinate1 - coordinate2);
+        if (worldDist < 0.0001) return distKM;
+
+        distKM = ToKMFromUnityUnits(worldDist);
+        return distKM;
+    }
+
+    // Calculate distance between two SimulationObject's center in KM
+    public static double GetCenterDistanceKM(SimulationObject object1, SimulationObject object2)
+    {
+        double distKM = 0.0;
+
+        Vector3 obj1Pos = (Vector3)(float3)object1.GetGlobalPosition();
+        Vector3 obj2Pos = (Vector3)(float3)object2.GetGlobalPosition();
+
+        float worldDist = math.length(obj1Pos - obj2Pos);
+        if (worldDist < 0.0001) return distKM;
+
+        distKM = ToKMFromUnityUnits(worldDist);
+        return distKM;
+    }
 }

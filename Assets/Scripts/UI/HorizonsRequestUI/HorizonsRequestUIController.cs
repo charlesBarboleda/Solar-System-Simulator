@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
@@ -198,7 +197,7 @@ public class HorizonsRequestUIController : MonoBehaviour
         }
         else
         {
-            List<string> requestTypeList = Enum.GetNames(typeof(ResponseType)).ToList();
+            List<string> requestTypeList = Enum.GetNames(typeof(RequestTypeFull)).ToList();
             _requestTypeDropdown.ClearOptions();
             _requestTypeDropdown.AddOptions(requestTypeList);
             _requestTypeDropdown.captionText.fontSize = 16;
@@ -207,7 +206,7 @@ public class HorizonsRequestUIController : MonoBehaviour
             _requestTypeDropdown.itemText.fontStyle = FontStyles.Bold;
         }
     }
-    public ResponseType GetResponseTypeValue() => (ResponseType)_requestTypeDropdown.value;
+    public RequestTypeFull GetResponseTypeValue() => (RequestTypeFull)_requestTypeDropdown.value;
 
     [ContextMenu("Init Output Format Dropdown")]
     public void InitOutputFormatDropdown()

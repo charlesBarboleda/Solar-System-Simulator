@@ -47,17 +47,32 @@ public static class SpacePhysics3D
         public void Dispose()
         {
             if (BarycentricPositions.IsCreated) BarycentricPositions.Dispose();
+            BarycentricPositions = default;
+
             if (BarycentricVelocities.IsCreated) BarycentricVelocities.Dispose();
+            BarycentricVelocities = default;
+
             if (ActiveMask.IsCreated) ActiveMask.Dispose();
+            ActiveMask = default;
 
             if (PotentialPhi.IsCreated) PotentialPhi.Dispose();
+            PotentialPhi = default;
+
             if (NewtonianAccel.IsCreated) NewtonianAccel.Dispose();
+            NewtonianAccel = default;
+
             if (AccelApprox.IsCreated) AccelApprox.Dispose();
+            AccelApprox = default;
 
             if (SecondTermSum.IsCreated) SecondTermSum.Dispose();
+            SecondTermSum = default;
+
             if (ThirdTermSum.IsCreated) ThirdTermSum.Dispose();
-            if (FourthTermSum.IsCreated) ThirdTermSum.Dispose();
+            ThirdTermSum = default;
+
             if (FourthTermSum.IsCreated) FourthTermSum.Dispose();
+            FourthTermSum = default;
+
         }
     }
 
@@ -205,10 +220,7 @@ public static class SpacePhysics3D
         }
     }
 
-    /// <summary>
-    /// Full EIH 1PN fixed-point iteration implemented as ONE Burst job (no main-thread ping-pong).
-    /// Uses the same pair-sweep structure and term accumulation arrays as your original CPU implementation.
-    /// </summary>
+    /// Full EIH 1PN fixed-point iteration implemented as ONE Burst job (no main-thread ping-pong)
     [BurstCompile(FloatMode = FloatMode.Strict, FloatPrecision = FloatPrecision.High)]
     struct Eih1PnIteratedPairJob : IJob
     {

@@ -114,11 +114,11 @@ Material:
     - _L2_Speed: 0.6
     - _LayerBlend: 0
     - _OpaqueCullMode: 2
-    - _P_EmissionIntensity: 6000
+    - _P_EmissionIntensity: 2000
     - _P_GranStrength: 10
-    - _P_GranWorldScale: 50
-    - _P_L1_Scale: 30
-    - _P_L1_Speed: 0.25
+    - _P_GranWorldScale: 100
+    - _P_L1_Scale: 25
+    - _P_L1_Speed: 0.5
     - _P_LimbMin: 0.6
     - _P_LimbPower: 0.2
     - _P_Phase_XY: 10
@@ -155,7 +155,7 @@ Material:
     - _ZWrite: 1
     - _epsilon: -0.2
     m_Colors:
-    - _BaseColor: {r: 1, g: 0.9568628, b: 0, a: 1}
+    - _BaseColor: {r: 1, g: 0.95686275, b: 0, a: 1}
     - _BrightCoreColor: {r: 1, g: 1, b: 1, a: 1}
     - _BrightWarpDir_XY: {r: 0.01, g: 0.035, b: 0, a: 0}
     - _BrightWarpDir_XZ: {r: -0.05, g: 0.025, b: 0, a: 0}
@@ -166,7 +166,7 @@ Material:
     - _GranTiling: {r: 8, g: 8, b: 0, a: 0}
     - _HotColor: {r: 1, g: 0.7787032, b: 0.44339618, a: 1}
     - _P_CoolColor: {r: 1, g: 0.2901961, b: 0, a: 1}
-    - _P_HotColor: {r: 1, g: 0.60563385, b: 0, a: 1}
+    - _P_HotColor: {r: 1, g: 1, b: 0.5882353, a: 1}
     - _P_ScrollDir2_XY: {r: -0.4, g: 0.9, b: 0, a: 0}
     - _P_ScrollDir2_XZ: {r: 0.7, g: 0.2, b: 0, a: 0}
     - _P_ScrollDir2_YZ: {r: -0.8, g: 0.3, b: 0, a: 0}

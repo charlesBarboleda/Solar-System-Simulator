@@ -152,8 +152,8 @@ public class NAIFCatalogManager : MonoBehaviour
         userCatalog ??= new();
         HashSet<int> userSeen = new();
         HashSet<int> horizonIds = new(horizonCatalog.Count);
-        for (int i = 0; i < horizonCatalog.Count; i++)
-            horizonIds.Add(horizonCatalog[i].NAIFID);
+
+        for (int i = 0; i < horizonCatalog.Count; i++) horizonIds.Add(horizonCatalog[i].NAIFID);
 
         for (int i = 0; i < userCatalog.Count; i++)
         {
@@ -192,6 +192,7 @@ public class NAIFCatalogManager : MonoBehaviour
 
         Dictionary<int, BodyCatalog> _cata2 = new(catalog2.Count);
         Dictionary<int, BodyCatalog> _cata1 = new(catalog1.Count);
+
         for (int i = 0; i < catalog2.Count; i++)
             if (!_cata2.TryAdd(catalog2[i].NAIFID, catalog2[i])) return false;
         for (int i = 0; i < catalog1.Count; i++)
