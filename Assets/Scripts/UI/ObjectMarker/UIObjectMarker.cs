@@ -83,7 +83,7 @@ public sealed class UIObjectMarker : MonoBehaviour
         _markers.Clear();
         _markerGameObjects.Clear();
 
-        if (systemBodies == null) return;
+        if (systemBodies == null || systemBodies.Count < 1) return;
 
         for (int i = 0; i < systemBodies.Count; i++)
         {

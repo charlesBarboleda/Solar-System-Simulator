@@ -57,8 +57,8 @@ public class LiveSimulationManager : MonoBehaviour
     {
         if (_rowEntries.TryGetValue(bodyName, out LiveSimulationRowContainerManager rowManager))
         {
-            _rowEntries.Remove(bodyName);
             Destroy(rowManager.gameObject);
+            _rowEntries.Remove(bodyName);
             RecalculateRowNumbers();
         }
     }
@@ -75,16 +75,20 @@ public class LiveSimulationManager : MonoBehaviour
 
     public void Initialize(List<AstronomicalObject> astronomicalObjects)
     {
-        foreach (var entry in _rowEntries.Values)
+        foreach (LiveSimulationRowContainerManager entry in _rowEntries.Values)
         {
-            if (entry != null) Destroy(entry.gameObject);
+            string objectName = entry.GetAstronomicalObject().Data.Body.Name;
+            RemoveEntry(objectName);
         }
 
         _rowEntries.Clear();
 
-        for (int i = 0; i < astronomicalObjects.Count; i++)
+        if (astronomicalObjects.Count > 0)
         {
-            CreateNewEntry(astronomicalObjects[i], i + 1);
+            for (int i = 0; i < astronomicalObjects.Count; i++)
+            {
+                CreateNewEntry(astronomicalObjects[i], i + 1);
+            }
         }
     }
 

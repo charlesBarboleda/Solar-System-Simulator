@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using System.Linq;
 
 public static class SimulationSaveLoad
 {
@@ -31,7 +32,7 @@ public static class SimulationSaveLoad
             DisplayName = displayName.Trim(),
             SavedAt = DateTime.UtcNow.ToString("o"), // ISO 8601 round-trip
             BodyCount = saveData.Bodies.Count,
-            SimDays = saveData.CurrentSimDays
+            SimDays = saveData.CurrentSimDays,
         };
 
         saveData.Meta = meta;
@@ -50,6 +51,25 @@ public static class SimulationSaveLoad
         UIMessage.Instance.NewUIMessage(MessageType.Success, $"Saved \"{displayName}\" ({saveData.Bodies.Count} bodies)", "Save Successful");
 
         return meta;
+    }
+
+    public static bool LoadLatestSave()
+    {
+        SaveSlotMeta firstSave = GetAllSaves().FirstOrDefault();
+        if (firstSave != null)
+        {
+            if (Load(firstSave.Id)) return true;
+            else
+            {
+                UIMessage.Instance.NewFadingMessage(MessageType.Info, "Failed to load system save file.");
+                return false;
+            }
+        }
+        else
+        {
+            UIMessage.Instance.NewFadingMessage(MessageType.Info, "No system save files found.");
+            return false;
+        }
     }
 
     public static bool Load(string saveId)

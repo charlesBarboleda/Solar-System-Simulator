@@ -43,6 +43,7 @@ public class MainMenuManager : MonoBehaviour
         SimulationAssetDatabaseManager.Instance.LoadDatabase();
         MainMenuDisplayManager.Instance.DestroyDisplayObjects();
         FPSCounter.Instance.enabled = true;
+        SimulationSaveLoad.LoadLatestSave();
 
         IsActive = false;
     }
@@ -50,6 +51,8 @@ public class MainMenuManager : MonoBehaviour
     public void OnExitGameButtonClicked() => Application.Quit();
 
     public void EnableMainMenu(bool enable) => _mainMenuContainer.SetActive(enable);
+
+    public void Enable3DContent(bool enable) => _3DContent.SetActive(enable);
 
     public void OnAssetsButtonClicked()
     {

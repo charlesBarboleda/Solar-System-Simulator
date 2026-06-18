@@ -8,7 +8,7 @@ using UnityEngine;
 public class SaveSlotMeta
 {
     public string Id;           // GUID, used as the filename key
-    public string DisplayName;  // User-facing name
+    public string DisplayName;  // User-facing 
     public string SavedAt;
     public int BodyCount;
     public double SimDays;
@@ -38,6 +38,7 @@ public class SimulationSaveData
     public double FixedStepSimDays;
     public int MaxSubstepsPerFixedUpdate;
     public double MaxBacklogSimDays;
+    public DateTimeDTO StartDateTime;
 
     // Body states
     public List<BodyStateData> Bodies = new();
@@ -59,4 +60,13 @@ public struct Double3DTO
 
     public Double3DTO(double3 value) { x = value.x; y = value.y; z = value.z; }
     public double3 ToDouble3() => new(x, y, z);
+}
+
+[Serializable]
+public struct DateTimeDTO
+{
+    public long Ticks;
+
+    public DateTimeDTO(DateTime value) { Ticks = value.Ticks; }
+    public DateTime ToDateTime() => new DateTime(Ticks);
 }

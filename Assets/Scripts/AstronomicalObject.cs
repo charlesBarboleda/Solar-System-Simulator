@@ -95,9 +95,9 @@ public class AstronomicalObject : SimulationObject
         _initialized = true;
     }
 
-    public override double GetCollisionRadius()
+    public override double GetCollisionRadius(bool addPadding = false)
     {
-        double radiusMeters = (Data.Body.Diameter * 0.5) * 1.25;
+        double radiusMeters = addPadding ? (Data.Body.Diameter * 0.5) * 1.25f : Data.Body.Diameter * 0.5;
 
         return PhysicsConstants.ToUnityUnitsFromM(radiusMeters);
     }
@@ -249,8 +249,10 @@ public class AstronomicalObject : SimulationObject
     {
         if (_spinRoot == null) return;
 
+        Quaternion _spinOffset = Quaternion.Euler(20f, 0f, 20f);
         float spinDeg = (float)math.degrees(_currentSpinAngleRad);
-        _spinRoot.localRotation = Quaternion.AngleAxis(spinDeg, Vector3.up);
+
+        _spinRoot.localRotation = _spinOffset * Quaternion.AngleAxis(spinDeg, Vector3.up);
     }
 
     double WrapAngleRad(double angleRad)

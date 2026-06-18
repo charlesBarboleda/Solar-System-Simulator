@@ -46,6 +46,7 @@ public class ApplyVectorToRowManager : MonoBehaviour
     {
         string vectorType = VectorMode == ApplyVectorManager.ApplyVectorMode.Position ? "Position" : "Velocity";
 
+        double3 convertedVector = new(PhysicsConstants.ToUnityUnitsFromAU(VectorToApply.x), PhysicsConstants.ToUnityUnitsFromAU(VectorToApply.y), PhysicsConstants.ToUnityUnitsFromAU(VectorToApply.z));
 
         UIMessage.Instance.NewUIConfirmation(
             $"Are you sure you want to apply the {vectorType.ToLower()} ({VectorToApply.x}, {VectorToApply.y}, {VectorToApply.z}) to {ObjectName}?",
@@ -56,13 +57,13 @@ public class ApplyVectorToRowManager : MonoBehaviour
                 {
                     case ApplyVectorManager.ApplyVectorMode.Position:
                         SimulationObject relativeToObject = ApplyVectorManager.Instance.GetRelativeToObject();
-                        if (NBodyManager.Instance.TrySetObjectPosition(AstronomicalObject, VectorToApply, relativeToObject))
+                        if (NBodyManager.Instance.TrySetObjectPosition(AstronomicalObject, convertedVector, relativeToObject))
                         {
                             UIMessage.Instance.NewFadingMessage(MessageType.Success, $"Applied position to {ObjectName}", 2f);
                         }
                         break;
                     case ApplyVectorManager.ApplyVectorMode.Velocity:
-                        if (NBodyManager.Instance.TrySetObjectVelocity(AstronomicalObject, VectorToApply))
+                        if (NBodyManager.Instance.TrySetObjectVelocity(AstronomicalObject, convertedVector))
                         {
                             UIMessage.Instance.NewFadingMessage(MessageType.Success, $"Applied velocity to {ObjectName}", 2f);
                         }

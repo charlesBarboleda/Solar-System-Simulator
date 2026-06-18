@@ -61,11 +61,8 @@ public class ChangeText : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
         if (_applyStyle)
         {
             if (_hoverExitBold) _textComponent.fontStyle = FontStyles.Bold;
-            else _textComponent.fontStyle = FontStyles.Normal;
             if (_hoverExitItalic) _textComponent.fontStyle = FontStyles.Italic;
-            else _textComponent.fontStyle = FontStyles.Normal;
             if (_hoverExitUnderline) _textComponent.fontStyle = FontStyles.Underline;
-            else _textComponent.fontStyle = FontStyles.Normal;
 
             _textComponent.color = _hoverExitFontColor;
             _textComponent.fontSize = _hoverExitFontSize;

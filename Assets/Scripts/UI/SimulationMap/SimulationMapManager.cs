@@ -62,6 +62,7 @@ public class SimulationMapManager : MonoBehaviour
         Instance = this;
 
         SetAUPerGrid(_defaultAUPerGrid);
+        _currentMapPlane = MapPlane.Y;
     }
 
     void Update()
@@ -94,23 +95,21 @@ public class SimulationMapManager : MonoBehaviour
             if (mapObjectManager == null) continue;
 
             double3 relativePosition = mapObjectManager.GetGlobalPosition() - playerPosition;
-
             Vector2 projectedPosition = ProjectWorldToMap(relativePosition);
             Vector2 scaledPosition = projectedPosition * MapScale;
 
             if (_hideObjectsOutsideBounds)
             {
                 Vector2 screenAlignedPos = (Vector2)(_mapParent.rotation * (Vector3)scaledPosition);
-
                 bool shouldHide = Mathf.Abs(screenAlignedPos.x) > halfBounds.x ||
                                   Mathf.Abs(screenAlignedPos.y) > halfBounds.y;
-
                 mapObjectManager.SetVisible(!shouldHide);
                 if (shouldHide) continue;
             }
 
             mapObjectManager.SetMapPosition(scaledPosition);
             mapObjectManager.SetCounterRotation();
+            mapObjectManager.UpdateTrail(playerPosition, MapScale);
         }
     }
 
@@ -119,6 +118,15 @@ public class SimulationMapManager : MonoBehaviour
         RectTransform mapRect = _mapParent as RectTransform;
         if (mapRect == null) return Vector2.one * float.MaxValue;
         return new Vector2(mapRect.rect.width * 0.5f, mapRect.rect.height * 0.5f);
+    }
+
+    public void ClearAllTrails()
+    {
+        foreach (MapObjectManager mapObj in _mapObjectList)
+        {
+            if (mapObj == null) continue;
+            mapObj.ClearTrail();
+        }
     }
 
     void UpdateMapRotation()
@@ -187,6 +195,7 @@ public class SimulationMapManager : MonoBehaviour
         // Derive MapScale so that one grid cell = AUPerGrid AU = pixelsPerCell pixels
         MapScale = pixelsPerCell / (AUPerGrid * (float)PhysicsConstants.UNITY_UNITS_PER_AU);
 
+        ClearAllTrails();
         UpdateGridLabel();
     }
 
@@ -238,7 +247,13 @@ public class SimulationMapManager : MonoBehaviour
     void ClearMap()
     {
         foreach (MapObjectManager mapObj in _mapObjectList)
-            if (mapObj != null) Destroy(mapObj.gameObject);
+        {
+            if (mapObj != null)
+            {
+                mapObj.DestroyTrail();
+                Destroy(mapObj.gameObject);
+            }
+        }
 
         _simulationMapObjects.Clear();
         _mapObjectList.Clear();
@@ -251,7 +266,11 @@ public class SimulationMapManager : MonoBehaviour
         _simulationMapObjects.Remove(name);
         _mapObjectList.Remove(mapObjectManager);
 
-        if (mapObjectManager != null) Destroy(mapObjectManager.gameObject);
+        if (mapObjectManager != null)
+        {
+            mapObjectManager.DestroyTrail();
+            Destroy(mapObjectManager.gameObject);
+        }
 
         Debug.Log($"Destroyed map object for {name}");
     }
@@ -264,13 +283,14 @@ public class SimulationMapManager : MonoBehaviour
 
         if (!mapObjectGO.TryGetComponent(out MapObjectManager mapObjectManager))
         {
-            UIMessage.Instance.NewFadingMessage(MessageType.Error,
-                $"Failed to create map object for {astroObject.Data.Body.Name}", 5f);
+            UIMessage.Instance.NewFadingMessage(MessageType.Error, $"Failed to create map object for {astroObject.Data.Body.Name}", 5f);
             Destroy(mapObjectGO);
             return null;
         }
 
         mapObjectManager.Initialize(astroObject);
+
+        mapObjectManager.InitializeTrail(_mapParent, ProjectWorldToMap);
 
         string bodyName = astroObject.Data.Body.Name;
 

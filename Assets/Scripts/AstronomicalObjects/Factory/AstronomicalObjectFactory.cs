@@ -43,6 +43,8 @@ public class AstronomicalObjectFactory : MonoBehaviour
     [SerializeField] List<MaterialEntry> _materials = new();
     Dictionary<string, Material> _materialLookup;
 
+    [SerializeField] Vector3 _rotationOffset = new(20, 0, 20);
+
     public float DistKM = 1f;
     public float EmissionIntensity = 1000f;
 

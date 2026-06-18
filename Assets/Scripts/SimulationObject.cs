@@ -94,7 +94,7 @@ public class SimulationObject : MonoBehaviour, ISimulationObject
         return true;
     }
 
-    public virtual double GetCollisionRadius() => 0.0;
+    public virtual double GetCollisionRadius(bool addPadding = false) => 0.0;
 
     public Vector3 GetLocalPosition() => (Vector3)(float3)RenderSpace.ToLocal(Position);
     public double3 GetGlobalPosition() => RenderSpace.ToGlobal(Position);

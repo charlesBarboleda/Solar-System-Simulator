@@ -809,7 +809,7 @@ public static class RuntimePreviewGenerator
 			};
 			m_previewLight = lightGO.AddComponent<Light>();
 			m_previewLight.type = LightType.Point;
-			m_previewLight.intensity = isStarBody ? 0f : 45f;
+			m_previewLight.intensity = isStarBody ? 0f : 100f;
 			m_previewLight.range = isStarBody ? 0f : 100f;
 			lightGO.layer = PREVIEW_LAYER;
 		}

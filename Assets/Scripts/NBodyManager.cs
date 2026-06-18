@@ -184,7 +184,7 @@ public class NBodyManager : MonoBehaviour
         return TryRemoveObject(astroObject);
     }
 
-    public bool TryRemoveObject(AstronomicalObject astroObject)
+    public bool TryRemoveObject(AstronomicalObject astroObject, bool showUI = true)
     {
         if (astroObject == null) return false;
 
@@ -230,7 +230,7 @@ public class NBodyManager : MonoBehaviour
 
         Destroy(runTimeObjectTransform.gameObject);
 
-        UIMessage.Instance.NewFadingMessage(MessageType.Success, $"Removed {bodyName} from simulation", 7.5f);
+        if (showUI) UIMessage.Instance.NewFadingMessage(MessageType.Success, $"Removed {bodyName} from simulation", 7.5f);
         return true;
     }
 
@@ -306,7 +306,6 @@ public class NBodyManager : MonoBehaviour
 
         if (IsPositionOccupied(astroObject, globalPosition))
         {
-            UIMessage.Instance.NewUIMessage(MessageType.Error, $"Failed to move {astroObject.Data.Body.Name}, target position is occupied.", "Teleport Blocked");
             return false;
         }
 
@@ -330,6 +329,7 @@ public class NBodyManager : MonoBehaviour
         PauseSimulation();
         _velocities[index] = velocity;
         astroObject.Velocity = velocity;
+
         return true;
     }
 
@@ -346,8 +346,11 @@ public class NBodyManager : MonoBehaviour
             GravityScale = SimulationSettings.Instance.GravityScale,
             FixedStepSimDays = SimulationSettings.Instance.FixedStepSimDays,
             MaxSubstepsPerFixedUpdate = SimulationSettings.Instance.MaxSubstepsPerFixedUpdate,
-            MaxBacklogSimDays = SimulationSettings.Instance.MaxBacklogSimDays
+            MaxBacklogSimDays = SimulationSettings.Instance.MaxBacklogSimDays,
+            StartDateTime = new DateTimeDTO(SimulationSettings.Instance.GetStartDateTime()),
         };
+
+        Debug.Log($"Saved Start Date: {SimulationSettings.Instance.GetStartDateTime()}");
 
         int n = SystemBodies.Count;
         for (int i = 0; i < n; i++)
@@ -371,8 +374,11 @@ public class NBodyManager : MonoBehaviour
 
     public void ApplyLoadedState(SimulationSaveData save)
     {
-        if (!_initialized) Initialize();
-        SystemBodies.Clear();
+        for (int i = SystemBodies.Count - 1; i >= 0; i--)
+        {
+            TryRemoveObject(SystemBodies[i], showUI: false);
+        }
+
         SimulationSettings.Instance.ResetClock();
 
         _gravityModel = save.GravityModel;
@@ -384,6 +390,7 @@ public class NBodyManager : MonoBehaviour
         SimulationSettings.Instance.SetFixedStepSimDays(save.FixedStepSimDays);
         SimulationSettings.Instance.SetMaxSubstepsPerFixedUpdate(save.MaxSubstepsPerFixedUpdate);
         SimulationSettings.Instance.SetMaxBacklogSimDays(save.MaxBacklogSimDays);
+        SimulationSettings.Instance.SetStartDateTime(save.StartDateTime.ToDateTime());
         SimulationSettings.Instance.SetSimDays(save.CurrentSimDays);
 
         foreach (var bodyState in save.Bodies)
@@ -401,12 +408,10 @@ public class NBodyManager : MonoBehaviour
             astroObject.transform.rotation = bodyState.Rotation;
 
             TryAddObject(astroObject);
-
         }
 
-        Initialize();
+        ReinitializeNativeState();
     }
-
     public bool TryGetAstroObjectByName(string name, out AstronomicalObject astroObject)
     {
         astroObject = null;
@@ -432,34 +437,36 @@ public class NBodyManager : MonoBehaviour
         return a.GetCollisionRadius() + b.GetCollisionRadius() + padding;
     }
 
+    double GetHardOverlapDistance(SimulationObject a, SimulationObject b)
+    {
+        return a.GetCollisionRadius() + b.GetCollisionRadius();
+    }
+
     public bool IsPositionOccupied(SimulationObject requester, double3 targetPosition, SimulationObject exclude = null)
     {
-        if (SystemBodies == null || SystemBodies.Count <= 0) return false;
-
         for (int i = 0; i < SystemBodies.Count; i++)
         {
             AstronomicalObject body = SystemBodies[i];
+            if (body == null || ReferenceEquals(body, requester)) continue;
+            if (exclude != null && ReferenceEquals(body, exclude)) continue;
 
-            if (body == null) continue;
-            if (ReferenceEquals(body, requester)) continue;
-            if (exclude != null && ReferenceEquals(body, exclude)) continue; // skip target
-
-            double safeDistance = GetSafeDistanceBetweenObjects(requester, body);
+            double overlapThreshold = GetHardOverlapDistance(requester, body);
             double distanceSq = math.distancesq(targetPosition, body.Position);
 
-            if (distanceSq < safeDistance * safeDistance)
+            if (distanceSq < overlapThreshold * overlapThreshold)
             {
                 UIMessage.Instance.NewUIMessage(MessageType.Error, $"Target position intersects with {body.Data.Body.Name}.", "Teleport Blocked");
                 return true;
             }
         }
 
+        // Player check
         if (MovementController.Instance != null && !ReferenceEquals(MovementController.Instance, requester))
         {
-            double playerSafeDistance = GetSafeDistanceBetweenObjects(requester, MovementController.Instance);
+            double playerThreshold = GetHardOverlapDistance(requester, MovementController.Instance);
             double playerDistanceSq = math.distancesq(targetPosition, MovementController.Instance.Position);
 
-            if (playerDistanceSq < playerSafeDistance * playerSafeDistance)
+            if (playerDistanceSq < playerThreshold * playerThreshold)
             {
                 UIMessage.Instance.NewUIMessage(MessageType.Error, $"Target position intersects with your position.", "Teleport Blocked");
                 return true;

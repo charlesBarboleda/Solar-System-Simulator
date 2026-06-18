@@ -66,7 +66,7 @@ public class CreateAssetUIManager : MonoBehaviour
     {
         BodyData bodyData = CreateBodyData();
         VisualData visualData = CreateVisualData();
-        RotationData rotationData = CreateRotationData();
+        RotationData rotationData = CreateRotationData(_isBasicRotation);
 
         bool isRingPlanet = bodyData.Type == BodyType.Planet && _hasRingToggleContainer.activeInHierarchy && _hasRingToggle.isOn;
         DisplayData displayData = CreateDisplayData(bodyData, visualData, isRingPlanet);

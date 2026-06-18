@@ -52,21 +52,6 @@ public class SimulationSettings : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        LoadDefaultSettings();
-    }
-
-    void LoadDefaultSettings()
-    {
-        HandleSimulationSteppingPreset(SimulationSteppingPresets.Balanced, out double fixedStep, out int maxSubstep, out double maxBacklog);
-
-        TimeScale = 1;
-        GravityScale = 1;
-        FixedStepSimDays = fixedStep;
-        MaxSubstepsPerFixedUpdate = maxSubstep;
-        MaxBacklogSimDays = maxBacklog;
-
-        UIMessage.Instance.NewFadingMessage(MessageType.Info, "Loaded Default Simulation Settings", 8f);
     }
 
     public void HandleSimulationSteppingPreset(SimulationSteppingPresets preset, out double fixedStep, out int maxSubstep, out double maxBacklog)
@@ -75,33 +60,33 @@ public class SimulationSettings : MonoBehaviour
         {
             case SimulationSteppingPresets.Performance:
                 fixedStep = 1.0 / 720;
-                maxSubstep = 32;
-                maxBacklog = 0.1;
+                maxSubstep = 256;
+                maxBacklog = 0.5;
                 break;
             case SimulationSteppingPresets.Balanced:
                 fixedStep = 1.0 / 1440.0;
-                maxSubstep = 64;
-                maxBacklog = 0.25;
+                maxSubstep = 512;
+                maxBacklog = 1.0;
                 break;
             case SimulationSteppingPresets.Precision:
                 fixedStep = 1.0 / 8640.0;
-                maxSubstep = 128;
-                maxBacklog = 0.5;
+                maxSubstep = 1024;
+                maxBacklog = 2.0;
                 break;
             case SimulationSteppingPresets.UltraPrecision:
                 fixedStep = 1e-5f;
-                maxSubstep = 256;
+                maxSubstep = 2048;
                 maxBacklog = 1;
                 break;
             case SimulationSteppingPresets.FastForward:
-                fixedStep = 0.01;
-                maxSubstep = 128;
-                maxBacklog = 2;
+                fixedStep = 0.05;
+                maxSubstep = 512;
+                maxBacklog = 10.0;
                 break;
             case SimulationSteppingPresets.Cinematic:
                 fixedStep = 0.05;
                 maxSubstep = 16;
-                maxBacklog = 0;
+                maxBacklog = 0.05;
                 break;
             default:
                 fixedStep = 1.0 / 1440.0;
@@ -296,6 +281,11 @@ public class SimulationSettings : MonoBehaviour
         ResetClock();
         SimDays = simDays;
         UIMessage.Instance.NewFadingMessage(MessageType.Info, $"Sim Days set to: {SimDays}");
+    }
+
+    public DateTime GetStartDateTime()
+    {
+        return _dateTimeStart;
     }
 
     public DateTime GetCurrentDateTime() => _dateTimeStart.AddDays(SimDays);

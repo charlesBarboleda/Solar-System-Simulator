@@ -35,8 +35,19 @@ public class SimulationStateDatabaseElementRowManager : MonoBehaviour
 
     public void SetMainText(string displayName, int objectCount, string savedAt)
     {
-        if (!string.IsNullOrEmpty(displayName)) _mainText.text = $"{displayName} ({objectCount} simulation objects)";
+        if (!string.IsNullOrEmpty(displayName)) _mainText.text = $"{Truncate(displayName, 25)}\n({objectCount} simulation objects)";
         else _mainText.text = $"Unnamed Save ({objectCount} simulation objects)";
+    }
+
+    string Truncate(string text, int maxLength)
+    {
+        const string suffix = "...";
+
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength) return text;
+
+        if (maxLength <= suffix.Length) return suffix[..maxLength];
+
+        return text[..(maxLength - suffix.Length)] + suffix;
     }
 
 }

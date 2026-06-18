@@ -54,7 +54,12 @@ public class SimulationAssetsUIManager : MonoBehaviour
     {
         _simulationAssetsContainer.SetActive(false);
 
-        if (MainMenuManager.Instance.IsActive) MainMenuManager.Instance.EnableMainMenu(true);
+        if (MainMenuManager.Instance.IsActive)
+        {
+            MainMenuManager.Instance.EnableMainMenu(true);
+            MainMenuManager.Instance.Enable3DContent(false);
+        }
+
     }
     public void OnSearchFieldInput(string input) => SearchByName(input);
 

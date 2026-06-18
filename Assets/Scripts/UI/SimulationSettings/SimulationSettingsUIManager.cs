@@ -51,8 +51,6 @@ public class SimulationSettingsUIManager : MonoBehaviour
         _fixedStepSimDaysInput.text = fixedStep.ToString();
         _maxSubstepsInput.text = maxSubstep.ToString();
         _maxBacklogSimDaysInput.text = maxBacklog.ToString();
-
-
     }
 
     public void OnPlayButtonClick()

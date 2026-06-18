@@ -66,42 +66,73 @@ public class LiveSimulationVectorsPanelManager : MonoBehaviour
         double3 newPosition = new();
         double3 newVelocity = new();
 
+        bool noPositionChanges = true;
+        bool noVelocityChanges = true;
+
         // Position
         if (string.IsNullOrWhiteSpace(_posXInput.text))
             newPosition.x = _astronomicalObject.Position.x;
         else
+        {
             double.TryParse(_posXInput.text, out newPosition.x);
+            noPositionChanges = false;
+        }
 
         if (string.IsNullOrWhiteSpace(_posYInput.text))
             newPosition.y = _astronomicalObject.Position.y;
         else
+        {
             double.TryParse(_posYInput.text, out newPosition.y);
+            noPositionChanges = false;
+        }
 
         if (string.IsNullOrWhiteSpace(_posZInput.text))
             newPosition.z = _astronomicalObject.Position.z;
         else
+        {
             double.TryParse(_posZInput.text, out newPosition.z);
+            noPositionChanges = false;
+        }
+
 
         // Velocity
         if (string.IsNullOrWhiteSpace(_velXInput.text))
             newVelocity.x = _astronomicalObject.Velocity.x;
         else
+        {
             double.TryParse(_velXInput.text, out newPosition.x);
+            noVelocityChanges = false;
+        }
 
         if (string.IsNullOrWhiteSpace(_velYInput.text))
             newVelocity.y = _astronomicalObject.Velocity.y;
         else
+        {
             double.TryParse(_velYInput.text, out newPosition.y);
+            noVelocityChanges = false;
+        }
 
         if (string.IsNullOrWhiteSpace(_velZInput.text))
             newVelocity.z = _astronomicalObject.Velocity.z;
         else
-            double.TryParse(_velZInput.text, out newPosition.z);
-
-        if (_astronomicalObject.SetPosition(newPosition))
         {
+            double.TryParse(_velZInput.text, out newPosition.z);
+            noVelocityChanges = false;
+        }
+
+        if (!noPositionChanges)
+        {
+            if (_astronomicalObject.SetPosition(newPosition))
+                UIMessage.Instance.NewFadingMessage(MessageType.Success, $"Applied new Position to {_astronomicalObject.Data.Body.Name}");
+        }
+
+        if (!noVelocityChanges)
+        {
+            UIMessage.Instance.NewFadingMessage(MessageType.Success, $"Applied new Velocity to {_astronomicalObject.Data.Body.Name}");
             _astronomicalObject.SetVelocity(newVelocity);
         }
+
+
     }
 
     void Initialize()

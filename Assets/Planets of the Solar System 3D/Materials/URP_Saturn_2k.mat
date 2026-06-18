@@ -121,8 +121,8 @@ Material:
     - _BumpScale: 1
     - _ConservativeDepthOffsetEnable: 0
     - _Cull: 2
-    - _CullMode: 1
-    - _CullModeForward: 1
+    - _CullMode: 2
+    - _CullModeForward: 2
     - _Cutoff: 0.5
     - _DepthOffsetEnable: 0
     - _DetailNormalMapScale: 1
@@ -143,7 +143,7 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _OpaqueCullMode: 1
+    - _OpaqueCullMode: 2
     - _Parallax: 0.02
     - _PerPixelSorting: 0
     - _QueueControl: -1
@@ -155,6 +155,7 @@ Material:
     - _RefractionModel: 0
     - _RenderQueueType: 1
     - _RequireSplitLighting: 0
+    - _RotationFix: 0
     - _Shininess: 0
     - _Smoothness: 0
     - _SmoothnessSource: 0

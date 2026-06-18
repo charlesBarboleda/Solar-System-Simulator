@@ -36,9 +36,7 @@ public class SimulationStateDatabaseUIManager : MonoBehaviour
 
     public void OnSaveSimulationButtonClick()
     {
-        Debug.Log("Save Simulation Button Clicked");
         _saveNameInputContainer.SetActive(true);
-        Debug.Log("Save Name Input Container Activated");
     }
 
     public void OnCloseSaveNameInputClick() => _saveNameInputContainer.SetActive(false);

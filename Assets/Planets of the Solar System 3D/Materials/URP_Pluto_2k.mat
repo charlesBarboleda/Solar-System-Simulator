@@ -50,7 +50,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - Texture2D_CFCAFFE9:
-        m_Texture: {fileID: 2800000, guid: 10f5e864093aa3a4e839beeef2031838, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7d562b538018ccf4bbd97bb79c6082e6, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:

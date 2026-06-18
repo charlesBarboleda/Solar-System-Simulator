@@ -14,14 +14,14 @@ public class UIManager : MonoBehaviour
     void Update()
     {
         if (_speedText != null && _movementController != null)
-            _speedText.text = $"Speed: {_movementController.SpeedKmPerSec} km/s";
+            _speedText.SetText($"Speed: {_movementController.SpeedKmPerSec} km/s");
 
         var t = TimeSpan.FromSeconds(SimulationSettings.Instance.SimSeconds);
         if (_simulationTimePassedText != null)
-            _simulationTimePassedText.text = $"Sim Time Elapsed: {SimulationSettings.Instance.SimDays:F3} days  ({t:dd\\.hh\\:mm\\:ss})";
+            _simulationTimePassedText.SetText($"Sim Time Elapsed: {SimulationSettings.Instance.SimDays:F3} days  ({t:dd\\.hh\\:mm\\:ss})");
 
         if (_dateTimeText != null)
-            _dateTimeText.text = $"Date Time: {SimulationSettings.Instance.GetCurrentDateTime()}";
+            _dateTimeText.SetText($"Date Time: {SimulationSettings.Instance.GetCurrentDateTime()}");
 
     }
 }

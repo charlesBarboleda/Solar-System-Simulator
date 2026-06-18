@@ -18,6 +18,11 @@ public class LiveSimulationRowContainerManager : MonoBehaviour
         _displayImage.texture = astronomicalObject.Data.Display.DisplayImage;
     }
 
+    public AstronomicalObject GetAstronomicalObject()
+    {
+        return _astronomicalObject;
+    }
+
     public void SetRowNumber(int rowNumber) => _numberText.text = $"{rowNumber}.";
 
     public void OnVectorsButtonClick() => LiveSimulationVectorsPanelManager.Instance.OpenPanel(_astronomicalObject);

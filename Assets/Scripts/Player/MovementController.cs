@@ -160,7 +160,7 @@ public class MovementController : SimulationObject
         _customSpeedKmPerSec = newSpeedKmPerSec;
     }
 
-    public override double GetCollisionRadius() => PhysicsConstants.ToUnityUnitsFromKM(10000.0);
+    public override double GetCollisionRadius(bool hasPadding = false) => PhysicsConstants.ToUnityUnitsFromKM(10000.0);
 
     float CalculateMovementSafetyFactor(Vector3 moveDirection, float desiredMoveDistance, float speedUnitsPerSecond)
     {
@@ -304,7 +304,7 @@ public class MovementController : SimulationObject
         double halfAngleRad = (fovDeg * 0.5f * fillFraction) * Mathf.Deg2Rad;
         double idealViewDistance = objectRadius / Math.Tan(halfAngleRad);
 
-        double safeDistance = NBodyManager.Instance.GetSafeDistanceBetweenObjects(this, targetObject) * 1.05;
+        double safeDistance = NBodyManager.Instance.GetSafeDistanceBetweenObjects(this, targetObject) * 1.25;
         double finalDistance = Math.Max(idealViewDistance, safeDistance);
 
         double3 finalPosition = targetPosition + direction * finalDistance;
